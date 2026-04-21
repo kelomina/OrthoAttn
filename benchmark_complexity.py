@@ -51,7 +51,6 @@ def benchmark_dsra(seq_lengths, dim=128, K=128, kr=16, chunk_size=256, batch_siz
             fwd_time = (end_time - start_time) * 1000
 
             attn_time = float('inf')
-            attn_measured = False
             if not skip_attn:
                 try:
                     start_attn = time.perf_counter()
