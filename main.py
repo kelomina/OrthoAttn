@@ -38,7 +38,7 @@ def run_associative_recall():
 
 def run_needle_in_haystack():
     print("\n" + "="*50)
-    print("Running Needle-In-A-Haystack Test (8K Context)")
+    print("Running Needle-In-A-Haystack Long-Context Sweep")
     print("="*50)
     from needle_in_haystack_test import run_niah_test as niah
     niah()

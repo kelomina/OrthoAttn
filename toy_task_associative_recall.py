@@ -7,12 +7,29 @@ import torch.optim as optim
 from dsra_layer import DSRA_Chunk_Layer
 
 class DSRAModel(nn.Module):
-    def __init__(self, vocab_size, dim, K=128, kr=8, chunk_size=256, pe_mode='none'):
+    def __init__(
+        self,
+        vocab_size,
+        dim,
+        K=128,
+        kr=8,
+        chunk_size=256,
+        pe_mode='none',
+        use_orthogonal_update=True,
+        use_bypass=True,
+    ):
         super().__init__()
         self.dim = dim
         self.chunk_size = chunk_size
         self.embedding = nn.Embedding(vocab_size, dim)
-        self.dsra = DSRA_Chunk_Layer(dim, K=K, kr=kr, pe_mode=pe_mode)
+        self.dsra = DSRA_Chunk_Layer(
+            dim,
+            K=K,
+            kr=kr,
+            pe_mode=pe_mode,
+            use_orthogonal_update=use_orthogonal_update,
+            use_bypass=use_bypass,
+        )
         self.norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
 
@@ -52,7 +69,37 @@ class DSRAModel(nn.Module):
 
         return logits
 
-def generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=10):
+
+def build_fixed_associative_mapping(vocab_size, num_pairs, seed=0, noise_pool_size=None):
+    required_tokens = 2 * num_pairs
+    if vocab_size < required_tokens + 5:
+        raise ValueError("Vocabulary too small for a fixed associative mapping.")
+
+    rng = random.Random(seed)
+    token_pool = rng.sample(list(range(4, vocab_size)), vocab_size - 4)
+    keys = token_pool[:num_pairs]
+    values = token_pool[num_pairs:2 * num_pairs]
+    noise_tokens = token_pool[2 * num_pairs:]
+
+    if noise_pool_size is not None:
+        noise_tokens = noise_tokens[:noise_pool_size]
+    if not noise_tokens:
+        raise ValueError("Fixed mapping must leave at least one noise token.")
+
+    return {
+        "pairs": list(zip(keys, values)),
+        "noise_tokens": noise_tokens,
+    }
+
+
+def generate_associative_recall_data(
+    batch_size,
+    seq_len,
+    vocab_size,
+    num_pairs=10,
+    fixed_pairs=None,
+    fixed_noise_tokens=None,
+):
     X = torch.zeros(batch_size, seq_len, dtype=torch.long)
     Y = torch.zeros(batch_size, seq_len, dtype=torch.long)
     query_token = 1
@@ -64,11 +111,23 @@ def generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=
         raise ValueError("Vocabulary too small for disjoint keys, values, and noise.")
 
     for b in range(batch_size):
-        available_tokens = random.sample(range(4, vocab_size), required_tokens)
-        keys = available_tokens[:num_pairs]
-        values = available_tokens[num_pairs:2 * num_pairs]
-        noise_tokens = available_tokens[2 * num_pairs:]
-        pairs = list(zip(keys, values))
+        if fixed_pairs is None:
+            available_tokens = random.sample(range(4, vocab_size), required_tokens)
+            keys = available_tokens[:num_pairs]
+            values = available_tokens[num_pairs:2 * num_pairs]
+            noise_tokens = available_tokens[2 * num_pairs:]
+            pairs = list(zip(keys, values))
+        else:
+            pairs = list(fixed_pairs)
+            if len(pairs) != num_pairs:
+                raise ValueError("fixed_pairs size must match num_pairs.")
+            if fixed_noise_tokens is None:
+                used_tokens = {token for pair in pairs for token in pair}
+                noise_tokens = [token for token in range(4, vocab_size) if token not in used_tokens]
+            else:
+                noise_tokens = list(fixed_noise_tokens)
+            if not noise_tokens:
+                raise ValueError("Fixed mapping must leave at least one noise token.")
 
         for i in range(seq_len):
             X[b, i] = random.choice(noise_tokens)

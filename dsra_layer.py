@@ -51,6 +51,7 @@ class DSRA_Chunk_Layer(nn.Module):
         self.use_bypass = use_bypass
         self.pe_mode = pe_mode
         self.time_decay_alpha = 0.01
+        self.read_temperature = nn.Parameter(torch.tensor(1.0))
 
         
         # S_init: [K, dim]
@@ -86,7 +87,8 @@ class DSRA_Chunk_Layer(nn.Module):
         V = self.W_v(x)
         Q_read = F.normalize(Q, dim=-1)
         S_read = F.normalize(S_prev, dim=-1)
-        read_logits = torch.einsum('btd,bkd->btk', Q_read, S_read) * (self.dim ** 0.5)
+        read_scale = self.read_temperature / (self.dim ** 0.5)
+        read_logits = torch.einsum('btd,bkd->btk', Q_read, S_read) * read_scale
         
         if self.pe_mode == 'timestamps':
             t_curr = chunk_time_start + torch.arange(T, device=x.device, dtype=torch.float32)
@@ -201,7 +203,8 @@ class DSRA_Chunk_Layer(nn.Module):
         v_t = self.W_v(x_t)
         q_read = F.normalize(q_t, dim=-1)
         s_read = F.normalize(S_prev, dim=-1)
-        read_logits = torch.einsum('btd,bkd->btk', q_read, s_read) * (self.dim ** 0.5)
+        read_scale = self.read_temperature / (self.dim ** 0.5)
+        read_logits = torch.einsum('btd,bkd->btk', q_read, s_read) * read_scale
         r_read = self.sparse_topk_distribution(read_logits)
         context_t = torch.einsum('btk,bkd->btd', r_read, S_prev)
         
