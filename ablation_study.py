@@ -8,24 +8,24 @@ def run_ablation(name, model, device, epochs=500, batch_size=16, seq_len=512, vo
     print(f"\n--- Starting Ablation Study: {name} ---")
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    
+
     best_acc = 0.0
-    
+
     model.train()
     for epoch in range(epochs):
         X, Y = generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=10)
         X, Y = X.to(device), Y.to(device)
-        
+
         loss_val, acc = train_step(model, X, Y, optimizer, criterion)
-        
+        best_acc = max(best_acc, acc)
+
         if epoch % 50 == 0:
-            best_acc = max(best_acc, acc)
             print(f"[{name}] Epoch {epoch:4d} | Loss: {loss_val:.4f} | Accuracy: {acc*100:.1f}%")
-            
+
             if acc == 1.0 and loss_val < 0.05:
                 print(f"[{name}] Solved at epoch {epoch}!")
                 break
-                
+
     return best_acc
 
 def main():
