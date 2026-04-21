@@ -4,8 +4,10 @@ import torch.optim as optim
 from toy_task_associative_recall import generate_associative_recall_data, train_step
 from dsra_model import MultiLayerDSRAModel
 
-def run_ablation(name, model, device, epochs=500, batch_size=16, seq_len=512, vocab_size=100):
+
+def run_ablation(name, model, device, epochs=3000, batch_size=16, seq_len=512, vocab_size=100):
     print(f"\n--- Starting Ablation Study: {name} ---")
+    # 增加训练轮次以确保模型充分收敛，特别是消融实验需要更长的训练来观察各组件的真实影响
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
@@ -40,56 +42,28 @@ def main():
     K = 64
     kr = 8
     
-    # 1. Full DSRA (NoPE)
-    model_full = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=True, pe_mode='none'
-    ).to(device)
-    
-    # 2. No Orthogonal Update
-    model_no_ortho = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=False, use_bypass=True, pe_mode='none'
-    ).to(device)
-    
-    # 3. No Instruction Bypass
-    model_no_bypass = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=False, pe_mode='none'
-    ).to(device)
-    
-    # 4. Full DSRA (RoPE)
-    model_rope = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=True, pe_mode='rope'
-    ).to(device)
-    
-    # 5. Full DSRA (ALiBi)
-    model_alibi = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=True, pe_mode='alibi'
-    ).to(device)
-    
-    # 6. Full DSRA (Timestamps)
-    model_timestamps = MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=True, pe_mode='timestamps'
-    ).to(device)
-    
-    acc_full = run_ablation("Full DSRA (NoPE)", model_full, device)
-    acc_no_ortho = run_ablation("No Orthogonal Update", model_no_ortho, device)
-    acc_no_bypass = run_ablation("No Bypass", model_no_bypass, device)
-    acc_rope = run_ablation("Full DSRA (RoPE)", model_rope, device)
-    acc_alibi = run_ablation("Full DSRA (ALiBi)", model_alibi, device)
-    acc_timestamps = run_ablation("Full DSRA (Timestamps)", model_timestamps, device)
-    
+    ablations = [
+        ("Full DSRA (NoPE)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "none"}),
+        ("No Orthogonal Update", {"use_orthogonal_update": False, "use_bypass": True, "pe_mode": "none"}),
+        ("No Bypass", {"use_orthogonal_update": True, "use_bypass": False, "pe_mode": "none"}),
+        ("Full DSRA (RoPE)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "rope"}),
+        ("Full DSRA (ALiBi)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "alibi"}),
+        ("Full DSRA (Timestamps)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "timestamps"}),
+    ]
+
+    results = {}
+    for name, config in ablations:
+        model = MultiLayerDSRAModel(
+            vocab_size, dim, num_layers, K, kr, chunk_size,
+            use_orthogonal_update=config["use_orthogonal_update"],
+            use_bypass=config["use_bypass"],
+            pe_mode=config["pe_mode"]
+        ).to(device)
+        results[name] = run_ablation(name, model, device, epochs=3000, seq_len=seq_len, vocab_size=vocab_size)
+
     print("\n=== Ablation Study Results ===")
-    print(f"Full DSRA (NoPE) Accuracy:         {acc_full*100:.1f}%")
-    print(f"No Orthogonal Update Acc:   {acc_no_ortho*100:.1f}%")
-    print(f"No Instruction Bypass Acc:  {acc_no_bypass*100:.1f}%")
-    print(f"Full DSRA (RoPE) Accuracy:         {acc_rope*100:.1f}%")
-    print(f"Full DSRA (ALiBi) Accuracy:        {acc_alibi*100:.1f}%")
-    print(f"Full DSRA (Timestamps) Acc:        {acc_timestamps*100:.1f}%")
+    for name, _ in ablations:
+        print(f"{name} Accuracy: {results[name]*100:.1f}%")
 
 if __name__ == '__main__':
     main()
