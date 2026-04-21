@@ -31,6 +31,7 @@ def get_alibi_mask(seq_len_q, seq_len_k, is_causal=True, device=None, dtype=None
     return mask.unsqueeze(0).unsqueeze(0)
 
 def get_chunk_causal_mask(seq_len_q, seq_len_k, prefix_len=0, device=None, dtype=None):
+    """创建分块因果注意力掩码，允许访问前缀分块但限制未来分块。"""
     q_idx = torch.arange(seq_len_q, device=device).unsqueeze(1)
     k_idx = torch.arange(seq_len_k, device=device).unsqueeze(0)
     allowed_k = prefix_len + q_idx
