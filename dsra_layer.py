@@ -30,6 +30,14 @@ def get_alibi_mask(seq_len_q, seq_len_k, is_causal=True, device=None, dtype=None
     # Since we have no num_heads explicitly in this implementation, Q is [B, T, D] which it treats as 1 head.
     return mask.unsqueeze(0).unsqueeze(0)
 
+def get_chunk_causal_mask(seq_len_q, seq_len_k, prefix_len=0, device=None, dtype=None):
+    q_idx = torch.arange(seq_len_q, device=device).unsqueeze(1)
+    k_idx = torch.arange(seq_len_k, device=device).unsqueeze(0)
+    allowed_k = prefix_len + q_idx
+    mask = torch.zeros(seq_len_q, seq_len_k, device=device, dtype=dtype)
+    mask = mask.masked_fill(k_idx > allowed_k, float('-inf'))
+    return mask.unsqueeze(0)
+
 class DSRA_Chunk_Layer(nn.Module):
     def __init__(self, dim, K=512, kr=16, eta=0.1, decay_lambda=0.01, use_orthogonal_update=True, use_bypass=True, pe_mode='none'):
         super().__init__()
@@ -52,6 +60,12 @@ class DSRA_Chunk_Layer(nn.Module):
         self.W_n = nn.Linear(dim + 1, K) 
         self.W_m = nn.Linear(dim, 1)
 
+    def sparse_topk_distribution(self, logits):
+        topk = min(self.kr, logits.size(-1))
+        topk_logits, topk_idx = torch.topk(logits, topk, dim=-1)
+        topk_probs = F.softmax(topk_logits, dim=-1)
+        return torch.zeros_like(logits).scatter(-1, topk_idx, topk_probs)
+
     def forward(self, x, S_prev=None, bypass_kv=None, S_time_prev=None, chunk_idx=0):
         """
         x: [B, T, D]
@@ -67,12 +81,11 @@ class DSRA_Chunk_Layer(nn.Module):
         if self.pe_mode == 'timestamps' and S_time_prev is None:
             S_time_prev = torch.zeros(B, self.K, device=x.device, dtype=torch.float32)
             
-        Q = self.W_q(x) # [B, T, D]
-        V = self.W_v(x) # [B, T, D]
-        
-        # 1. Read Routing
-        # [B, T, D] @ [B, D, K] -> [B, T, K]
-        read_logits = torch.einsum('btd,bkd->btk', Q, S_prev) / (self.dim ** 0.5)
+        Q = self.W_q(x)
+        V = self.W_v(x)
+        Q_read = F.normalize(Q, dim=-1)
+        S_read = F.normalize(S_prev, dim=-1)
+        read_logits = torch.einsum('btd,bkd->btk', Q_read, S_read) * (self.dim ** 0.5)
         
         if self.pe_mode == 'timestamps':
             t_curr = chunk_time_start + torch.arange(T, device=x.device, dtype=torch.float32)
@@ -89,18 +102,7 @@ class DSRA_Chunk_Layer(nn.Module):
             read_logits = read_logits - self.time_decay_alpha * time_diff
 
         
-        # Gumbel Softmax for differentiable TopK
-        # For training stability, we use softmax over topk
-        topk_logits, topk_idx = torch.topk(read_logits, self.kr, dim=-1) # [B, T, kr]
-        topk_probs = F.softmax(topk_logits, dim=-1) # [B, T, kr]
-        
-        # Reconstruct full sparse distribution
-        # Need to ensure scatter operates on correct dimension.
-        # read_logits is [B, T, K], topk_idx is [B, T, kr], topk_probs is [B, T, kr]
-        r_read = torch.zeros_like(read_logits).scatter(-1, topk_idx, topk_probs) # [B, T, K]
-        
-        # Read from state
-        # [B, T, K] @ [B, K, D] -> [B, T, D]
+        r_read = self.sparse_topk_distribution(read_logits)
         context = torch.einsum('btk,bkd->btd', r_read, S_prev)
         
         # 2. Instruction Bypass (Local Window)
@@ -115,78 +117,66 @@ class DSRA_Chunk_Layer(nn.Module):
 
         if bypass_kv is not None:
             K_bypass, V_bypass = bypass_kv
+            prev_len = K_bypass.shape[1]
             if self.pe_mode == 'rope':
-                # K_bypass is from previous chunk
-                K_bypass = apply_rotary_pos_emb(K_bypass, offset=chunk_time_start - T)
-                
+                K_bypass = apply_rotary_pos_emb(K_bypass, offset=max(chunk_time_start - prev_len, 0))
+
+            if self.pe_mode == 'rope':
+                K_current = Q_bypass
+            else:
+                K_current = Q
+
+            K_cat = torch.cat([K_bypass, K_current], dim=1)
+            V_cat = torch.cat([V_bypass, V], dim=1)
             attn_mask = None
             if self.pe_mode == 'alibi':
-                # ALiBi expects a shape broadcastable to [B, num_heads, seq_len_q, seq_len_k].
-                # Since we don't use multi-head explicitly, Q is [B, T, D], we need [B, 1, T, T] or [1, 1, T, T]
-                attn_mask = get_alibi_mask(T, T, is_causal=False, device=x.device, dtype=x.dtype)
-                # But scaled_dot_product_attention for [B, T, D] expects mask [B, T, T] or [1, T, T]
-                attn_mask = attn_mask.squeeze(0) # [1, T, T]
-                
-            # bypass_kv is from the previous chunk, so all its tokens are in the past
-            # Hence, no causal mask is needed for cross-attention to the previous chunk
-            bypass_out = F.scaled_dot_product_attention(Q_bypass, K_bypass, V_bypass, is_causal=(attn_mask is None), attn_mask=attn_mask)
+                alibi_mask = get_alibi_mask(T, prev_len + T, is_causal=False, device=x.device, dtype=x.dtype).squeeze(0)
+                causal_mask = get_chunk_causal_mask(T, prev_len + T, prefix_len=prev_len, device=x.device, dtype=x.dtype)
+                attn_mask = alibi_mask + causal_mask
+            else:
+                attn_mask = get_chunk_causal_mask(T, prev_len + T, prefix_len=prev_len, device=x.device, dtype=x.dtype)
+
+            bypass_out = F.scaled_dot_product_attention(Q_bypass, K_cat, V_cat, is_causal=False, attn_mask=attn_mask)
         else:
             if self.pe_mode == 'rope':
                 K_bypass_self = Q_bypass
             else:
                 K_bypass_self = Q
-                
+
             attn_mask = None
             if self.pe_mode == 'alibi':
                 attn_mask = get_alibi_mask(T, T, is_causal=True, device=x.device, dtype=x.dtype)
-                attn_mask = attn_mask.squeeze(0) # [1, T, T]
-                
-            # Self-attention within chunk requires causal mask
+                attn_mask = attn_mask.squeeze(0)
+
             bypass_out = F.scaled_dot_product_attention(Q_bypass, K_bypass_self, V, is_causal=(attn_mask is None), attn_mask=attn_mask)
             
-        out = (1 - instr_prob) * context + instr_prob * bypass_out
+        out = context + instr_prob * bypass_out
         
-        # 3. Orthogonal Write Routing & Update
-        # Novelty detection
-        sim = F.cosine_similarity(V.unsqueeze(2), S_prev.unsqueeze(1), dim=-1) # [B, T, K]
-        novelty = 1.0 - sim.max(dim=-1)[0] # [B, T]
-        
-        # Write routing logits
-        write_logits = self.W_n(torch.cat([novelty.unsqueeze(-1), Q], dim=-1)) # [B, T, K]
-        r_write = torch.sigmoid(write_logits) # [B, T, K]
-        
-        # Aggregate chunk information to write
-        # Generate time decay weights for aggregation
+        sim = F.cosine_similarity(V.unsqueeze(2), S_prev.unsqueeze(1), dim=-1)
+        novelty = 1.0 - sim.max(dim=-1)[0]
+        write_logits = self.W_n(torch.cat([novelty.unsqueeze(-1), Q], dim=-1)) + read_logits
+        r_write = self.sparse_topk_distribution(write_logits)
         w = (1 - self.decay_lambda) ** torch.arange(T - 1, -1, -1, device=x.device, dtype=x.dtype)
-        w = w / w.sum() # Normalize
-        
-        # [B, T, K] @ [B, T, D] with weights [T]
-        V_agg = torch.einsum('btk,btd,t->bkd', r_write, V, w)
-        
-        # Orthogonal Projection: P = S^T (S S^T)^-1 S
+        weighted_write = r_write * novelty.unsqueeze(-1).clamp(0.0, 1.0) * w.view(1, T, 1)
+        slot_mass = weighted_write.sum(dim=1).unsqueeze(-1).clamp_min(1e-6)
+        V_agg = torch.einsum('btk,btd->bkd', weighted_write, V) / slot_mass
+
         if self.use_orthogonal_update:
-            # We project V_agg to be orthogonal to the row space of S_prev
             S_cov = torch.bmm(S_prev, S_prev.transpose(1, 2)) + 1e-5 * torch.eye(self.K, device=x.device)
             S_cov_inv = torch.inverse(S_cov)
-            
-            SV = torch.bmm(V_agg, S_prev.transpose(1, 2)) # [B, K, K]
-            proj_coeff = torch.bmm(SV, S_cov_inv) # [B, K, K]
-            V_proj = torch.bmm(proj_coeff, S_prev) # [B, K, D]
-            
-            V_orth = V_agg - V_proj # [B, K, D]
+            SV = torch.bmm(V_agg, S_prev.transpose(1, 2))
+            proj_coeff = torch.bmm(SV, S_cov_inv)
+            V_proj = torch.bmm(proj_coeff, S_prev)
+            V_orth = V_agg - V_proj
         else:
-            V_orth = V_agg # Fallback to direct addition
-            
-        self.last_V_orth = V_orth # Expose for testing
-        
-        # Update S with decay to prevent orthogonal space saturation
+            V_orth = V_agg
+
+        self.last_V_orth = V_orth
         S_next = (1 - self.decay_lambda) * S_prev + self.eta * V_orth
-        
+
         S_time_next = S_time_prev
         if self.pe_mode == 'timestamps':
-            # r_write max prob over time
-            max_write_prob = r_write.max(dim=1)[0] # [B, K]
-            # Soft update timestamp
+            max_write_prob = weighted_write.max(dim=1)[0]
             S_time_next = S_time_prev * (1 - max_write_prob) + (chunk_time_start + T) * max_write_prob
             
         return out, S_next, (Q, V), S_time_next
@@ -206,14 +196,12 @@ class DSRA_Chunk_Layer(nn.Module):
         if S_prev is None:
             S_prev = self.S_init.unsqueeze(0).expand(B, -1, -1)
             
-        q_t = self.W_q(x_t) # [B, 1, D]
-        v_t = self.W_v(x_t) # [B, 1, D]
-        
-        # 1. Read
-        read_logits = torch.einsum('btd,bkd->btk', q_t, S_prev) / (self.dim ** 0.5)
-        topk_logits, topk_idx = torch.topk(read_logits, self.kr, dim=-1)
-        topk_probs = F.softmax(topk_logits, dim=-1)
-        r_read = torch.zeros_like(read_logits).scatter(-1, topk_idx, topk_probs)
+        q_t = self.W_q(x_t)
+        v_t = self.W_v(x_t)
+        q_read = F.normalize(q_t, dim=-1)
+        s_read = F.normalize(S_prev, dim=-1)
+        read_logits = torch.einsum('btd,bkd->btk', q_read, s_read) * (self.dim ** 0.5)
+        r_read = self.sparse_topk_distribution(read_logits)
         context_t = torch.einsum('btk,bkd->btd', r_read, S_prev)
         
         # 2. Bypass
@@ -222,27 +210,24 @@ class DSRA_Chunk_Layer(nn.Module):
         else:
             instr_prob = torch.zeros(B, 1, 1, device=x_t.device)
             
-        # Update KV cache
         if kv_cache is not None:
             K_cache, V_cache = kv_cache
-            K_cache = torch.cat([K_cache, q_t], dim=1) # Using Q as K for simplicity as in original code
+            K_cache = torch.cat([K_cache, q_t], dim=1)
             V_cache = torch.cat([V_cache, v_t], dim=1)
         else:
             K_cache, V_cache = q_t, v_t
-            
-        # Cross attention to cache (all tokens in cache are valid for current token)
+
         bypass_out_t = F.scaled_dot_product_attention(q_t, K_cache, V_cache, is_causal=False)
-        out_t = (1 - instr_prob) * context_t + instr_prob * bypass_out_t
-        
-        # 3. Write
+        out_t = context_t + instr_prob * bypass_out_t
+
         sim = F.cosine_similarity(v_t.unsqueeze(2), S_prev.unsqueeze(1), dim=-1)
         novelty = 1.0 - sim.max(dim=-1)[0]
-        write_logits = self.W_n(torch.cat([novelty.unsqueeze(-1), q_t], dim=-1))
-        r_write = torch.sigmoid(write_logits)
-        
-        # In step mode, V_agg is just weighted v_t
-        V_agg = torch.einsum('btk,btd->bkd', r_write, v_t)
-        
+        write_logits = self.W_n(torch.cat([novelty.unsqueeze(-1), q_t], dim=-1)) + read_logits
+        r_write = self.sparse_topk_distribution(write_logits)
+        weighted_write = r_write * novelty.unsqueeze(-1).clamp(0.0, 1.0)
+        slot_mass = weighted_write.sum(dim=1).unsqueeze(-1).clamp_min(1e-6)
+        V_agg = torch.einsum('btk,btd->bkd', weighted_write, v_t) / slot_mass
+
         if self.use_orthogonal_update:
             S_cov = torch.bmm(S_prev, S_prev.transpose(1, 2)) + 1e-5 * torch.eye(self.K, device=x_t.device)
             S_cov_inv = torch.inverse(S_cov)
@@ -254,5 +239,5 @@ class DSRA_Chunk_Layer(nn.Module):
             V_orth = V_agg
             
         S_next = (1 - self.decay_lambda) * S_prev + self.eta * V_orth
-        
+
         return out_t, S_next, (K_cache, V_cache)

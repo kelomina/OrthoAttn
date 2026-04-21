@@ -60,7 +60,7 @@ def generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=
     value_token = 3
     required_tokens = (2 * num_pairs) + 1
 
-    if vocab_size - 4 < required_tokens:
+    if vocab_size < required_tokens + 4:
         raise ValueError("Vocabulary too small for disjoint keys, values, and noise.")
 
     for b in range(batch_size):
