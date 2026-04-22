@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from pathlib import Path
 from collections import deque
 
@@ -25,11 +26,24 @@ DEFAULT_WARMUP_RATIO_GRID = [0.1, 0.2]
 DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO = 0.3
 DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO_GRID = [0.2, 0.3]
 DEFAULT_TRAIN_DATASET_SIZE = 64
+DEFAULT_TRAIN_DATASET_SIZE_GRID = [32, 64, 128]
 DEFAULT_TRAIN_DATASET_SEED = 7
-QUESTION_TEMPLATE = "What is the most valuable exhibit in the {museum}? Answer based on the context."
-ANSWER_TEMPLATE = (
+DEFAULT_FIXED_SAMPLE_RATIO = 0.2
+ANSWER_COMPLEXITY_LEVELS = (1, 2, 3)
+QUESTION_TEMPLATES = (
+    "What is the most valuable exhibit in the {museum}? Answer based on the context.",
+    "Based on the context, which exhibit is identified as the most valuable item in the {museum}?",
+    "From the passage, name the most valuable exhibit in the {museum}.",
+    "According to the context, what artwork is described as the most valuable exhibit in the {museum}?",
+)
+ANSWER_TEMPLATES = (
     "The most valuable exhibit in the {museum} is {artifact} painted by {artist} "
-    "of the {dynasty} dynasty."
+    "of the {dynasty} dynasty.",
+    "{artifact} by {artist} from the {dynasty} dynasty is the most valuable exhibit in the {museum}.",
+    "Among all pieces in the {museum}, the most valuable exhibit is {artifact}, a "
+    "{dynasty} dynasty painting by {artist}.",
+    "The {museum}'s most valuable exhibit is {artifact}. It was painted by {artist} "
+    "during the {dynasty} dynasty.",
 )
 MUSEUM_NAMES = (
     "Palace Museum",
@@ -95,6 +109,24 @@ FILLER_DETAILS = (
     "studied by conservation scholars",
     "referenced in visitor education programs",
 )
+ANSWER_ENTITY_PATTERNS = (
+    re.compile(
+        r"^The most valuable exhibit in the (?P<museum>.+?) is (?P<artifact>.+?) "
+        r"painted by (?P<artist>.+?) of the (?P<dynasty>.+?) dynasty\.$"
+    ),
+    re.compile(
+        r"^(?P<artifact>.+?) by (?P<artist>.+?) from the (?P<dynasty>.+?) dynasty "
+        r"is the most valuable exhibit in the (?P<museum>.+?)\.$"
+    ),
+    re.compile(
+        r"^Among all pieces in the (?P<museum>.+?), the most valuable exhibit is "
+        r"(?P<artifact>.+?), a (?P<dynasty>.+?) dynasty painting by (?P<artist>.+?)\.$"
+    ),
+    re.compile(
+        r"^The (?P<museum>.+?)'s most valuable exhibit is (?P<artifact>.+?)\. "
+        r"It was painted by (?P<artist>.+?) during the (?P<dynasty>.+?) dynasty\.$"
+    ),
+)
 
 
 def load_json_retrieval_case(
@@ -140,15 +172,267 @@ def build_noise_bytes(target_bytes, rng):
     return "".join(chunks).encode("ascii")[:target_bytes]
 
 
-def generate_random_json_retrieval_case(reference_case, rng, target_total_bytes=None):
+def extract_answer_entities(expected_answer_text):
+    """提取答案中的博物馆与文物实体 / Extract museum and artifact entities.
+
+    调用方 / Callers:
+    - `build_answer_complexity_case()`
+    - `generate_random_json_retrieval_case()`
+
+    本函数调用 / Callees:
+    - `re.Pattern.match()`
+
+    作用 / Purpose:
+    - 从完整答案句中解析 `museum/artifact/artist/dynasty`
+    - 为答案长度与复杂度递进提供结构化字段
+
+    变量说明 / Variables:
+    - `expected_answer_text`: 完整英文答案句 / Full English answer sentence
+    - `pattern`: 预定义模板正则 / Regex for known answer templates
+    - `match`: 当前正则匹配结果 / Current regex match result
+
+    如何接入 / Integration:
+    - 当 case 元数据中缺少结构化字段时，先调用本函数再构建递进答案
+
+    错误处理 / Error Handling:
+    - 若未匹配任何模板，返回空字典，由上层回退到截断策略
+
+    关键词 / Keywords:
+    - answer|entity|museum|artifact|artist|dynasty|regex|parse|curriculum|metadata
+    """
+    for pattern in ANSWER_ENTITY_PATTERNS:
+        match = pattern.match(expected_answer_text)
+        if match:
+            return match.groupdict()
+    return {}
+
+
+def build_answer_text_for_complexity(
+    full_answer_text,
+    answer_complexity_level,
+    museum=None,
+    artifact=None,
+    artist=None,
+    dynasty=None,
+):
+    """按复杂度生成答案文本 / Build answer text by curriculum complexity.
+
+    调用方 / Callers:
+    - `build_answer_complexity_case()`
+    - `generate_random_json_retrieval_case()`
+
+    本函数调用 / Callees:
+    - `str.split()`
+    - `str.join()`
+
+    作用 / Purpose:
+    - 将完整答案映射为短答案、中答案或完整答案
+    - 让训练从“关键词”逐步过渡到“完整句子”
+
+    变量说明 / Variables:
+    - `full_answer_text`: 完整答案 / Full answer sentence
+    - `answer_complexity_level`: 复杂度级别 1/2/3 / Complexity level 1/2/3
+    - `museum/artifact/artist/dynasty`: 结构化实体 / Structured entities
+    - `words`: 回退模式下的分词结果 / Tokenized words for fallback mode
+
+    如何接入 / Integration:
+    - 训练数据生成前先调用本函数，随后再编码并注入上下文
+
+    错误处理 / Error Handling:
+    - 若结构化实体缺失，则回退到按词数裁剪的保守策略
+    - 若传入非法级别，则自动钳制到 1~3
+
+    关键词 / Keywords:
+    - answer|complexity|curriculum|short|medium|full|artifact|artist|fallback|length
+    """
+    normalized_level = max(1, min(3, int(answer_complexity_level)))
+    if normalized_level == 3:
+        return full_answer_text
+    if artifact and normalized_level == 1:
+        return artifact
+    if artifact and artist and normalized_level == 2:
+        return f"{artifact} by {artist}"
+
+    words = full_answer_text.split()
+    if normalized_level == 1:
+        return " ".join(words[: max(1, min(len(words), 4))])
+    return " ".join(words[: max(1, min(len(words), 8))])
+
+
+def build_answer_complexity_case(case, answer_complexity_level, rng=None):
+    """构建指定答案复杂度的 case / Build a case at a target answer complexity.
+
+    调用方 / Callers:
+    - `build_random_training_case_pool()`
+    - 测试代码可直接调用本函数验证复杂度递进行为
+
+    本函数调用 / Callees:
+    - `build_noise_bytes()`
+    - `build_answer_text_for_complexity()`
+    - `extract_answer_entities()`
+
+    作用 / Purpose:
+    - 基于已有 case 生成短答案、中答案或完整答案版本
+    - 兼容固定评测样本与随机训练样本，保持方案 A 的混合训练策略
+
+    变量说明 / Variables:
+    - `case`: 原始样本 / Source case
+    - `answer_complexity_level`: 答案复杂度级别 / Target answer complexity level
+    - `rng`: 噪声生成随机源 / RNG for filler noise generation
+    - `entity_metadata`: 从元数据或答案句解析出的结构化实体 / Structured entities
+    - `needle_position_pct`: 答案在上下文中的相对位置 / Relative answer position in context
+
+    如何接入 / Integration:
+    - 在训练池构建时对固定样本做复杂度适配，再与随机样本混合
+
+    错误处理 / Error Handling:
+    - 若缺少结构化实体，则回退到保守截断策略
+    - 若 `target_total_bytes` 小于答案长度，按答案实际长度扩展总长度避免负切片
+
+    关键词 / Keywords:
+    - case|curriculum|answer|complexity|fixed-sample|random-sample|metadata|needle|context|training
+    """
+    rng = rng or random.Random(0)
+    metadata = case["metadata"]
+    total_bytes = int(metadata.get("target_total_bytes", len(case["sample_bytes"])))
+    question = metadata.get("question")
+    full_answer_text = metadata.get("full_expected_answer_text", metadata.get("expected_answer_text"))
+    if question is None and "question_bytes" not in case:
+        return generate_random_json_retrieval_case(
+            case,
+            rng,
+            target_total_bytes=total_bytes,
+            answer_complexity_level=answer_complexity_level,
+        )
+    if full_answer_text is None and "expected_answer_bytes" not in case:
+        return generate_random_json_retrieval_case(
+            case,
+            rng,
+            target_total_bytes=total_bytes,
+            answer_complexity_level=answer_complexity_level,
+        )
+    if question is None:
+        question = case["question_bytes"].decode("ascii")
+    full_answer_text = metadata.get(
+        "full_expected_answer_text",
+        metadata.get("expected_answer_text", case["expected_answer_bytes"].decode("ascii")),
+    )
+    entity_metadata = {
+        "museum": metadata.get("museum"),
+        "artifact": metadata.get("artifact"),
+        "artist": metadata.get("artist"),
+        "dynasty": metadata.get("dynasty"),
+    }
+    if not all(entity_metadata.values()):
+        entity_metadata.update(extract_answer_entities(full_answer_text))
+    expected_answer_text = build_answer_text_for_complexity(
+        full_answer_text=full_answer_text,
+        answer_complexity_level=answer_complexity_level,
+        museum=entity_metadata.get("museum"),
+        artifact=entity_metadata.get("artifact"),
+        artist=entity_metadata.get("artist"),
+        dynasty=entity_metadata.get("dynasty"),
+    )
+    expected_answer_bytes = expected_answer_text.encode("ascii")
+    total_bytes = max(total_bytes, len(expected_answer_bytes))
+    filler_bytes = build_noise_bytes(total_bytes - len(expected_answer_bytes), rng)
+    needle_position_pct = float(metadata.get("needle_position_pct", 0.5))
+    max_insert_position = len(filler_bytes)
+    desired_insert_position = int(total_bytes * needle_position_pct)
+    insert_position = max(0, min(desired_insert_position, max_insert_position))
+    sample_bytes = (
+        filler_bytes[:insert_position]
+        + expected_answer_bytes
+        + filler_bytes[insert_position:]
+    )
+
+    return {
+        **{key: case[key] for key in ("input_file", "metadata_file") if key in case},
+        "sample_bytes": sample_bytes,
+        "metadata": {
+            **metadata,
+            **{key: value for key, value in entity_metadata.items() if value is not None},
+            "target_total_bytes": total_bytes,
+            "actual_total_bytes": len(sample_bytes),
+            "needle_bytes": len(expected_answer_bytes),
+            "needle_position_pct": needle_position_pct,
+            "insert_position_byte_index": insert_position,
+            "question": question,
+            "expected_answer_text": expected_answer_text,
+            "expected_answer_bytes": list(expected_answer_bytes),
+            "full_expected_answer_text": full_answer_text,
+            "full_expected_answer_bytes": list(full_answer_text.encode("ascii")),
+            "answer_length_bytes": len(expected_answer_bytes),
+            "answer_complexity_level": max(1, min(3, int(answer_complexity_level))),
+        },
+        "question_bytes": question.encode("ascii"),
+        "expected_answer_bytes": expected_answer_bytes,
+    }
+
+
+def generate_random_json_retrieval_case(
+    reference_case,
+    rng,
+    target_total_bytes=None,
+    answer_complexity_level=3,
+):
+    """生成单个随机训练样本 / Generate one random training case.
+
+    调用方 / Callers:
+    - `build_random_training_case_pool()`
+    - 测试代码可直接调用本函数验证样本分布与元数据一致性
+
+    本函数调用 / Callees:
+    - `build_noise_bytes()`
+    - `build_answer_text_for_complexity()`
+    - `random.Random.choice()`
+    - `random.Random.uniform()`
+
+    作用 / Purpose:
+    - 基于参考评测 case 的总长度约束，随机生成训练用 `sample/question/answer`
+    - 通过多 question 模板、多 answer 模板与答案复杂度递进提升训练稳定性
+
+    变量说明 / Variables:
+    - `reference_case`: 评测基准样本，主要提供目标总字节数与默认长度参考
+    - `rng`: 外部注入的随机数生成器，保证训练数据可复现
+    - `target_total_bytes`: 训练样本总字节数；未传入时回退到参考 case 的总长度
+    - `answer_complexity_level`: 答案复杂度级别 1/2/3，分别对应短答案/中答案/完整答案
+    - `question_template`: 当前样本采用的问句模板
+    - `answer_template`: 当前样本采用的完整答案模板
+    - `needle_position_pct`: 答案片段在上下文中的相对位置比例
+    - `insert_position`: 答案片段插入到噪声上下文中的实际字节下标
+
+    如何接入 / Integration:
+    - 由训练数据池构建函数批量调用，并将返回结果直接传给 `build_training_example()`
+    - 训练循环可通过不同 `answer_complexity_level` 实现从易到难的课程学习
+
+    错误处理 / Error Handling:
+    - 对 `target_total_bytes` 做 `int()` 标准化，避免外部传入浮点值影响切片逻辑
+    - 对 `answer_complexity_level` 做范围钳制，避免非法配置破坏训练分布
+    - 使用 `max/min` 约束插入位置，避免越界
+    - 使用 ASCII 编码模板文本，降低训练语料生成阶段的编码异常风险
+
+    关键词 / Keywords:
+    - random|training-case|answer|complexity|curriculum|template|question|artifact|museum|metadata
+    """
     metadata = reference_case["metadata"]
     total_bytes = int(target_total_bytes or metadata.get("target_total_bytes", len(reference_case["sample_bytes"])))
     museum = rng.choice(MUSEUM_NAMES)
     artifact = rng.choice(ARTIFACT_NAMES)
     artist = rng.choice(ARTIST_NAMES)
     dynasty = rng.choice(DYNASTY_NAMES)
-    question = QUESTION_TEMPLATE.format(museum=museum)
-    expected_answer_text = ANSWER_TEMPLATE.format(
+    question_template = rng.choice(QUESTION_TEMPLATES)
+    answer_template = rng.choice(ANSWER_TEMPLATES)
+    question = question_template.format(museum=museum)
+    full_expected_answer_text = answer_template.format(
+        museum=museum,
+        artifact=artifact,
+        artist=artist,
+        dynasty=dynasty,
+    )
+    expected_answer_text = build_answer_text_for_complexity(
+        full_answer_text=full_expected_answer_text,
+        answer_complexity_level=answer_complexity_level,
         museum=museum,
         artifact=artifact,
         artist=artist,
@@ -177,17 +461,138 @@ def generate_random_json_retrieval_case(reference_case, rng, target_total_bytes=
             "question": question,
             "expected_answer_text": expected_answer_text,
             "expected_answer_bytes": list(expected_answer_bytes),
+            "full_expected_answer_text": full_expected_answer_text,
+            "full_expected_answer_bytes": list(full_expected_answer_text.encode("ascii")),
+            "question_template": question_template,
+            "answer_template": answer_template,
+            "museum": museum,
+            "artifact": artifact,
+            "artist": artist,
+            "dynasty": dynasty,
+            "answer_length_bytes": len(expected_answer_bytes),
+            "answer_complexity_level": max(1, min(3, int(answer_complexity_level))),
         },
         "question_bytes": question.encode("ascii"),
         "expected_answer_bytes": expected_answer_bytes,
     }
 
 
-def build_random_training_case_pool(reference_case, dataset_size, seed):
+def build_random_training_case_pool(
+    reference_case,
+    dataset_size,
+    seed,
+    fixed_ratio=0.2,
+    answer_complexity_level=3,
+):
+    """构建随机训练样本池 / Build a random training case pool.
+
+    调用方 / Callers:
+    - `train_single_configuration()`
+    - 测试代码可调用本函数验证数据集多样性
+
+    本函数调用 / Callees:
+    - `build_answer_complexity_case()`
+    - `generate_random_json_retrieval_case()`
+    - `random.Random()`
+
+    作用 / Purpose:
+    - 按给定数据集大小预生成多 case 训练池，供每个 epoch 随机抽样
+    - 方案 A: 混合固定比例的评测样本（reference_case）并按答案复杂度递进生成训练样本
+
+    变量说明 / Variables:
+    - `reference_case`: 评测基准样本
+    - `dataset_size`: 训练池大小
+    - `seed`: 随机种子
+    - `fixed_ratio`: 池子中固定评测样本的比例
+    - `answer_complexity_level`: 当前训练池的答案复杂度级别
+
+    如何接入 / Integration:
+    - 将本函数返回的 `case_pool` 交给训练循环，通过 `random.choice()` 按 epoch 抽样
+
+    错误处理 / Error Handling:
+    - `fixed_ratio` 通过数量裁剪间接限制在有效范围
+    - `answer_complexity_level` 传递给下游 case 生成函数统一钳制
+
+    关键词 / Keywords:
+    - pool|dataset|fixed-ratio|complexity|curriculum|reference|random|shuffle|epoch|sampling
+    """
     rng = random.Random(seed)
+    case_pool = []
+
+    # 确定固定样本数量
+    fixed_count = int(dataset_size * fixed_ratio)
+    case_pool.extend([
+        build_answer_complexity_case(
+            reference_case,
+            answer_complexity_level=answer_complexity_level,
+            rng=rng,
+        )
+        for _ in range(fixed_count)
+    ])
+
+    # 填充剩余的随机样本
+    random_count = max(0, dataset_size - fixed_count)
+    case_pool.extend([
+        generate_random_json_retrieval_case(
+            reference_case,
+            rng,
+            answer_complexity_level=answer_complexity_level,
+        )
+        for _ in range(random_count)
+    ])
+
+    # 随机打乱，确保训练时各阶段抽样均匀
+    rng.shuffle(case_pool)
+    return case_pool
+
+
+def build_search_space(
+    kr_grid,
+    chunk_size_grid,
+    lr_grid,
+    warmup_ratio_grid,
+    scheduled_sampling_max_ratio_grid,
+    train_dataset_size_grid,
+):
+    """构建 json retrieval 的超参搜索空间。
+
+    调用方:
+    - `run_json_retrieval_test()`
+    - 测试代码可直接验证组合维度是否完整
+
+    本函数调用:
+    - 无其他项目内函数，仅使用列表推导式组合所有搜索维度
+
+    作用:
+    - 将 `kr/chunk_size/lr/warmup_ratio/scheduled_sampling_max_ratio/train_dataset_size`
+      六个维度展开为 trial 列表
+
+    变量说明:
+    - `*_grid`: 各超参数候选集合
+    - 返回值中的每个元组顺序固定，对应训练入口所需参数顺序
+
+    如何接入:
+    - 由 `run_json_retrieval_test()` 在正式训练前调用
+    - 若后续再增加搜索维度，优先在本函数内扩展，避免多处散落维护
+
+    错误处理:
+    - 不做隐式修正；若外部传入空列表，将返回空搜索空间，由上层决定是否报错或跳过
+    """
     return [
-        generate_random_json_retrieval_case(reference_case, rng)
-        for _ in range(max(1, dataset_size))
+        (
+            kr,
+            chunk_size,
+            lr,
+            warmup_ratio_value,
+            scheduled_sampling_max_ratio_value,
+            train_dataset_size_value,
+        )
+        for kr in kr_grid
+        for chunk_size in chunk_size_grid
+        for lr in lr_grid
+        for warmup_ratio_value in warmup_ratio_grid
+        for scheduled_sampling_max_ratio_value in scheduled_sampling_max_ratio_grid
+        for train_dataset_size_value in train_dataset_size_grid
     ]
 
 
@@ -414,6 +819,91 @@ def build_curriculum_plan(case, total_epochs):
     return plan
 
 
+def resolve_answer_complexity_level(current_epoch, total_epochs):
+    """根据训练进度解析答案复杂度 / Resolve answer complexity from training progress.
+
+    调用方 / Callers:
+    - `train_single_configuration()`
+    - 测试代码可直接验证课程切换规则
+
+    本函数调用 / Callees:
+    - `max()`
+    - `min()`
+
+    作用 / Purpose:
+    - 将训练进度映射到三级答案课程
+    - 前 1/3 训练短答案，中间 1/3 训练中答案，后 1/3 训练完整答案
+
+    变量说明 / Variables:
+    - `current_epoch`: 当前全局 epoch，从 1 开始 / Current global epoch starting from 1
+    - `total_epochs`: 总训练 epoch 数 / Total training epochs
+    - `progress`: 当前训练进度比例 / Training progress ratio
+
+    如何接入 / Integration:
+    - 在训练循环每个 epoch 开始前调用，并按返回级别切换训练池
+
+    错误处理 / Error Handling:
+    - 对输入 epoch 做最小值保护，避免 0 或负数导致进度异常
+    - 对总 epoch 做最小值保护，避免除零
+
+    关键词 / Keywords:
+    - progress|epoch|curriculum|answer|complexity|schedule|training|stage|level|ratio
+    """
+    safe_total_epochs = max(1, int(total_epochs))
+    safe_current_epoch = max(1, min(int(current_epoch), safe_total_epochs))
+    progress = safe_current_epoch / safe_total_epochs
+    if progress <= (1.0 / 3.0):
+        return 1
+    if progress <= (2.0 / 3.0):
+        return 2
+    return 3
+
+
+def resolve_fixed_sample_ratio(current_epoch, total_epochs, base_fixed_ratio):
+    """根据训练进度解析固定样本比例 / Resolve fixed sample ratio from training progress.
+
+    调用方 / Callers:
+    - `train_single_configuration()`
+    - 测试代码可直接验证比例课程切换规则
+
+    本函数调用 / Callees:
+    - `max()`
+    - `min()`
+
+    作用 / Purpose:
+    - 将训练进度映射到高固定比例、中固定比例、目标固定比例三阶段
+    - 前期更偏向记忆评测样本，后期逐步增加随机样本占比
+
+    变量说明 / Variables:
+    - `current_epoch`: 当前全局 epoch，从 1 开始 / Current global epoch starting from 1
+    - `total_epochs`: 总训练 epoch 数 / Total training epochs
+    - `base_fixed_ratio`: 最终目标固定样本比例 / Final target fixed sample ratio
+    - `high_ratio`: 前期高固定样本比例 / Early-stage high fixed ratio
+    - `mid_ratio`: 中期过渡固定样本比例 / Mid-stage transition ratio
+
+    如何接入 / Integration:
+    - 在训练循环每个 epoch 开始前调用，并按返回比例切换训练池
+
+    错误处理 / Error Handling:
+    - 对 epoch 和 total_epochs 做边界保护，避免除零或非法进度
+    - 对 fixed ratio 做范围钳制，保证结果始终位于 0~1
+
+    关键词 / Keywords:
+    - fixed-ratio|curriculum|epoch|schedule|training|focus|random-case|reference-case|sampling|progress
+    """
+    safe_total_epochs = max(1, int(total_epochs))
+    safe_current_epoch = max(1, min(int(current_epoch), safe_total_epochs))
+    normalized_base_ratio = float(max(0.0, min(base_fixed_ratio, 1.0)))
+    progress = safe_current_epoch / safe_total_epochs
+    high_ratio = max(normalized_base_ratio, 0.8)
+    mid_ratio = max(normalized_base_ratio, 0.5)
+    if progress <= (1.0 / 3.0):
+        return high_ratio
+    if progress <= (2.0 / 3.0):
+        return mid_ratio
+    return normalized_base_ratio
+
+
 def build_lr_schedule_lambda(total_steps, warmup_steps):
     warmup_steps = max(1, min(warmup_steps, total_steps))
 
@@ -517,6 +1007,8 @@ def summarize_search_result(result):
         "lr": result["config"]["lr"],
         "warmup_ratio": result["config"]["warmup_ratio"],
         "scheduled_sampling_max_ratio": result["config"]["scheduled_sampling_max_ratio"],
+        "train_dataset_size": result["config"]["train_dataset_size"],
+        "fixed_sample_ratio": result["config"]["fixed_sample_ratio"],
         "generation_exact_byte_match": result["evaluation"]["exact_byte_match"],
         "generation_sequence_accuracy": result["evaluation"]["sequence_accuracy"],
         "generation_prefix_match_length": result["evaluation"]["prefix_match_length"],
@@ -564,6 +1056,8 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
         f"- Expected Answer Bytes: `{len(case['expected_answer_bytes'])}`",
         f"- Insert Position: `{case['metadata']['insert_position_byte_index']}`",
         f"- Curriculum: `{config['curriculum_labels']}`",
+        f"- Answer Curriculum: `{config['answer_curriculum_labels']}`",
+        f"- Fixed Ratio Curriculum: `{config['fixed_ratio_curriculum_labels']}`",
         f"- Search Trials: `{len(search_results)}`",
         "",
         "## Expected Answer",
@@ -602,6 +1096,9 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
         f"- Scheduled Sampling Max Ratio: `{config['scheduled_sampling_max_ratio']}`",
         f"- Training Mode: `{config['training_mode']}`",
         f"- Train Dataset Size: `{config['train_dataset_size']}`",
+        f"- Fixed Sample Ratio: `{config['fixed_sample_ratio']}`",
+        f"- Answer Curriculum: `{config['answer_curriculum_labels']}`",
+        f"- Fixed Ratio Curriculum: `{config['fixed_ratio_curriculum_labels']}`",
         f"- Train Dataset Seed: `{config['train_dataset_seed']}`",
     ]
     if search_results:
@@ -616,6 +1113,8 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
                 f"- Trial {rank}: kr={result['kr']}, chunk_size={result['chunk_size']}, lr={result['lr']}, "
                 f"warmup_ratio={result['warmup_ratio']}, "
                 f"scheduled_sampling_max_ratio={result['scheduled_sampling_max_ratio']}, "
+                f"train_dataset_size={result['train_dataset_size']}, "
+                f"fixed_ratio={result['fixed_sample_ratio']}, "
                 f"gen_seq_acc={result['generation_sequence_accuracy']*100:.2f}%, "
                 f"gen_prefix={result['generation_prefix_match_length']}, "
                 f"teacher_seq_acc={result['teacher_forced_sequence_accuracy']*100:.2f}%"
@@ -637,14 +1136,29 @@ def train_single_configuration(
     scheduled_sampling_max_ratio=DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO,
     train_dataset_size=DEFAULT_TRAIN_DATASET_SIZE,
     train_dataset_seed=DEFAULT_TRAIN_DATASET_SEED,
+    fixed_sample_ratio=DEFAULT_FIXED_SAMPLE_RATIO,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     curriculum_plan = build_curriculum_plan(case, epochs)
-    training_cases = build_random_training_case_pool(
-        reference_case=case,
-        dataset_size=train_dataset_size,
-        seed=train_dataset_seed,
+    fixed_ratio_schedule = tuple(
+        dict.fromkeys(
+            (
+                resolve_fixed_sample_ratio(1, epochs, fixed_sample_ratio),
+                resolve_fixed_sample_ratio(max(1, (epochs + 1) // 2), epochs, fixed_sample_ratio),
+                resolve_fixed_sample_ratio(epochs, epochs, fixed_sample_ratio),
+            )
+        )
     )
+    training_cases_by_fixed_ratio = {
+        ratio: build_random_training_case_pool(
+            reference_case=case,
+            dataset_size=train_dataset_size,
+            seed=train_dataset_seed + int(ratio * 1000),
+            fixed_ratio=ratio,
+            answer_complexity_level=3,
+        )
+        for ratio in fixed_ratio_schedule
+    }
     training_case_sampler = random.Random(train_dataset_seed)
 
     model = DSRAModel(
@@ -675,16 +1189,22 @@ def train_single_configuration(
 
     global_epoch = 0
     for stage_idx, stage in enumerate(curriculum_plan, start=1):
-        stage_preview_case = training_cases[0]
+        stage_start_epoch = global_epoch + 1
+        stage_fixed_ratio = resolve_fixed_sample_ratio(stage_start_epoch, total_steps, fixed_sample_ratio)
+        stage_training_cases = training_cases_by_fixed_ratio[stage_fixed_ratio]
+        stage_preview_case = stage_training_cases[0]
         preview_X, _ = build_training_example(stage_preview_case, context_bytes=stage["context_bytes"])
         print(
             f"\n--- Curriculum Stage {stage_idx}/{len(curriculum_plan)} | "
             f"context={stage['name']} | approx_train_seq_len={preview_X.shape[1]} "
-            f"| stage_epochs={stage['epochs']} | train_cases={len(training_cases)} ---"
+            f"| fixed_ratio={stage_fixed_ratio:.2f} "
+            f"| stage_epochs={stage['epochs']} | train_cases={len(stage_training_cases)} ---"
         )
 
         for stage_epoch in range(1, stage["epochs"] + 1):
             global_epoch += 1
+            current_fixed_ratio = resolve_fixed_sample_ratio(global_epoch, total_steps, fixed_sample_ratio)
+            training_cases = training_cases_by_fixed_ratio[current_fixed_ratio]
             train_case = training_case_sampler.choice(training_cases)
             X, Y = build_training_example(train_case, context_bytes=stage["context_bytes"])
             X, Y = X.to(device), Y.to(device)
@@ -744,6 +1264,7 @@ def train_single_configuration(
                         "lr": float(optimizer.param_groups[0]["lr"]),
                         "scheduled_sampling_ratio": float(current_sampling_ratio),
                         "scheduled_sampling_tokens": sampled_token_count,
+                        "fixed_sample_ratio": current_fixed_ratio,
                     }
                 )
                 print(
@@ -752,6 +1273,7 @@ def train_single_configuration(
                     f"| Seq Acc: {teacher_forced['sequence_accuracy']*100:5.1f}% "
                     f"| Prefix Match: {teacher_forced['prefix_match_length']:3d} "
                     f"| LR: {optimizer.param_groups[0]['lr']:.2e} "
+                    f"| Fixed Ratio: {current_fixed_ratio:.2f} "
                     f"| SS Ratio: {current_sampling_ratio:.2f} "
                     f"| SS Tokens: {sampled_token_count:2d} "
                     f"| Teacher Forced Exact Match: {teacher_forced['exact_byte_match']}"
@@ -780,8 +1302,11 @@ def train_single_configuration(
         "scheduled_sampling_max_ratio": scheduled_sampling_max_ratio,
         "train_dataset_size": train_dataset_size,
         "train_dataset_seed": train_dataset_seed,
+        "fixed_sample_ratio": fixed_sample_ratio,
         "training_mode": "random_case_pool",
         "curriculum_labels": " -> ".join(stage["name"] for stage in curriculum_plan),
+        "answer_curriculum_labels": "L3(full)",
+        "fixed_ratio_curriculum_labels": "0.8 -> 0.5 -> target",
         "best_exact_match": best_exact_match or final_generation["exact_byte_match"],
     }
 
@@ -809,8 +1334,43 @@ def run_json_retrieval_test(
     scheduled_sampling_max_ratio=DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO,
     scheduled_sampling_max_ratio_grid=None,
     train_dataset_size=DEFAULT_TRAIN_DATASET_SIZE,
+    train_dataset_size_grid=None,
     train_dataset_seed=DEFAULT_TRAIN_DATASET_SEED,
+    fixed_sample_ratio=DEFAULT_FIXED_SAMPLE_RATIO,
 ):
+    """运行 json retrieval 训练、搜索与报告输出。
+
+    调用方:
+    - 模块直接执行入口 `__main__`
+    - 外部脚本可直接导入并调用本函数完成实验
+
+    本函数调用:
+    - `load_json_retrieval_case()`
+    - `build_curriculum_plan()`
+    - `build_search_space()`
+    - `train_single_configuration()`
+    - `summarize_search_result()`
+    - `score_search_result()`
+    - `save_json_retrieval_reports()`
+
+    作用:
+    - 统一编排数据加载、六维 grid search、最佳结果选择与报告落盘
+
+    变量说明:
+    - `train_dataset_size`: 兼容旧接口的单值训练集大小
+    - `train_dataset_size_grid`: 新增的数据集大小搜索维度；为空时按默认策略推导
+    - `search_space`: 所有 trial 的参数组合
+    - `best_result`: 当前评分最优的 trial 结果
+    - `search_results`: 归档后的 trial 摘要列表
+
+    如何接入:
+    - 推荐由实验脚本传入 `reports_dir`，让报告输出到 `reports` 目录
+    - 如需固定数据集大小而不是搜索，可显式传入 `train_dataset_size_grid=[N]`
+
+    错误处理:
+    - 当 `train_dataset_size_grid` 未传入时，会根据是否使用默认单值参数选择默认 grid 或单元素 grid
+    - 若搜索空间为空，将显式抛出 `ValueError`，避免静默返回无意义结果
+    """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
     curriculum_plan = build_curriculum_plan(case, epochs)
@@ -822,14 +1382,21 @@ def run_json_retrieval_test(
     scheduled_sampling_max_ratio_grid = (
         scheduled_sampling_max_ratio_grid or DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO_GRID
     )
-    search_space = [
-        (kr, chunk_size, lr, warmup_ratio_value, scheduled_sampling_max_ratio_value)
-        for kr in kr_grid
-        for chunk_size in chunk_size_grid
-        for lr in lr_grid
-        for warmup_ratio_value in warmup_ratio_grid
-        for scheduled_sampling_max_ratio_value in scheduled_sampling_max_ratio_grid
-    ]
+    if train_dataset_size_grid is None:
+        if train_dataset_size == DEFAULT_TRAIN_DATASET_SIZE:
+            train_dataset_size_grid = DEFAULT_TRAIN_DATASET_SIZE_GRID
+        else:
+            train_dataset_size_grid = [train_dataset_size]
+    search_space = build_search_space(
+        kr_grid=kr_grid,
+        chunk_size_grid=chunk_size_grid,
+        lr_grid=lr_grid,
+        warmup_ratio_grid=warmup_ratio_grid,
+        scheduled_sampling_max_ratio_grid=scheduled_sampling_max_ratio_grid,
+        train_dataset_size_grid=train_dataset_size_grid,
+    )
+    if not search_space:
+        raise ValueError("Search space is empty. Please provide at least one value for every grid.")
 
     print("\n--- Running JSON File Retrieval Test ---")
     print(f"Using device: {device}")
@@ -838,7 +1405,7 @@ def run_json_retrieval_test(
         f"| answer_len={len(case['expected_answer_bytes'])} | dim={dim} | K={K} | epochs={epochs}"
     )
     print(
-        f"Training Data | mode=random_case_pool | dataset_size={train_dataset_size} "
+        f"Training Data | mode=random_case_pool | dataset_size_grid={train_dataset_size_grid} "
         f"| dataset_seed={train_dataset_seed}"
     )
     print(
@@ -849,7 +1416,8 @@ def run_json_retrieval_test(
         "Grid Search | "
         f"kr={kr_grid} | chunk_size={chunk_size_grid} | lr={lr_grid} "
         f"| warmup_ratio={warmup_ratio_grid} "
-        f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_grid}"
+        f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_grid} "
+        f"| train_dataset_size={train_dataset_size_grid}"
     )
 
     best_result = None
@@ -860,11 +1428,13 @@ def run_json_retrieval_test(
         lr,
         warmup_ratio_value,
         scheduled_sampling_max_ratio_value,
+        train_dataset_size_value,
     ) in enumerate(search_space, start=1):
         print(
             f"\n=== Search Trial {trial_idx}/{len(search_space)} | "
             f"kr={kr} | chunk_size={chunk_size} | lr={lr:.0e} | warmup_ratio={warmup_ratio_value} "
-            f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_value} ==="
+            f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_value} "
+            f"| train_dataset_size={train_dataset_size_value} ==="
         )
         result = train_single_configuration(
             case=case,
@@ -878,8 +1448,9 @@ def run_json_retrieval_test(
             lr=lr,
             warmup_ratio=warmup_ratio_value,
             scheduled_sampling_max_ratio=scheduled_sampling_max_ratio_value,
-            train_dataset_size=train_dataset_size,
+            train_dataset_size=train_dataset_size_value,
             train_dataset_seed=train_dataset_seed,
+            fixed_sample_ratio=fixed_sample_ratio,
         )
         search_results.append(summarize_search_result(result))
         if best_result is None or score_search_result(result) > score_search_result(best_result):
@@ -912,7 +1483,8 @@ def run_json_retrieval_test(
     print(
         f"Best Config | kr={best_result['config']['kr']} | chunk_size={best_result['config']['chunk_size']} "
         f"| lr={best_result['config']['lr']:.0e} | warmup_ratio={best_result['config']['warmup_ratio']} "
-        f"| scheduled_sampling_max_ratio={best_result['config']['scheduled_sampling_max_ratio']}"
+        f"| scheduled_sampling_max_ratio={best_result['config']['scheduled_sampling_max_ratio']} "
+        f"| train_dataset_size={best_result['config']['train_dataset_size']}"
     )
     print(
         f"Teacher Forced Prefix Match Length: {best_result['teacher_forced_evaluation']['prefix_match_length']}"
