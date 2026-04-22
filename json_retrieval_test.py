@@ -1,4 +1,5 @@
 import json
+import random
 from pathlib import Path
 from collections import deque
 
@@ -21,6 +22,79 @@ DEFAULT_KR_GRID = [8, 16, 32]
 DEFAULT_CHUNK_SIZE_GRID = [256, 512]
 DEFAULT_WARMUP_RATIO = 0.1
 DEFAULT_WARMUP_RATIO_GRID = [0.1, 0.2]
+DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO = 0.3
+DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO_GRID = [0.2, 0.3]
+DEFAULT_TRAIN_DATASET_SIZE = 64
+DEFAULT_TRAIN_DATASET_SEED = 7
+QUESTION_TEMPLATE = "What is the most valuable exhibit in the {museum}? Answer based on the context."
+ANSWER_TEMPLATE = (
+    "The most valuable exhibit in the {museum} is {artifact} painted by {artist} "
+    "of the {dynasty} dynasty."
+)
+MUSEUM_NAMES = (
+    "Palace Museum",
+    "Grand Archive Museum",
+    "Riverfront Gallery",
+    "Imperial Heritage Hall",
+    "Northern Art Museum",
+    "Capital Relics Center",
+)
+ARTIFACT_NAMES = (
+    "Along the River During the Qingming Festival",
+    "Autumn Lantern Procession",
+    "Golden Crane Panorama",
+    "Jade Mountain Chronicle",
+    "Celestial Market Scroll",
+    "Spring Court Landscape",
+)
+ARTIST_NAMES = (
+    "Zhang Zeduan",
+    "Lin Qiao",
+    "Guo Ming",
+    "Shen Rui",
+    "Han Yao",
+    "Wei Cheng",
+)
+DYNASTY_NAMES = (
+    "Northern Song",
+    "Southern Song",
+    "Tang",
+    "Ming",
+    "Han",
+    "Jin",
+)
+FILLER_SUBJECTS = (
+    "The gallery archive",
+    "The museum record",
+    "The restoration team",
+    "The visitor guide",
+    "The curatorial note",
+    "The collection ledger",
+)
+FILLER_VERBS = (
+    "describes",
+    "documents",
+    "summarizes",
+    "explains",
+    "records",
+    "highlights",
+)
+FILLER_OBJECTS = (
+    "bronze vessels",
+    "ceramic figures",
+    "court paintings",
+    "stone inscriptions",
+    "silk banners",
+    "scholarly commentaries",
+)
+FILLER_DETAILS = (
+    "from multiple dynastic periods",
+    "preserved in climate controlled storage",
+    "displayed beside archival notes",
+    "cataloged for rotating exhibitions",
+    "studied by conservation scholars",
+    "referenced in visitor education programs",
+)
 
 
 def load_json_retrieval_case(
@@ -43,6 +117,78 @@ def load_json_retrieval_case(
         "question_bytes": metadata["question"].encode("utf-8"),
         "expected_answer_bytes": expected_bytes,
     }
+
+
+def build_noise_sentence(rng):
+    subject = rng.choice(FILLER_SUBJECTS)
+    verb = rng.choice(FILLER_VERBS)
+    obj = rng.choice(FILLER_OBJECTS)
+    detail = rng.choice(FILLER_DETAILS)
+    return f"{subject} {verb} {obj} {detail}. "
+
+
+def build_noise_bytes(target_bytes, rng):
+    if target_bytes <= 0:
+        return b""
+
+    chunks = []
+    total_bytes = 0
+    while total_bytes < target_bytes:
+        sentence = build_noise_sentence(rng)
+        chunks.append(sentence)
+        total_bytes += len(sentence)
+    return "".join(chunks).encode("ascii")[:target_bytes]
+
+
+def generate_random_json_retrieval_case(reference_case, rng, target_total_bytes=None):
+    metadata = reference_case["metadata"]
+    total_bytes = int(target_total_bytes or metadata.get("target_total_bytes", len(reference_case["sample_bytes"])))
+    museum = rng.choice(MUSEUM_NAMES)
+    artifact = rng.choice(ARTIFACT_NAMES)
+    artist = rng.choice(ARTIST_NAMES)
+    dynasty = rng.choice(DYNASTY_NAMES)
+    question = QUESTION_TEMPLATE.format(museum=museum)
+    expected_answer_text = ANSWER_TEMPLATE.format(
+        museum=museum,
+        artifact=artifact,
+        artist=artist,
+        dynasty=dynasty,
+    )
+    expected_answer_bytes = expected_answer_text.encode("ascii")
+    filler_bytes = build_noise_bytes(total_bytes - len(expected_answer_bytes), rng)
+    needle_position_pct = rng.uniform(0.15, 0.85)
+    max_insert_position = len(filler_bytes)
+    desired_insert_position = int(total_bytes * needle_position_pct)
+    insert_position = max(0, min(desired_insert_position, max_insert_position))
+    sample_bytes = (
+        filler_bytes[:insert_position]
+        + expected_answer_bytes
+        + filler_bytes[insert_position:]
+    )
+
+    return {
+        "sample_bytes": sample_bytes,
+        "metadata": {
+            "target_total_bytes": total_bytes,
+            "actual_total_bytes": len(sample_bytes),
+            "needle_bytes": len(expected_answer_bytes),
+            "needle_position_pct": needle_position_pct,
+            "insert_position_byte_index": insert_position,
+            "question": question,
+            "expected_answer_text": expected_answer_text,
+            "expected_answer_bytes": list(expected_answer_bytes),
+        },
+        "question_bytes": question.encode("ascii"),
+        "expected_answer_bytes": expected_answer_bytes,
+    }
+
+
+def build_random_training_case_pool(reference_case, dataset_size, seed):
+    rng = random.Random(seed)
+    return [
+        generate_random_json_retrieval_case(reference_case, rng)
+        for _ in range(max(1, dataset_size))
+    ]
 
 
 def build_curriculum_context(case, context_bytes):
@@ -283,12 +429,94 @@ def build_lr_schedule_lambda(total_steps, warmup_steps):
     return schedule
 
 
+def build_scheduled_sampling_ratio_schedule(total_steps, max_ratio):
+    total_steps = max(1, total_steps)
+    max_ratio = float(max(0.0, min(max_ratio, 1.0)))
+
+    if total_steps == 1:
+        return lambda step_idx: max_ratio
+
+    def schedule(step_idx):
+        bounded_step = max(0, min(step_idx, total_steps - 1))
+        progress = bounded_step / (total_steps - 1)
+        return max_ratio * progress
+
+    return schedule
+
+
+def build_scheduled_sampling_inputs(X, Y, predicted_tokens, sampling_ratio, sample_mask=None):
+    """
+    调用方:
+    - 当前文件训练循环中的 scheduled sampling 分支会调用本函数，基于 teacher-forced 预测结果构造下一次前向的 `train_X`
+    - `tests/test_json_retrieval.py` 中的回归测试会直接调用本函数验证替换逻辑、设备对齐与类型对齐
+
+    本函数调用:
+    - `X.clone()` 复制输入序列，避免原地污染训练样本
+    - `(Y[0] != PAD_TOKEN_ID).nonzero(...).flatten()` 收集答案 token 在标签中的有效位置
+    - `predicted_tokens[:-1].to(...)` 将候选 token 对齐到 `sampled_X` 的设备与 dtype
+    - `torch.rand(...)` 在未显式传入 `sample_mask` 时按采样比例生成布尔采样掩码
+    - `sample_mask.to(...)` 将外部传入的掩码对齐到 `sampled_X` 的设备并转换为布尔类型
+
+    作用:
+    - 按 scheduled sampling 规则，将答案前缀位置上的一部分 teacher-forced 预测 token 回填到 `X`
+    - 返回替换后的新输入张量与本次实际替换的 token 数量
+
+    变量含义:
+    - `X`: 训练输入序列，约定形状为 `(1, seq_len)`，其设备和 dtype 作为最终对齐目标
+    - `Y`: 标签序列，约定形状为 `(1, seq_len)`，用来定位答案区域的有效 token
+    - `predicted_tokens`: teacher-forced 阶段输出的答案 token 序列，长度应与答案 token 数一致
+    - `sampling_ratio`: 采样比例，`<= 0.0` 时直接返回原始副本
+    - `sample_mask`: 可选的外部布尔掩码，用于测试或固定采样行为；长度必须与答案前缀长度一致
+    - `sampled_X`: `X` 的副本，承载本函数的替换结果
+    - `answer_positions`: `Y[0]` 中所有非 `PAD_TOKEN_ID` 的位置
+    - `prefix_positions`: 可被替换的答案前缀位置，跳过第一个答案 token 以保持自回归对齐
+    - `candidate_tokens`: `predicted_tokens[:-1]` 对齐设备和 dtype 后得到的候选替换 token
+
+    接入方式:
+    - 先在训练循环中完成 `X`、`Y` 的构造，并确保二者对应同一个单样本序列
+    - 使用 teacher-forced 前向结果生成 `predicted_tokens`
+    - 调用本函数拿到 `train_X` 后，再将 `train_X` 送入正式训练前向
+    - 若需要稳定复现实验或编写测试，可显式传入 `sample_mask`
+
+    错误处理:
+    - 当 `sampling_ratio <= 0.0`、答案 token 数不足 2 个时，直接返回 `X` 的副本和 `0`
+    - 当 `predicted_tokens[:-1]` 与答案前缀长度不一致时，抛出 `ValueError`
+    - 当显式传入的 `sample_mask` 长度与答案前缀长度不一致时，抛出 `ValueError`
+    - 通过 `.to(device=sampled_X.device, dtype=sampled_X.dtype)` 与 `.to(device=sampled_X.device, dtype=torch.bool)` 规避跨设备和类型不一致导致的索引/赋值错误
+    """
+    sampled_X = X.clone()
+    if sampling_ratio <= 0.0:
+        return sampled_X, 0
+
+    answer_positions = (Y[0] != PAD_TOKEN_ID).nonzero(as_tuple=False).flatten()
+    if answer_positions.numel() <= 1:
+        return sampled_X, 0
+
+    prefix_positions = answer_positions[1:]
+    candidate_tokens = predicted_tokens[:-1].to(device=sampled_X.device, dtype=sampled_X.dtype)
+    if candidate_tokens.numel() != prefix_positions.numel():
+        raise ValueError("Predicted token count does not align with answer prefix positions.")
+
+    if sample_mask is None:
+        sample_mask = torch.rand(prefix_positions.numel(), device=sampled_X.device) < sampling_ratio
+    else:
+        sample_mask = sample_mask.to(device=sampled_X.device, dtype=torch.bool)
+        if sample_mask.numel() != prefix_positions.numel():
+            raise ValueError("Sample mask count does not align with answer prefix positions.")
+
+    if sample_mask.any():
+        sampled_X[0, prefix_positions[sample_mask]] = candidate_tokens[sample_mask]
+
+    return sampled_X, int(sample_mask.sum().item())
+
+
 def summarize_search_result(result):
     return {
         "kr": result["config"]["kr"],
         "chunk_size": result["config"]["chunk_size"],
         "lr": result["config"]["lr"],
         "warmup_ratio": result["config"]["warmup_ratio"],
+        "scheduled_sampling_max_ratio": result["config"]["scheduled_sampling_max_ratio"],
         "generation_exact_byte_match": result["evaluation"]["exact_byte_match"],
         "generation_sequence_accuracy": result["evaluation"]["sequence_accuracy"],
         "generation_prefix_match_length": result["evaluation"]["prefix_match_length"],
@@ -371,6 +599,10 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
         f"- Chunk Size: `{config['chunk_size']}`",
         f"- Learning Rate: `{config['lr']}`",
         f"- Warmup Ratio: `{config['warmup_ratio']}`",
+        f"- Scheduled Sampling Max Ratio: `{config['scheduled_sampling_max_ratio']}`",
+        f"- Training Mode: `{config['training_mode']}`",
+        f"- Train Dataset Size: `{config['train_dataset_size']}`",
+        f"- Train Dataset Seed: `{config['train_dataset_seed']}`",
     ]
     if search_results:
         lines.extend(
@@ -383,6 +615,7 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
             lines.append(
                 f"- Trial {rank}: kr={result['kr']}, chunk_size={result['chunk_size']}, lr={result['lr']}, "
                 f"warmup_ratio={result['warmup_ratio']}, "
+                f"scheduled_sampling_max_ratio={result['scheduled_sampling_max_ratio']}, "
                 f"gen_seq_acc={result['generation_sequence_accuracy']*100:.2f}%, "
                 f"gen_prefix={result['generation_prefix_match_length']}, "
                 f"teacher_seq_acc={result['teacher_forced_sequence_accuracy']*100:.2f}%"
@@ -401,9 +634,18 @@ def train_single_configuration(
     chunk_size,
     lr,
     warmup_ratio,
+    scheduled_sampling_max_ratio=DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO,
+    train_dataset_size=DEFAULT_TRAIN_DATASET_SIZE,
+    train_dataset_seed=DEFAULT_TRAIN_DATASET_SEED,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     curriculum_plan = build_curriculum_plan(case, epochs)
+    training_cases = build_random_training_case_pool(
+        reference_case=case,
+        dataset_size=train_dataset_size,
+        seed=train_dataset_seed,
+    )
+    training_case_sampler = random.Random(train_dataset_seed)
 
     model = DSRAModel(
         vocab_size=VOCAB_SIZE,
@@ -422,6 +664,10 @@ def train_single_configuration(
         optimizer,
         lr_lambda=build_lr_schedule_lambda(total_steps, warmup_steps),
     )
+    scheduled_sampling_ratio = build_scheduled_sampling_ratio_schedule(
+        total_steps=total_steps,
+        max_ratio=scheduled_sampling_max_ratio,
+    )
     criterion = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN_ID)
 
     history = []
@@ -429,18 +675,40 @@ def train_single_configuration(
 
     global_epoch = 0
     for stage_idx, stage in enumerate(curriculum_plan, start=1):
-        X, Y = build_training_example(case, context_bytes=stage["context_bytes"])
-        X, Y = X.to(device), Y.to(device)
+        stage_preview_case = training_cases[0]
+        preview_X, _ = build_training_example(stage_preview_case, context_bytes=stage["context_bytes"])
         print(
             f"\n--- Curriculum Stage {stage_idx}/{len(curriculum_plan)} | "
-            f"context={stage['name']} | train_seq_len={X.shape[1]} | stage_epochs={stage['epochs']} ---"
+            f"context={stage['name']} | approx_train_seq_len={preview_X.shape[1]} "
+            f"| stage_epochs={stage['epochs']} | train_cases={len(training_cases)} ---"
         )
 
         for stage_epoch in range(1, stage["epochs"] + 1):
             global_epoch += 1
+            train_case = training_case_sampler.choice(training_cases)
+            X, Y = build_training_example(train_case, context_bytes=stage["context_bytes"])
+            X, Y = X.to(device), Y.to(device)
             model.train()
             optimizer.zero_grad()
-            logits = model(X)
+            current_sampling_ratio = scheduled_sampling_ratio(global_epoch - 1)
+            sampled_token_count = 0
+            teacher_forced_logits = None
+
+            if current_sampling_ratio > 0.0:
+                with torch.no_grad():
+                    teacher_forced_logits = model(X)
+                    teacher_forced_logits_target, _ = collect_answer_targets(teacher_forced_logits, Y)
+                    teacher_forced_preds = predict_byte_tokens(teacher_forced_logits_target)
+                    train_X, sampled_token_count = build_scheduled_sampling_inputs(
+                        X,
+                        Y,
+                        teacher_forced_preds,
+                        current_sampling_ratio,
+                    )
+            else:
+                train_X = X
+
+            logits = model(train_X)
             logits_target, targets = collect_answer_targets(logits, Y)
             loss = criterion(logits_target, targets)
             loss.backward()
@@ -458,7 +726,9 @@ def train_single_configuration(
                 or stage_epoch == stage["epochs"]
             )
             if is_log_step:
-                teacher_forced = evaluate_teacher_forced(logits, Y, case)
+                if teacher_forced_logits is None:
+                    teacher_forced_logits = logits
+                teacher_forced = evaluate_teacher_forced(teacher_forced_logits, Y, train_case)
                 best_exact_match = best_exact_match or teacher_forced["exact_byte_match"]
                 history.append(
                     {
@@ -472,6 +742,8 @@ def train_single_configuration(
                         "teacher_forced_prefix_match_length": teacher_forced["prefix_match_length"],
                         "first_mismatch_index": teacher_forced["first_mismatch_index"],
                         "lr": float(optimizer.param_groups[0]["lr"]),
+                        "scheduled_sampling_ratio": float(current_sampling_ratio),
+                        "scheduled_sampling_tokens": sampled_token_count,
                     }
                 )
                 print(
@@ -480,18 +752,14 @@ def train_single_configuration(
                     f"| Seq Acc: {teacher_forced['sequence_accuracy']*100:5.1f}% "
                     f"| Prefix Match: {teacher_forced['prefix_match_length']:3d} "
                     f"| LR: {optimizer.param_groups[0]['lr']:.2e} "
+                    f"| SS Ratio: {current_sampling_ratio:.2f} "
+                    f"| SS Tokens: {sampled_token_count:2d} "
                     f"| Teacher Forced Exact Match: {teacher_forced['exact_byte_match']}"
                 )
-                if teacher_forced["exact_byte_match"] and stage["context_bytes"] == len(case["sample_bytes"]):
-                    print("JSON retrieval task solved successfully!")
-                    break
 
-            del logits, logits_target, targets, loss
+            del logits, logits_target, targets, loss, train_X, teacher_forced_logits
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-
-        if best_exact_match and stage["context_bytes"] == len(case["sample_bytes"]):
-            break
 
     full_X, full_Y = build_training_example(case)
     full_X, full_Y = full_X.to(device), full_Y.to(device)
@@ -509,6 +777,10 @@ def train_single_configuration(
         "chunk_size": chunk_size,
         "lr": lr,
         "warmup_ratio": warmup_ratio,
+        "scheduled_sampling_max_ratio": scheduled_sampling_max_ratio,
+        "train_dataset_size": train_dataset_size,
+        "train_dataset_seed": train_dataset_seed,
+        "training_mode": "random_case_pool",
         "curriculum_labels": " -> ".join(stage["name"] for stage in curriculum_plan),
         "best_exact_match": best_exact_match or final_generation["exact_byte_match"],
     }
@@ -534,6 +806,10 @@ def run_json_retrieval_test(
     lr_grid=None,
     warmup_ratio=DEFAULT_WARMUP_RATIO,
     warmup_ratio_grid=None,
+    scheduled_sampling_max_ratio=DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO,
+    scheduled_sampling_max_ratio_grid=None,
+    train_dataset_size=DEFAULT_TRAIN_DATASET_SIZE,
+    train_dataset_seed=DEFAULT_TRAIN_DATASET_SEED,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
@@ -543,12 +819,16 @@ def run_json_retrieval_test(
     chunk_size_grid = chunk_size_grid or DEFAULT_CHUNK_SIZE_GRID
     lr_grid = lr_grid or DEFAULT_LR_GRID
     warmup_ratio_grid = warmup_ratio_grid or DEFAULT_WARMUP_RATIO_GRID
+    scheduled_sampling_max_ratio_grid = (
+        scheduled_sampling_max_ratio_grid or DEFAULT_SCHEDULED_SAMPLING_MAX_RATIO_GRID
+    )
     search_space = [
-        (kr, chunk_size, lr, warmup_ratio_value)
+        (kr, chunk_size, lr, warmup_ratio_value, scheduled_sampling_max_ratio_value)
         for kr in kr_grid
         for chunk_size in chunk_size_grid
         for lr in lr_grid
         for warmup_ratio_value in warmup_ratio_grid
+        for scheduled_sampling_max_ratio_value in scheduled_sampling_max_ratio_grid
     ]
 
     print("\n--- Running JSON File Retrieval Test ---")
@@ -558,20 +838,33 @@ def run_json_retrieval_test(
         f"| answer_len={len(case['expected_answer_bytes'])} | dim={dim} | K={K} | epochs={epochs}"
     )
     print(
+        f"Training Data | mode=random_case_pool | dataset_size={train_dataset_size} "
+        f"| dataset_seed={train_dataset_seed}"
+    )
+    print(
         "Curriculum | "
         + " -> ".join(f"{stage['name']}({stage['epochs']})" for stage in curriculum_plan)
     )
     print(
         "Grid Search | "
-        f"kr={kr_grid} | chunk_size={chunk_size_grid} | lr={lr_grid} | warmup_ratio={warmup_ratio_grid}"
+        f"kr={kr_grid} | chunk_size={chunk_size_grid} | lr={lr_grid} "
+        f"| warmup_ratio={warmup_ratio_grid} "
+        f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_grid}"
     )
 
     best_result = None
     search_results = []
-    for trial_idx, (kr, chunk_size, lr, warmup_ratio_value) in enumerate(search_space, start=1):
+    for trial_idx, (
+        kr,
+        chunk_size,
+        lr,
+        warmup_ratio_value,
+        scheduled_sampling_max_ratio_value,
+    ) in enumerate(search_space, start=1):
         print(
             f"\n=== Search Trial {trial_idx}/{len(search_space)} | "
-            f"kr={kr} | chunk_size={chunk_size} | lr={lr:.0e} | warmup_ratio={warmup_ratio_value} ==="
+            f"kr={kr} | chunk_size={chunk_size} | lr={lr:.0e} | warmup_ratio={warmup_ratio_value} "
+            f"| scheduled_sampling_max_ratio={scheduled_sampling_max_ratio_value} ==="
         )
         result = train_single_configuration(
             case=case,
@@ -584,6 +877,9 @@ def run_json_retrieval_test(
             chunk_size=chunk_size,
             lr=lr,
             warmup_ratio=warmup_ratio_value,
+            scheduled_sampling_max_ratio=scheduled_sampling_max_ratio_value,
+            train_dataset_size=train_dataset_size,
+            train_dataset_seed=train_dataset_seed,
         )
         search_results.append(summarize_search_result(result))
         if best_result is None or score_search_result(result) > score_search_result(best_result):
@@ -615,7 +911,8 @@ def run_json_retrieval_test(
     print("\n=== JSON Retrieval Result ===")
     print(
         f"Best Config | kr={best_result['config']['kr']} | chunk_size={best_result['config']['chunk_size']} "
-        f"| lr={best_result['config']['lr']:.0e} | warmup_ratio={best_result['config']['warmup_ratio']}"
+        f"| lr={best_result['config']['lr']:.0e} | warmup_ratio={best_result['config']['warmup_ratio']} "
+        f"| scheduled_sampling_max_ratio={best_result['config']['scheduled_sampling_max_ratio']}"
     )
     print(
         f"Teacher Forced Prefix Match Length: {best_result['teacher_forced_evaluation']['prefix_match_length']}"
