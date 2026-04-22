@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
+from pathlib import Path
 from dsra_model import MultiLayerDSRAModel
+from report_utils import build_capacity_markdown, ensure_reports_dir, write_json, write_markdown
 
 DEFAULT_SEQ_LENGTHS = [
     8192,
@@ -276,6 +278,19 @@ def run_niah_capacity_test(seq_lengths=None, mode="train_step"):
             )
 
     return results
+
+
+def save_niah_capacity_reports(forward_results, train_results, reports_dir):
+    reports_dir = ensure_reports_dir(reports_dir)
+    payload = {
+        "forward_only": forward_results,
+        "train_step": train_results,
+    }
+    write_json(reports_dir / "needle_capacity_results.json", payload)
+    write_markdown(
+        reports_dir / "needle_capacity_results.md",
+        build_capacity_markdown(forward_results, train_results),
+    )
 
 
 def run_niah_test(seq_lengths=None):

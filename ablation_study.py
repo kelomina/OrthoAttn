@@ -1,9 +1,11 @@
 import random
+from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from report_utils import build_ablation_markdown, ensure_reports_dir, write_json, write_markdown
 from toy_task_associative_recall import (
     DSRAModel,
     build_fixed_associative_mapping,
@@ -255,7 +257,13 @@ def run_ablation(
     return best_run
 
 
-def main():
+def save_ablation_reports(results, reports_dir):
+    reports_dir = ensure_reports_dir(reports_dir)
+    write_markdown(reports_dir / "ablation_summary.md", build_ablation_markdown(results))
+    write_json(reports_dir / "ablation_summary.json", results)
+
+
+def main(reports_dir=None):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
@@ -354,6 +362,11 @@ def main():
             f"best_eval_acc={result['best_eval_acc']*100:.2f}% | "
             f"final_eval_loss={result['final_eval_loss']:.4f}"
         )
+
+    if reports_dir is not None:
+        save_ablation_reports(results, Path(reports_dir))
+
+    return results
 
 
 if __name__ == '__main__':
