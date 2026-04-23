@@ -1,0 +1,153 @@
+
+==================================================
+Running Unit Tests (Math, Gradients, LLM Compatibility)
+==================================================
+test_alibi_mask_shape (tests.test_dsra_math.TestDSRAMath.test_alibi_mask_shape) ... ok
+test_extreme_chunk_size (tests.test_dsra_math.TestDSRAMath.test_extreme_chunk_size) ... ok
+test_extreme_k_and_kr (tests.test_dsra_math.TestDSRAMath.test_extreme_k_and_kr) ... ok
+test_forward_dimensions (tests.test_dsra_math.TestDSRAMath.test_forward_dimensions) ... ok
+test_gradient_flow_and_stability (tests.test_dsra_math.TestDSRAMath.test_gradient_flow_and_stability) ... ok
+test_orthogonality (tests.test_dsra_math.TestDSRAMath.test_orthogonality) ... ok
+test_pe_modes (tests.test_dsra_math.TestDSRAMath.test_pe_modes) ... ok
+test_timestamps_shape (tests.test_dsra_math.TestDSRAMath.test_timestamps_shape) ... ok
+test_zero_novelty (tests.test_dsra_math.TestDSRAMath.test_zero_novelty) ... ok
+test_evaluate_teacher_forced_ignores_special_tokens_in_predictions (tests.test_json_retrieval.TestJsonRetrieval.test_evaluate_teacher_forced_ignores_special_tokens_in_predictions) ... ok
+test_autoregressive_generation (tests.test_llm_compatibility.TestLLMCompatibility.test_autoregressive_generation) ... ok
+test_prefill_vs_decode_alignment (tests.test_llm_compatibility.TestLLMCompatibility.test_prefill_vs_decode_alignment)
+Verify that processing tokens one-by-one with cache gives similar results ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.420s
+
+OK
+
+==================================================
+Running Complexity & Performance Benchmark
+==================================================
+--- DSRA Complexity Benchmark ---
+Testing O(N) linear time and decoupled memory footprint.
+Benchmarking on device: cuda:0
+SeqLen: 1024   | DSRA Time:    34.51 ms | Std Attn Time:    12.80 ms | Peak Mem: 221.76 MB
+SeqLen: 4096   | DSRA Time:    84.25 ms | Std Attn Time:    61.21 ms | Peak Mem: 229.76 MB
+SeqLen: 8192   | DSRA Time:   142.96 ms | Std Attn Time:   151.32 ms | Peak Mem: 243.76 MB
+SeqLen: 16384  | DSRA Time:   252.70 ms | Std Attn Time:  8367.45 ms | Peak Mem: 267.76 MB
+Std Attn reached inf at seq_len=32768, skipping for longer sequences...
+SeqLen: 32768  | DSRA Time:   967.35 ms | Std Attn Time:   SKIP    | Peak Mem: 315.76 MB
+SeqLen: 65536  | DSRA Time:  2658.99 ms | Std Attn Time:   SKIP    | Peak Mem: 571.76 MB
+SeqLen: 131072 | DSRA Time:  2474.77 ms | Std Attn Time:   SKIP    | Peak Mem: 699.76 MB
+SeqLen: 262144 | DSRA Time:  4682.02 ms | Std Attn Time:   SKIP    | Peak Mem: 1011.50 MB
+SeqLen: 524288 | DSRA Time: 10996.92 ms | Std Attn Time:   SKIP    | Peak Mem: 1779.50 MB
+SeqLen: 1048576 | DSRA Time: 18263.65 ms | Std Attn Time:   SKIP    | Peak Mem: 3315.50 MB
+SeqLen: 2097152 | DSRA Time: 1846709.81 ms | Std Attn Time:   SKIP    | Peak Mem: 6387.50 MB
+
+==================================================
+Running State Saturation & Decay Test
+==================================================
+
+--- Running Saturation Test: No Decay ---
+K=4, dim=64, seq_len=16384, lambda=0.0
+Final V_orth norm: 0.721287
+
+--- Running Saturation Test: Mild Decay ---
+K=4, dim=64, seq_len=16384, lambda=0.05
+Final V_orth norm: 1.392955
+
+--- Running Saturation Test: Strong Decay ---
+K=4, dim=64, seq_len=16384, lambda=0.2
+Final V_orth norm: 2.178770
+
+Plot saved to saturation_test_results.png
+
+==================================================
+Running Associative Recall Toy Task
+==================================================
+Using device: cuda:0
+Epoch    0 | Loss: 4.7601 | Accuracy: 0.0%
+Epoch   50 | Loss: 4.5441 | Accuracy: 0.0%
+Epoch  100 | Loss: 4.7164 | Accuracy: 0.0%
+Epoch  150 | Loss: 4.4671 | Accuracy: 0.0%
+Epoch  200 | Loss: 4.5798 | Accuracy: 0.0%
+Epoch  250 | Loss: 4.5171 | Accuracy: 0.0%
+Epoch  300 | Loss: 4.3090 | Accuracy: 6.2%
+Epoch  350 | Loss: 4.7084 | Accuracy: 0.0%
+Epoch  400 | Loss: 4.3842 | Accuracy: 12.5%
+Epoch  450 | Loss: 4.6098 | Accuracy: 0.0%
+Epoch  500 | Loss: 4.4057 | Accuracy: 12.5%
+Epoch  550 | Loss: 4.0542 | Accuracy: 0.0%
+Epoch  600 | Loss: 4.3938 | Accuracy: 12.5%
+Epoch  650 | Loss: 3.6830 | Accuracy: 25.0%
+Epoch  700 | Loss: 4.2298 | Accuracy: 6.2%
+Epoch  750 | Loss: 4.0500 | Accuracy: 12.5%
+Epoch  800 | Loss: 3.8998 | Accuracy: 6.2%
+Epoch  850 | Loss: 3.7728 | Accuracy: 12.5%
+Epoch  900 | Loss: 3.7873 | Accuracy: 12.5%
+Epoch  950 | Loss: 3.7306 | Accuracy: 18.8%
+Epoch 1000 | Loss: 4.1467 | Accuracy: 12.5%
+Epoch 1050 | Loss: 3.8645 | Accuracy: 12.5%
+Epoch 1100 | Loss: 4.1512 | Accuracy: 6.2%
+Epoch 1150 | Loss: 3.7237 | Accuracy: 6.2%
+Epoch 1200 | Loss: 3.2531 | Accuracy: 25.0%
+Epoch 1250 | Loss: 3.6020 | Accuracy: 6.2%
+Epoch 1300 | Loss: 3.3778 | Accuracy: 18.8%
+Epoch 1350 | Loss: 3.4590 | Accuracy: 18.8%
+Epoch 1400 | Loss: 3.2398 | Accuracy: 25.0%
+Epoch 1450 | Loss: 3.8599 | Accuracy: 12.5%
+
+==================================================
+Running Needle-In-A-Haystack Long-Context Sweep
+==================================================
+--- Running Needle-In-A-Haystack Long-Context Sweep on cuda:0 ---
+
+--- Running Needle-In-A-Haystack Test (8192 tokens) on cuda:0 ---
+Config | batch_size=4 | epochs=400 | chunk_size=256
+Epoch   0 | Depth: 0.9 | Loss: 5.1158 | Accuracy:   0.0%
+Epoch  20 | Depth: 0.1 | Loss: 0.7055 | Accuracy: 100.0%
+Epoch  40 | Depth: 0.1 | Loss: 0.0460 | Accuracy: 100.0%
+
+SUCCESS! The model successfully found the needle in 8192 context!
+
+Final Best Accuracy achieved @ 8192: 100.0%
+
+--- Running Needle-In-A-Haystack Test (16384 tokens) on cuda:0 ---
+Config | batch_size=4 | epochs=400 | chunk_size=256
+Epoch   0 | Depth: 0.1 | Loss: 4.3565 | Accuracy:   0.0%
+Epoch  20 | Depth: 0.1 | Loss: 0.5946 | Accuracy: 100.0%
+Epoch  40 | Depth: 0.9 | Loss: 0.0351 | Accuracy: 100.0%
+
+SUCCESS! The model successfully found the needle in 16384 context!
+
+Final Best Accuracy achieved @ 16384: 100.0%
+
+--- Running Needle-In-A-Haystack Test (32768 tokens) on cuda:0 ---
+Config | batch_size=4 | epochs=400 | chunk_size=256
+Epoch   0 | Depth: 0.5 | Loss: 4.9322 | Accuracy:   0.0%
+Epoch  20 | Depth: 0.1 | Loss: 1.5234 | Accuracy: 100.0%
+Epoch  40 | Depth: 0.9 | Loss: 0.0711 | Accuracy: 100.0%
+
+SUCCESS! The model successfully found the needle in 32768 context!
+
+Final Best Accuracy achieved @ 32768: 100.0%
+
+--- Running Needle-In-A-Haystack Test (65536 tokens) on cuda:0 ---
+Config | batch_size=2 | epochs=250 | chunk_size=256
+Epoch   0 | Depth: 0.9 | Loss: 3.1082 | Accuracy: 100.0%
+Epoch  20 | Depth: 0.9 | Loss: 2.0357 | Accuracy: 100.0%
+Epoch  40 | Depth: 0.9 | Loss: 0.8208 | Accuracy: 100.0%
+Epoch  60 | Depth: 0.5 | Loss: 0.1572 | Accuracy: 100.0%
+Epoch  80 | Depth: 0.1 | Loss: 0.0082 | Accuracy: 100.0%
+
+SUCCESS! The model successfully found the needle in 65536 context!
+
+Final Best Accuracy achieved @ 65536: 100.0%
+
+--- Running Needle-In-A-Haystack Test (131072 tokens) on cuda:0 ---
+Config | batch_size=2 | epochs=250 | chunk_size=256
+
+OOM! Skipping Needle-In-A-Haystack at seq_len=131072.
+
+--- Running Needle-In-A-Haystack Test (262144 tokens) on cuda:0 ---
+Config | batch_size=1 | epochs=120 | chunk_size=256
+Epoch   0 | Depth: 0.5 | Loss: 4.2390 | Accuracy:   0.0%
+Epoch  20 | Depth: 0.1 | Loss: 4.2316 | Accuracy:   0.0%
+Epoch  40 | Depth: 0.1 | Loss: 4.2349 | Accuracy:   0.0%
+Epoch  60 | Depth: 0.1 | Loss: 4.2339 | Accuracy:   0.0%

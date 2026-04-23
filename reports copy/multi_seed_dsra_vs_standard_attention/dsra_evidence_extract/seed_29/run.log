@@ -1,0 +1,65 @@
+
+--- Running JSON Retrieval Generalization Test ---
+Using device: cuda:0
+Config | full_seq_len=32233 | answer_len=148 | dim=128 | K=128 | model_type=dsra
+Case Pools | train=24 (seed=29) | val=6 (seed=130) | test=6 (seed=231)
+Training Data | target_case_sampling_ratio=0.0 | disjoint_split=museum/artifact held-out
+Pair Split | seed=332 | train_pairs=21 | val_pairs=7 | test_pairs=8
+Local Context | mode=concat | size=4
+Entity Span Loss | museum=1.0 | artifact=1.0 | min_context_bytes=0
+Entity Auxiliary Loss | museum=0.0 | artifact=0.0 | min_context_bytes=0
+Entity Hint Injection | museum=0.0 | artifact=0.0 | min_context_bytes=0
+Entity Hint Training | use_gold_labels=False
+Slot Decoder | loss_weight=0.0 | logit_bias=0.0 | min_context_bytes=0
+Evidence Decoder | windows=16 | loss_weight=0.5 | hint_weight=0.0 | min_context_bytes=16384
+Selection Score Mode | mode=teacher_forced
+Grid Search | epochs=[240] | kr=[32] | chunk_size=[256] | lr=[0.0005] | warmup_ratio=[0.2] | scheduled_sampling_max_ratio=[0.0]
+
+=== Generalization Trial 1/1 | epochs=240 | kr=32 | chunk_size=256 | lr=5e-04 | warmup_ratio=0.2 | scheduled_sampling_max_ratio=0.0 ===
+Curriculum | 2K(48) -> 4K(48) -> 8K(48) -> 16K(48) -> 32K(48)
+
+--- Curriculum Stage 1/5 | context=2K | approx_train_seq_len=2282 | stage_epochs=48 | train_cases=24 ---
+Epoch    1 | Stage:  2K | Loss: 5.6530 | Train Token Acc:   0.0% | Seq Acc:   0.0% | Prefix Match:   0 | LR: 2.08e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   10 | Stage:  2K | Loss: 5.1601 | Train Token Acc:   0.8% | Seq Acc:   0.8% | Prefix Match:   0 | LR: 1.15e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   20 | Stage:  2K | Loss: 4.3193 | Train Token Acc:  16.5% | Seq Acc:  16.5% | Prefix Match:   0 | LR: 2.19e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   30 | Stage:  2K | Loss: 3.8364 | Train Token Acc:  15.7% | Seq Acc:  15.7% | Prefix Match:   0 | LR: 3.23e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   40 | Stage:  2K | Loss: 3.3947 | Train Token Acc:  21.3% | Seq Acc:  21.3% | Prefix Match:   0 | LR: 4.27e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   48 | Stage:  2K | Loss: 2.8627 | Train Token Acc:  30.3% | Seq Acc:  30.3% | Prefix Match:   0 | LR: 5.00e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+
+--- Curriculum Stage 2/5 | context=4K | approx_train_seq_len=4330 | stage_epochs=48 | train_cases=24 ---
+Epoch   58 | Stage:  4K | Loss: 2.3632 | Train Token Acc:  45.8% | Seq Acc:  45.8% | Prefix Match:   0 | LR: 4.96e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   68 | Stage:  4K | Loss: 1.9815 | Train Token Acc:  53.7% | Seq Acc:  53.7% | Prefix Match:   0 | LR: 4.87e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   78 | Stage:  4K | Loss: 1.6309 | Train Token Acc:  58.5% | Seq Acc:  58.5% | Prefix Match:   0 | LR: 4.72e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   88 | Stage:  4K | Loss: 1.5981 | Train Token Acc:  59.0% | Seq Acc:  59.0% | Prefix Match:  12 | LR: 4.51e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch   96 | Stage:  4K | Loss: 1.3093 | Train Token Acc:  69.4% | Seq Acc:  69.4% | Prefix Match:  33 | LR: 4.31e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+
+--- Curriculum Stage 3/5 | context=8K | approx_train_seq_len=8426 | stage_epochs=48 | train_cases=24 ---
+Epoch  106 | Stage:  8K | Loss: 0.8580 | Train Token Acc:  81.4% | Seq Acc:  81.4% | Prefix Match:  33 | LR: 4.03e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch  116 | Stage:  8K | Loss: 0.7805 | Train Token Acc:  82.6% | Seq Acc:  82.6% | Prefix Match:  33 | LR: 3.71e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch  126 | Stage:  8K | Loss: 0.8062 | Train Token Acc:  75.4% | Seq Acc:  75.4% | Prefix Match:  33 | LR: 3.37e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch  136 | Stage:  8K | Loss: 0.9912 | Train Token Acc:  73.5% | Seq Acc:  73.5% | Prefix Match:  33 | LR: 3.01e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+Epoch  144 | Stage:  8K | Loss: 0.7563 | Train Token Acc:  78.9% | Seq Acc:  78.9% | Prefix Match:  33 | LR: 2.71e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 0.000/0 | Teacher Forced Exact Match: False
+
+--- Curriculum Stage 4/5 | context=16K | approx_train_seq_len=16618 | stage_epochs=48 | train_cases=24 ---
+Epoch  154 | Stage: 16K | Loss: 2.5122 | Train Token Acc:  66.1% | Seq Acc:  66.1% | Prefix Match:  33 | LR: 2.35e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.772/0 | Teacher Forced Exact Match: False
+Epoch  164 | Stage: 16K | Loss: 1.9780 | Train Token Acc:  85.4% | Seq Acc:  85.4% | Prefix Match:  33 | LR: 1.99e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.644/0 | Teacher Forced Exact Match: False
+Epoch  174 | Stage: 16K | Loss: 2.1281 | Train Token Acc:  76.9% | Seq Acc:  76.9% | Prefix Match:  33 | LR: 1.66e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.370/1 | Teacher Forced Exact Match: False
+Epoch  184 | Stage: 16K | Loss: 1.8854 | Train Token Acc:  80.4% | Seq Acc:  80.4% | Prefix Match:  33 | LR: 1.35e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.148/0 | Teacher Forced Exact Match: False
+Epoch  192 | Stage: 16K | Loss: 1.9171 | Train Token Acc:  75.0% | Seq Acc:  75.0% | Prefix Match:  33 | LR: 1.13e-04 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.037/1 | Teacher Forced Exact Match: False
+
+--- Curriculum Stage 5/5 | context=32K | approx_train_seq_len=32234 | stage_epochs=48 | train_cases=24 ---
+Epoch  202 | Stage: 32K | Loss: 2.0374 | Train Token Acc:  84.2% | Seq Acc:  84.2% | Prefix Match:  33 | LR: 9.00e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.681/0 | Teacher Forced Exact Match: False
+Epoch  212 | Stage: 32K | Loss: 2.0103 | Train Token Acc:  85.0% | Seq Acc:  85.0% | Prefix Match:  33 | LR: 7.16e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.631/0 | Teacher Forced Exact Match: False
+Epoch  222 | Stage: 32K | Loss: 1.5645 | Train Token Acc:  88.6% | Seq Acc:  88.6% | Prefix Match:  33 | LR: 5.86e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.033/1 | Teacher Forced Exact Match: False
+Epoch  232 | Stage: 32K | Loss: 1.4460 | Train Token Acc:  82.1% | Seq Acc:  82.1% | Prefix Match:  33 | LR: 5.15e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 1.422/1 | Teacher Forced Exact Match: False
+Epoch  240 | Stage: 32K | Loss: 1.6696 | Train Token Acc:  82.3% | Seq Acc:  82.3% | Prefix Match:  33 | LR: 5.00e-05 | SS Ratio: 0.00 | SS Tokens:  0 | Aux(M/A): 0.000/0.000 | Slot Loss: 0.000 | Evidence: 2.052/1 | Teacher Forced Exact Match: False
+Validation | gen_exact=0.00% | tf_exact=0.00% | gen_seq_acc=32.72% | tf_seq_acc=80.51%
+Test       | gen_exact=0.00% | tf_exact=0.00% | gen_seq_acc=32.76% | tf_seq_acc=80.84%
+
+=== JSON Retrieval Generalization Result ===
+Best Config | epochs=240 | kr=32 | chunk_size=256 | lr=5e-04 | warmup_ratio=0.2 | scheduled_sampling_max_ratio=0.0
+Selection Score Mode: teacher_forced
+Validation Generation Exact Match Rate: 0.00%
+Validation Teacher-Forced Exact Match Rate: 0.00%
+Test Generation Exact Match Rate: 0.00%
+Test Teacher-Forced Exact Match Rate: 0.00%
