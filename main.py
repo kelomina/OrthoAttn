@@ -44,6 +44,8 @@ def write_run_report(reports_dir, executed_tests):
             "- `reports/needle_capacity_results.json`",
             "- `reports/json_retrieval_report.md`",
             "- `reports/json_retrieval_report.json`",
+            "- `reports/json_retrieval_generalization_report.md`",
+            "- `reports/json_retrieval_generalization_report.json`",
         ]
     )
     write_markdown(reports_dir / "run_summary.md", lines)
@@ -115,6 +117,24 @@ def run_json_retrieval():
     return run_json_retrieval_test(reports_dir=get_reports_dir())
 
 
+def run_json_retrieval_generalization():
+    print("\n" + "="*50)
+    print("Running JSON Retrieval Generalization Test")
+    print("="*50)
+    from json_retrieval_test import run_json_retrieval_generalization_test
+
+    return run_json_retrieval_generalization_test(reports_dir=get_reports_dir())
+
+
+def run_attention_family_benchmark():
+    print("\n" + "="*50)
+    print("Running Attention Family Benchmark")
+    print("="*50)
+    from attention_family_benchmark import run_attention_family_benchmark_suite
+
+    return run_attention_family_benchmark_suite(reports_dir=get_reports_dir())
+
+
 def run_ablation():
     print("\n" + "="*50)
     print("Running Ablation Study (Core Mechanisms)")
@@ -134,6 +154,8 @@ def main():
         'needle',       # needle_in_haystack_test.py
         'needle_capacity',
         'json_retrieval',
+        'json_retrieval_generalization',
+        'attention_family_benchmark',
         'ablation',     # ablation_study.py
         'report',
         'all'           # Run everything in sequence
@@ -172,6 +194,8 @@ def main():
             'needle': ("needle", run_needle_in_haystack),
             'needle_capacity': ("needle_capacity", run_needle_capacity_reports),
             'json_retrieval': ("json_retrieval", run_json_retrieval),
+            'json_retrieval_generalization': ("json_retrieval_generalization", run_json_retrieval_generalization),
+            'attention_family_benchmark': ("attention_family_benchmark", run_attention_family_benchmark),
             'ablation': ("ablation", run_ablation),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }
