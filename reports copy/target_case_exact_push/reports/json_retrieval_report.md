@@ -14,7 +14,7 @@ The most valuable exhibit in the Palace Museum is Along the River During the Qin
 
 ## Teacher-Forced Evaluation
 - Exact Byte Match: `False`
-- Sequence Accuracy: `89.19%`
+- Sequence Accuracy: `95.27%`
 - Prefix Match Length: `15`
 - First Mismatch Index: `15`
 - First Mismatch Expected Byte: `108`
@@ -23,30 +23,32 @@ The most valuable exhibit in the Palace Museum is Along the River During the Qin
 ## Generation Evaluation
 - Exact Byte Match: `False`
 - Exact Text Match: `False`
-- Sequence Accuracy: `21.62%`
-- Prefix Match Length: `16`
-- First Mismatch Index: `16`
-- First Mismatch Expected Byte: `101`
-- First Mismatch Predicted Byte: `108`
+- Sequence Accuracy: `16.22%`
+- Prefix Match Length: `12`
+- First Mismatch Index: `12`
+- First Mismatch Expected Byte: `117`
+- First Mismatch Predicted Byte: `112`
 
 ## Predicted Answer
-The most valuablle xhiibt iingngdy nate   AMuumsmi  tuLanadyspatll   duAngmg n duan otheei nngdy natleiinnggy n otruheen  othree   otrr  AMuumsmi  t
+The most valpitdn e Soog nthee  rrSDiSong Ssro tnnee rrSSo ognS sytvasatyyssta  rriSSo ognS sytvasutlaee rrSDiSon ogSs rotned  rS enrS iint  ee   ee
 
 ## Training Config
 - Device: `cuda:0`
-- Epochs: `1000`
-- Eval Interval: `10`
+- Epochs: `600`
+- Eval Interval: `25`
 - Dim: `128`
 - K: `128`
 - kr: `32`
 - Chunk Size: `256`
 - Learning Rate: `0.0005`
 - Warmup Ratio: `0.2`
-- Scheduled Sampling Max Ratio: `0.2`
-- Training Mode: `random_case_pool`
-- Train Dataset Size: `32`
-- Fixed Sample Ratio: `0.3`
+- Scheduled Sampling Max Ratio: `0.0`
+- Target Case Sampling Ratio: `1.0`
+- Training Mode: `target_case_only`
+- Train Dataset Size: `64`
 - Train Dataset Seed: `7`
+- Final Polish Epochs: `300`
+- Final Polish LR: `0.0001`
 
 ## Search Summary
-- Trial 1: kr=32, chunk_size=256, lr=0.0005, warmup_ratio=0.2, scheduled_sampling_max_ratio=0.2, train_dataset_size=32, fixed_ratio=0.3, gen_seq_acc=21.62%, gen_prefix=16, teacher_seq_acc=89.19%
+- Trial 1: kr=32, chunk_size=256, lr=0.0005, warmup_ratio=0.2, scheduled_sampling_max_ratio=0.0, gen_seq_acc=16.22%, gen_prefix=12, teacher_seq_acc=95.27%
