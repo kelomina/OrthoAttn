@@ -1,0 +1,2456 @@
+{
+  "complexity": {
+    "device": "cuda:0",
+    "seq_lengths": [
+      1024,
+      4096,
+      16384,
+      32768
+    ],
+    "batch_size": 1,
+    "dim": 128,
+    "K": 128,
+    "kr": 32,
+    "chunk_size": 256,
+    "warmup_runs": 1,
+    "measured_runs": 2,
+    "models": {
+      "dsra": {
+        "label": "DSRA",
+        "family_config": {},
+        "length_results": [
+          {
+            "seq_len": 1024,
+            "status": "ok",
+            "mean_time_ms": 13.233349978690967,
+            "std_time_ms": 0.4585587407743208,
+            "peak_mem_mb": 63.58154296875
+          },
+          {
+            "seq_len": 4096,
+            "status": "ok",
+            "mean_time_ms": 49.878349993377924,
+            "std_time_ms": 8.011731970472802,
+            "peak_mem_mb": 68.65185546875
+          },
+          {
+            "seq_len": 16384,
+            "status": "ok",
+            "mean_time_ms": 151.871799986111,
+            "std_time_ms": 5.253661919096104,
+            "peak_mem_mb": 98.25927734375
+          },
+          {
+            "seq_len": 32768,
+            "status": "ok",
+            "mean_time_ms": 300.96109997248277,
+            "std_time_ms": 23.694865378049,
+            "peak_mem_mb": 186.57177734375
+          }
+        ]
+      },
+      "sparse_attention": {
+        "label": "Sparse Attention",
+        "family_config": {
+          "sparse_local_window": 512,
+          "sparse_global_stride": 1024
+        },
+        "length_results": [
+          {
+            "seq_len": 1024,
+            "status": "ok",
+            "mean_time_ms": 3.2338999735657126,
+            "std_time_ms": 0.3306431378618209,
+            "peak_mem_mb": 46.765625
+          },
+          {
+            "seq_len": 4096,
+            "status": "ok",
+            "mean_time_ms": 17.512250022264197,
+            "std_time_ms": 9.1141113988023,
+            "peak_mem_mb": 31.9609375
+          },
+          {
+            "seq_len": 16384,
+            "status": "ok",
+            "mean_time_ms": 45.30694999266416,
+            "std_time_ms": 2.8023349025023596,
+            "peak_mem_mb": 98.1953125
+          },
+          {
+            "seq_len": 32768,
+            "status": "ok",
+            "mean_time_ms": 85.51540001644753,
+            "std_time_ms": 0.47743855327367735,
+            "peak_mem_mb": 186.5078125
+          }
+        ]
+      },
+      "sliding_window_attention": {
+        "label": "Sliding Window Attention",
+        "family_config": {
+          "window_size": 1024
+        },
+        "length_results": [
+          {
+            "seq_len": 1024,
+            "status": "ok",
+            "mean_time_ms": 2.5602499954402447,
+            "std_time_ms": 0.3793627956297952,
+            "peak_mem_mb": 47.650390625
+          },
+          {
+            "seq_len": 4096,
+            "status": "ok",
+            "mean_time_ms": 7.5312500121071935,
+            "std_time_ms": 0.20781870138150366,
+            "peak_mem_mb": 31.9609375
+          },
+          {
+            "seq_len": 16384,
+            "status": "ok",
+            "mean_time_ms": 41.11985003692098,
+            "std_time_ms": 0.6441035735803884,
+            "peak_mem_mb": 98.1953125
+          },
+          {
+            "seq_len": 32768,
+            "status": "ok",
+            "mean_time_ms": 68.72089998796582,
+            "std_time_ms": 12.802026868387612,
+            "peak_mem_mb": 186.5078125
+          }
+        ]
+      },
+      "linear_attention": {
+        "label": "Linear Attention",
+        "family_config": {},
+        "length_results": [
+          {
+            "seq_len": 1024,
+            "status": "ok",
+            "mean_time_ms": 188.8508999836631,
+            "std_time_ms": 6.472572609110542,
+            "peak_mem_mb": 46.765625
+          },
+          {
+            "seq_len": 4096,
+            "status": "ok",
+            "mean_time_ms": 809.4827499880921,
+            "std_time_ms": 26.512756624714086,
+            "peak_mem_mb": 31.9609375
+          },
+          {
+            "seq_len": 16384,
+            "status": "ok",
+            "mean_time_ms": 4007.856400014134,
+            "std_time_ms": 9.275402448969682,
+            "peak_mem_mb": 98.1953125
+          },
+          {
+            "seq_len": 32768,
+            "status": "ok",
+            "mean_time_ms": 7163.96155001712,
+            "std_time_ms": 743.7826421638106,
+            "peak_mem_mb": 186.5078125
+          }
+        ]
+      },
+      "standard_attention": {
+        "label": "Standard Attention",
+        "family_config": {},
+        "length_results": [
+          {
+            "seq_len": 1024,
+            "status": "ok",
+            "mean_time_ms": 4.325999994762242,
+            "std_time_ms": 0.011737979628347486,
+            "peak_mem_mb": 47.650390625
+          },
+          {
+            "seq_len": 4096,
+            "status": "ok",
+            "mean_time_ms": 8.946949994424358,
+            "std_time_ms": 0.9244006956937082,
+            "peak_mem_mb": 35.447265625
+          },
+          {
+            "seq_len": 16384,
+            "status": "ok",
+            "mean_time_ms": 45.815000019501895,
+            "std_time_ms": 6.99455885837606,
+            "peak_mem_mb": 110.572265625
+          },
+          {
+            "seq_len": 32768,
+            "status": "ok",
+            "mean_time_ms": 132.07995000993833,
+            "std_time_ms": 0.7365931451172437,
+            "peak_mem_mb": 211.009765625
+          }
+        ]
+      }
+    }
+  },
+  "json_retrieval": {
+    "task_variants": {
+      "baseline": {
+        "variant_kwargs": {
+          "evidence_loss_weight": 0.0,
+          "evidence_hint_weight": 0.0
+        },
+        "model_results": [
+          {
+            "model_type": "dsra",
+            "label": "DSRA",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": null,
+              "test_extract_exact": null,
+              "test_extract_seq_acc": null,
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.11242105724926685,
+                "std": 0.023587376533164426,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.5051959699120143,
+                "std": 0.03295642385527197,
+                "n": 5
+              },
+              "validation_evidence_window_acc": null,
+              "validation_extract_exact": null,
+              "validation_extract_seq_acc": null,
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.10536322148073098,
+                "std": 0.021965169651496263,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.5083182420788585,
+                "std": 0.030684131812975395,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11493371199578511,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.49122807937341884,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11089934561395179,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.47400091392489196,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.1217130553029773,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4733526898518772,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10393400006359907,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4763479690696516,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.1032828669073504,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.5203253940951063,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10392909229807626,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4953506386661467,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.06812068338785895,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.5027956560062532,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09078567064682276,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.5399971928926565,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11876578980968308,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.5538893910676367,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.15255717762388438,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.5402831350067248,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\dsra"
+          },
+          {
+            "model_type": "sparse_attention",
+            "label": "Sparse Attention",
+            "family_config": {
+              "sparse_local_window": 512,
+              "sparse_global_stride": 1024
+            },
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": null,
+              "test_extract_exact": null,
+              "test_extract_seq_acc": null,
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.10525801785629754,
+                "std": 0.026728806034434345,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.4261328729114866,
+                "std": 0.025419526095477946,
+                "n": 5
+              },
+              "validation_evidence_window_acc": null,
+              "validation_extract_exact": null,
+              "validation_extract_seq_acc": null,
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.09675273636374768,
+                "std": 0.02144306287808089,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4279752499217027,
+                "std": 0.028111594121453493,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.12663518014060401,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4677731469013108,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.13433508996819066,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4452710321416702,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.10934185144992357,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.43763562265366973,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.12644846885235475,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4581252451214212,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08372487282682323,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.43015609487014544,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10631601019301554,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4014313226880072,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.0724240501968387,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.41069373466095516,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.06852883938301314,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.42376771642600813,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09163772720454887,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.3936176505224326,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09066168088491362,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4020690481803263,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sparse_attention"
+          },
+          {
+            "model_type": "sliding_window_attention",
+            "label": "Sliding Window Attention",
+            "family_config": {
+              "window_size": 1024
+            },
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": null,
+              "test_extract_exact": null,
+              "test_extract_seq_acc": null,
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.08865626229065278,
+                "std": 0.025023796766956423,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.4307138466160058,
+                "std": 0.02148469775711761,
+                "n": 5
+              },
+              "validation_evidence_window_acc": null,
+              "validation_extract_exact": null,
+              "validation_extract_seq_acc": null,
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.09182460096035568,
+                "std": 0.02197006611882545,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4389090120695791,
+                "std": 0.018046117066019683,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.10125299486237614,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4639410107770895,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10800979996518381,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.44315209134501254,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.12110691968319381,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.44399243947497014,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11372527586097243,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4605255800765309,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08871322017020083,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.443825888805478,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09748767275505243,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.40559827872662096,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.06096642219228658,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.42388287800277025,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.06033211807153774,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.42570570092213217,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08708344789372102,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4189028432875877,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.06372644480051748,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4185875820097324,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\sliding_window_attention"
+          },
+          {
+            "model_type": "linear_attention",
+            "label": "Linear Attention",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": null,
+              "test_extract_exact": null,
+              "test_extract_seq_acc": null,
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.1636479900150274,
+                "std": 0.0009566413728151501,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.1636479900150274,
+                "std": 0.0009566413728151501,
+                "n": 5
+              },
+              "validation_evidence_window_acc": null,
+              "validation_extract_exact": null,
+              "validation_extract_seq_acc": null,
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.16288680959790472,
+                "std": 0.0017129539321728787,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.16288680959790472,
+                "std": 0.0017129539321728787,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16160130213967094,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16160130213967094,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16315339695200115,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16315339695200115,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16488995233601317,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16488995233601317,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16507456991127928,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16507456991127928,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16366627277404844,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16366627277404844,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16294520987034355,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16294520987034355,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16066457117198024,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16066457117198024,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16418940899566045,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16418940899566045,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16361194956781086,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16361194956781086,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16287736434585245,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16287736434585245,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\linear_attention"
+          },
+          {
+            "model_type": "standard_attention",
+            "label": "Standard Attention",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": null,
+              "test_extract_exact": null,
+              "test_extract_seq_acc": null,
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.10097776952091202,
+                "std": 0.01779950306366422,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.4292479953445445,
+                "std": 0.01973326648656374,
+                "n": 5
+              },
+              "validation_evidence_window_acc": null,
+              "validation_extract_exact": null,
+              "validation_extract_seq_acc": null,
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.1037575136653452,
+                "std": 0.009232941244828817,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4400961443706508,
+                "std": 0.013254076965103669,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09433612289678983,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.45442706148813017,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10012670322366235,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.43386754419281837,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11140796715240292,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.43816294286258894,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.12459601339820438,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4562374789328076,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11435834935120684,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.452944519968949,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11162554023516591,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.40748663101604277,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09474172196444311,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4296874220426084,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.07996395855313437,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.43627802066680066,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.10394340696188331,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4252587754909775,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.0885766321943931,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4123703019142532,
+                  "validation_evidence_window_acc": null,
+                  "test_evidence_window_acc": null,
+                  "validation_extract_exact": null,
+                  "test_extract_exact": null,
+                  "validation_extract_seq_acc": null,
+                  "test_extract_seq_acc": null
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\baseline\\standard_attention"
+          }
+        ]
+      },
+      "evidence_extract": {
+        "variant_kwargs": {
+          "evidence_window_count": 16,
+          "evidence_loss_weight": 0.5,
+          "evidence_hint_weight": 0.0,
+          "evidence_min_context_bytes": 16384
+        },
+        "model_results": [
+          {
+            "model_type": "dsra",
+            "label": "DSRA",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": {
+                "mean": 0.15,
+                "std": 0.22360679774997896,
+                "n": 5
+              },
+              "test_extract_exact": {
+                "mean": 0.15,
+                "std": 0.22360679774997896,
+                "n": 5
+              },
+              "test_extract_seq_acc": {
+                "mean": 0.39398532900822325,
+                "std": 0.15733214262569836,
+                "n": 5
+              },
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.09476409653300537,
+                "std": 0.02442485872355411,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.5002642514443573,
+                "std": 0.027835811067121064,
+                "n": 5
+              },
+              "validation_evidence_window_acc": {
+                "mean": 0.35,
+                "std": 0.2850438562747845,
+                "n": 5
+              },
+              "validation_extract_exact": {
+                "mean": 0.35,
+                "std": 0.2850438562747845,
+                "n": 5
+              },
+              "validation_extract_seq_acc": {
+                "mean": 0.527091971942637,
+                "std": 0.21058999932308192,
+                "n": 5
+              },
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.10658299526287376,
+                "std": 0.022586465824002054,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.5037932234938278,
+                "std": 0.030359134007919446,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11493371199578511,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4836085093090919,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11089934561395179,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.47563490085299653,
+                  "validation_evidence_window_acc": 0.75,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.75,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.8139097744360902,
+                  "test_extract_seq_acc": 0.28269012407222777
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.1217130553029773,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4733526898518772,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10201092314052215,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4763479690696516,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.45826966956893567,
+                  "test_extract_seq_acc": 0.2812623223200941
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08474376731006725,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.5173228623545656,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.08750848082398885,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4893300549717662,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.25325939107782064,
+                  "test_extract_seq_acc": 0.4652519939953095
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08062617752783896,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.49512369833429554,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.05595386001559352,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.5340200303516223,
+                  "validation_evidence_window_acc": 0.5,
+                  "test_evidence_window_acc": 0.5,
+                  "validation_extract_exact": 0.5,
+                  "test_extract_exact": 0.5,
+                  "validation_extract_seq_acc": 0.6382224645583424,
+                  "test_extract_seq_acc": 0.6394395730080061
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "dsra",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.1308982641777002,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.549558357619309,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11744787307097052,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.5259883019757499,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.4717985600719964,
+                  "test_extract_seq_acc": 0.3012826316454788
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\dsra"
+          },
+          {
+            "model_type": "sparse_attention",
+            "label": "Sparse Attention",
+            "family_config": {
+              "sparse_local_window": 512,
+              "sparse_global_stride": 1024
+            },
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": {
+                "mean": 0.2,
+                "std": 0.32596012026013244,
+                "n": 5
+              },
+              "test_extract_exact": {
+                "mean": 0.2,
+                "std": 0.32596012026013244,
+                "n": 5
+              },
+              "test_extract_seq_acc": {
+                "mean": 0.43154770629304623,
+                "std": 0.2335927062234493,
+                "n": 5
+              },
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.10180263034389296,
+                "std": 0.022536337791394072,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.42442889047352267,
+                "std": 0.02727078009800387,
+                "n": 5
+              },
+              "validation_evidence_window_acc": {
+                "mean": 0.3,
+                "std": 0.2091650066335189,
+                "n": 5
+              },
+              "validation_extract_exact": {
+                "mean": 0.3,
+                "std": 0.2091650066335189,
+                "n": 5
+              },
+              "validation_extract_seq_acc": {
+                "mean": 0.4944009357061463,
+                "std": 0.14446732767541245,
+                "n": 5
+              },
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.09392752568707649,
+                "std": 0.017523001800494167,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4275197249385276,
+                "std": 0.029138603623726913,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.10246515989033064,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4696528461494311,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.1114764832486667,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4431523880738736,
+                  "validation_evidence_window_acc": 0.5,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.5,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.6331405436668595,
+                  "test_extract_seq_acc": 0.28269012407222777
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.11898725733752394,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.43763562265366973,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.12985684909000328,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.46015776544662446,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.45826966956893567,
+                  "test_extract_seq_acc": 0.2812623223200941
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09275661102293999,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4262791939865727,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10385550278598407,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.3954843285057189,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.75,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.75,
+                  "validation_extract_seq_acc": 0.44825939107782065,
+                  "test_extract_seq_acc": 0.8256302521008403
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.07805533578995635,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.41241331138053183,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.06858085260393045,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4212809221610702,
+                  "validation_evidence_window_acc": 0.5,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.5,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.6382224645583424,
+                  "test_extract_seq_acc": 0.46687320132659016
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "sparse_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.0773732643946315,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.3916176505224326,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09524346399088028,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4020690481803263,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.2941126096587733,
+                  "test_extract_seq_acc": 0.3012826316454788
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sparse_attention"
+          },
+          {
+            "model_type": "sliding_window_attention",
+            "label": "Sliding Window Attention",
+            "family_config": {
+              "window_size": 1024
+            },
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": {
+                "mean": 0.25,
+                "std": 0.3535533905932738,
+                "n": 5
+              },
+              "test_extract_exact": {
+                "mean": 0.25,
+                "std": 0.3535533905932738,
+                "n": 5
+              },
+              "test_extract_seq_acc": {
+                "mean": 0.46606098062932944,
+                "std": 0.25212968722613105,
+                "n": 5
+              },
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.0902919625136718,
+                "std": 0.02868623681685681,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.4291286262020843,
+                "std": 0.022761701215431696,
+                "n": 5
+              },
+              "validation_evidence_window_acc": {
+                "mean": 0.25,
+                "std": 0.30618621784789724,
+                "n": 5
+              },
+              "validation_extract_exact": {
+                "mean": 0.25,
+                "std": 0.30618621784789724,
+                "n": 5
+              },
+              "validation_extract_seq_acc": {
+                "mean": 0.45938975096213713,
+                "std": 0.21629818464167705,
+                "n": 5
+              },
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.10096964023707522,
+                "std": 0.02185420451284287,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4370244228245427,
+                "std": 0.020173211232786203,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.12469742324101504,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4658640877001664,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11203176185728528,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.44315209134501254,
+                  "validation_evidence_window_acc": 0.75,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.75,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.8139097744360902,
+                  "test_extract_seq_acc": 0.28269012407222777
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.12322556375099042,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4423477026328649,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.11997527586097242,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4605255800765309,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.27506356269870663,
+                  "test_extract_seq_acc": 0.2812623223200941
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.0792776184160998,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.44019071820180344,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09955378845753178,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.40367520180354405,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.75,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.75,
+                  "validation_extract_seq_acc": 0.44825939107782065,
+                  "test_extract_seq_acc": 0.8256302521008403
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.08224715670831521,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.42388287800277025,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.06227010256766177,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.42376771642600813,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.5,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.5,
+                  "validation_extract_seq_acc": 0.4656034169392948,
+                  "test_extract_seq_acc": 0.6394395730080061
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "sliding_window_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09540043906895564,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.41283672758510837,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.057628883824907724,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4145225413593259,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.2941126096587733,
+                  "test_extract_seq_acc": 0.3012826316454788
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\sliding_window_attention"
+          },
+          {
+            "model_type": "linear_attention",
+            "label": "Linear Attention",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": {
+                "mean": 0.15,
+                "std": 0.13693063937629152,
+                "n": 5
+              },
+              "test_extract_exact": {
+                "mean": 0.15,
+                "std": 0.13693063937629152,
+                "n": 5
+              },
+              "test_extract_seq_acc": {
+                "mean": 0.39440203450811046,
+                "std": 0.09376315007795759,
+                "n": 5
+              },
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.1636479900150274,
+                "std": 0.0009566413728151501,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.1636479900150274,
+                "std": 0.0009566413728151501,
+                "n": 5
+              },
+              "validation_evidence_window_acc": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_extract_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_extract_seq_acc": {
+                "mean": 0.27514097973054147,
+                "std": 0.014763346332530977,
+                "n": 5
+              },
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.16288680959790472,
+                "std": 0.0017129539321728787,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.16288680959790472,
+                "std": 0.0017129539321728787,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16160130213967094,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16160130213967094,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16315339695200115,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16315339695200115,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.2728511034632971,
+                  "test_extract_seq_acc": 0.28269012407222777
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16488995233601317,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16488995233601317,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16507456991127928,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16507456991127928,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.27506356269870663,
+                  "test_extract_seq_acc": 0.4592284240150094
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16366627277404844,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16366627277404844,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16294520987034355,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16294520987034355,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.25325939107782064,
+                  "test_extract_seq_acc": 0.461935791481246
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16066457117198024,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16066457117198024,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16418940899566045,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16418940899566045,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.2804182317541096,
+                  "test_extract_seq_acc": 0.46687320132659016
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "linear_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.16361194956781086,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.16361194956781086,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.16287736434585245,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.16287736434585245,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.2941126096587733,
+                  "test_extract_seq_acc": 0.3012826316454788
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\linear_attention"
+          },
+          {
+            "model_type": "standard_attention",
+            "label": "Standard Attention",
+            "family_config": {},
+            "aggregate_metrics": {
+              "model_type": null,
+              "test_evidence_window_acc": {
+                "mean": 0.25,
+                "std": 0.1767766952966369,
+                "n": 5
+              },
+              "test_extract_exact": {
+                "mean": 0.15,
+                "std": 0.22360679774997896,
+                "n": 5
+              },
+              "test_extract_seq_acc": {
+                "mean": 0.4589269153988771,
+                "std": 0.12672053171922315,
+                "n": 5
+              },
+              "test_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_generation_seq_acc": {
+                "mean": 0.09989955805660859,
+                "std": 0.018522910979300835,
+                "n": 5
+              },
+              "test_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "test_teacher_forced_seq_acc": {
+                "mean": 0.4302297370195931,
+                "std": 0.019460065563976052,
+                "n": 5
+              },
+              "validation_evidence_window_acc": {
+                "mean": 0.25,
+                "std": 0.1767766952966369,
+                "n": 5
+              },
+              "validation_extract_exact": {
+                "mean": 0.25,
+                "std": 0.1767766952966369,
+                "n": 5
+              },
+              "validation_extract_seq_acc": {
+                "mean": 0.45667474782340517,
+                "std": 0.11930176971291534,
+                "n": 5
+              },
+              "validation_generation_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_generation_seq_acc": {
+                "mean": 0.08848388973238001,
+                "std": 0.018406301489682652,
+                "n": 5
+              },
+              "validation_teacher_forced_exact": {
+                "mean": 0.0,
+                "std": 0.0,
+                "n": 5
+              },
+              "validation_teacher_forced_seq_acc": {
+                "mean": 0.4394590695932333,
+                "std": 0.011506009512974289,
+                "n": 5
+              }
+            },
+            "seed_runs": [
+              {
+                "seed_root": 7,
+                "seed_bundle": {
+                  "seed_root": 7,
+                  "train_dataset_seed": 7,
+                  "validation_dataset_seed": 108,
+                  "test_dataset_seed": 209,
+                  "pair_split_seed": 310,
+                  "torch_seed": 411,
+                  "python_seed": 512
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention\\seed_7\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09057672440054923,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4563354584346951,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.09506134374653816,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.43641773093418157,
+                  "validation_evidence_window_acc": 0.5,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.5,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.6307036675658613,
+                  "test_extract_seq_acc": 0.454959031635253
+                }
+              },
+              {
+                "seed_root": 11,
+                "seed_bundle": {
+                  "seed_root": 11,
+                  "train_dataset_seed": 11,
+                  "validation_dataset_seed": 112,
+                  "test_dataset_seed": 213,
+                  "pair_split_seed": 314,
+                  "torch_seed": 415,
+                  "python_seed": 516
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention\\seed_11\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.09714467286822631,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.43625454591602403,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.10636116587697819,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4562374789328076,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.0,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.44667373219023204,
+                  "test_extract_seq_acc": 0.2812623223200941
+                }
+              },
+              {
+                "seed_root": 19,
+                "seed_bundle": {
+                  "seed_root": 19,
+                  "train_dataset_seed": 19,
+                  "validation_dataset_seed": 120,
+                  "test_dataset_seed": 221,
+                  "pair_split_seed": 322,
+                  "torch_seed": 423,
+                  "python_seed": 524
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention\\seed_19\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.05675988791964591,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.443765781815035,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.08095874713521772,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4076296697954452,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.25,
+                  "validation_extract_seq_acc": 0.44825939107782065,
+                  "test_extract_seq_acc": 0.4652519939953095
+                }
+              },
+              {
+                "seed_root": 29,
+                "seed_bundle": {
+                  "seed_root": 29,
+                  "train_dataset_seed": 29,
+                  "validation_dataset_seed": 130,
+                  "test_dataset_seed": 231,
+                  "pair_split_seed": 332,
+                  "torch_seed": 433,
+                  "python_seed": 534
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention\\seed_29\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.0939947565115953,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4356807863094347,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.1285399013299158,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.4364609831960747,
+                  "validation_evidence_window_acc": 0.25,
+                  "test_evidence_window_acc": 0.5,
+                  "validation_extract_exact": 0.25,
+                  "test_extract_exact": 0.5,
+                  "validation_extract_seq_acc": 0.4636243386243386,
+                  "test_extract_seq_acc": 0.6394395730080061
+                }
+              },
+              {
+                "seed_root": 37,
+                "seed_bundle": {
+                  "seed_root": 37,
+                  "train_dataset_seed": 37,
+                  "validation_dataset_seed": 138,
+                  "test_dataset_seed": 239,
+                  "pair_split_seed": 340,
+                  "torch_seed": 441,
+                  "python_seed": 542
+                },
+                "report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention\\seed_37\\reports",
+                "metrics": {
+                  "model_type": "standard_attention",
+                  "validation_generation_exact": 0.0,
+                  "validation_generation_seq_acc": 0.10394340696188331,
+                  "validation_teacher_forced_exact": 0.0,
+                  "validation_teacher_forced_seq_acc": 0.4252587754909775,
+                  "test_generation_exact": 0.0,
+                  "test_generation_seq_acc": 0.0885766321943931,
+                  "test_teacher_forced_exact": 0.0,
+                  "test_teacher_forced_seq_acc": 0.41440282223945646,
+                  "validation_evidence_window_acc": 0.0,
+                  "test_evidence_window_acc": 0.25,
+                  "validation_extract_exact": 0.0,
+                  "test_extract_exact": 0.0,
+                  "validation_extract_seq_acc": 0.2941126096587733,
+                  "test_extract_seq_acc": 0.4537216560357227
+                }
+              }
+            ],
+            "model_report_dir": "reports\\attention_family_formal_multiseed\\reports\\attention_family_json_retrieval\\reports\\evidence_extract\\standard_attention"
+          }
+        ]
+      }
+    },
+    "shared_generalization_kwargs": {
+      "epochs": 80,
+      "epochs_grid": [
+        80
+      ],
+      "eval_interval": 10,
+      "dim": 128,
+      "K": 128,
+      "kr_grid": [
+        32
+      ],
+      "chunk_size_grid": [
+        256
+      ],
+      "lr_grid": [
+        0.0005
+      ],
+      "warmup_ratio_grid": [
+        0.2
+      ],
+      "scheduled_sampling_max_ratio_grid": [
+        0.0
+      ],
+      "train_dataset_size": 12,
+      "validation_dataset_size": 4,
+      "test_dataset_size": 4,
+      "generalization_score_mode": "teacher_forced",
+      "local_context_mode": "concat",
+      "local_context_size": 4,
+      "final_polish_epochs": 0,
+      "final_generation_polish_epochs": 0
+    },
+    "task_seed_roots": [
+      7,
+      11,
+      19,
+      29,
+      37
+    ]
+  }
+}
