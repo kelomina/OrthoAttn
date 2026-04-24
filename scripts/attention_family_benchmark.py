@@ -257,7 +257,8 @@ def run_attention_family_json_retrieval_benchmark(
     generalization_kwargs=None,
     task_seed_roots=None,
 ):
-    reports_dir = ensure_reports_dir(Path(reports_dir))
+    reports_dir = Path(reports_dir)
+    reports_dir.mkdir(parents=True, exist_ok=True)
     model_types = tuple(model_types or ATTENTION_FAMILY_MODEL_TYPES)
     task_variants = tuple(task_variants or TASK_VARIANTS.keys())
     task_seed_roots = tuple(task_seed_roots or DEFAULT_TASK_SEED_ROOTS)
@@ -331,7 +332,8 @@ def run_attention_family_json_retrieval_benchmark(
 
 
 def save_attention_family_benchmark_reports(reports_dir, complexity_results, task_results):
-    reports_dir = ensure_reports_dir(Path(reports_dir))
+    reports_dir = Path(reports_dir)
+    reports_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "complexity": complexity_results,
         "json_retrieval": task_results,

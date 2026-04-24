@@ -5,7 +5,7 @@ import torch
 from dsra_layer import DSRA_Chunk_Layer
 from src.dsra.report_utils import ensure_reports_dir
 
-def test_saturation(K, dim, seq_len, chunk_size, decay_lambda, title):
+def run_saturation_case(K, dim, seq_len, chunk_size, decay_lambda, title):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print(f"\n--- Running Saturation Test: {title} ---")
     print(f"K={K}, dim={dim}, seq_len={seq_len}, lambda={decay_lambda}")
@@ -77,17 +77,17 @@ def run_saturation_test():
     results = {}
     
     # 1. No Decay (Should saturate and drop to 0)
-    results['No Decay (lambda=0)'] = test_saturation(
+    results['No Decay (lambda=0)'] = run_saturation_case(
         K, dim, seq_len, chunk_size, decay_lambda=0.0, title="No Decay"
     )
     
     # 2. Mild Decay (Should maintain a steady state > 0)
-    results['Mild Decay (lambda=0.05)'] = test_saturation(
+    results['Mild Decay (lambda=0.05)'] = run_saturation_case(
         K, dim, seq_len, chunk_size, decay_lambda=0.05, title="Mild Decay"
     )
     
     # 3. Strong Decay (Should maintain a higher steady state)
-    results['Strong Decay (lambda=0.2)'] = test_saturation(
+    results['Strong Decay (lambda=0.2)'] = run_saturation_case(
         K, dim, seq_len, chunk_size, decay_lambda=0.2, title="Strong Decay"
     )
     
