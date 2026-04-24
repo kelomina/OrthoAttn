@@ -31,4 +31,7 @@ python_files = ["test_*.py"]
 testpaths = ["tests"]
 
 [tool.setuptools]
-py-modules = ["dsra_layer", "dsra_model"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
