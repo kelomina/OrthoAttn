@@ -1,5 +1,9 @@
+from pathlib import Path
+
 import torch
+
 from dsra_layer import DSRA_Chunk_Layer
+from src.dsra.report_utils import ensure_reports_dir
 
 def test_saturation(K, dim, seq_len, chunk_size, decay_lambda, title):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -43,6 +47,8 @@ def test_saturation(K, dim, seq_len, chunk_size, decay_lambda, title):
 def plot_results(results_dict):
     try:
         import matplotlib.pyplot as plt
+        reports_dir = ensure_reports_dir(Path(__file__).resolve().parents[1])
+        output_path = reports_dir / "saturation_test_results.png"
         plt.figure(figsize=(10, 6))
         for title, norms in results_dict.items():
             plt.plot(norms, label=title)
@@ -54,8 +60,8 @@ def plot_results(results_dict):
         plt.grid(True, which="both", ls="-", alpha=0.2)
         plt.legend()
         plt.tight_layout()
-        plt.savefig('saturation_test_results.png')
-        print("\nPlot saved to saturation_test_results.png")
+        plt.savefig(output_path)
+        print(f"\nPlot saved to {output_path}")
     except ImportError:
         print("\nmatplotlib not installed, skipping plot generation.")
         print("Data Summary:")
