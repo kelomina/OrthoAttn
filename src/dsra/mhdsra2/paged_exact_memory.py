@@ -16,9 +16,9 @@ import torch.nn.functional as F
 
 @dataclass
 class PageRecord:
-    key: torch.Tensor      # [H, G, d] CPU
-    value: torch.Tensor    # [H, G, d] CPU
-    summary: torch.Tensor  # [H, d] CPU normalized
+    key: torch.Tensor
+    value: torch.Tensor
+    summary: torch.Tensor
     start: int
     end: int
     valid: bool = True
@@ -54,7 +54,7 @@ class PagedExactMemory:
             value = value[0]
         if key.dim() != 3:
             raise ValueError("key/value must be [H,T,d] or [1,H,T,d]")
-        h, t, d = key.shape
+        _, t, _ = key.shape
         for s in range(0, t, self.page_size):
             e = min(s + self.page_size, t)
             k_page = key[:, s:e, :].detach().to("cpu", dtype=self.dtype).contiguous()
@@ -96,18 +96,18 @@ class PagedExactMemory:
             raise ValueError("query must be [H,T,d] or [1,H,T,d]")
 
         device = device or query.device
-        q_summary = F.normalize(query_h.float().mean(dim=1), dim=-1).cpu()  # [H,d]
+        q_summary = F.normalize(query_h.float().mean(dim=1), dim=-1).cpu()
         valid_pages = [p for p in self.pages if p.valid]
         if not valid_pages:
             return None, None, None
-        summaries = torch.stack([p.summary.float() for p in valid_pages], dim=1)  # [H,P,d]
-        page_scores = torch.einsum("hd,hpd->hp", q_summary, summaries).mean(dim=0)  # [P]
+        summaries = torch.stack([p.summary.float() for p in valid_pages], dim=1)
+        page_scores = torch.einsum("hd,hpd->hp", q_summary, summaries).mean(dim=0)
         n_pages = min(top_pages, page_scores.numel())
         top_page_idx = torch.topk(page_scores, n_pages).indices.tolist()
         chosen = [valid_pages[i] for i in top_page_idx]
 
-        k_cat = torch.cat([p.key.float() for p in chosen], dim=1)    # [H,R0,d]
-        v_cat = torch.cat([p.value.float() for p in chosen], dim=1)  # [H,R0,d]
+        k_cat = torch.cat([p.key.float() for p in chosen], dim=1)
+        v_cat = torch.cat([p.value.float() for p in chosen], dim=1)
         pos = torch.cat([torch.arange(p.start, p.end) for p in chosen], dim=0)
         token_scores = torch.einsum("hd,hrd->hr", q_summary, F.normalize(k_cat, dim=-1)).mean(dim=0)
         r = min(max_tokens, token_scores.numel())

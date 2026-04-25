@@ -13,7 +13,7 @@ O(B * H * C * K) per chunk, not O(B * H * T^2).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -57,13 +57,13 @@ class MHDSRA2Config:
 
 @dataclass
 class MHDSRA2State:
-    slot_k: torch.Tensor        # [B, H, K, d]
-    slot_v: torch.Tensor        # [B, H, K, d]
-    age: torch.Tensor           # [B, H, K]
-    usage: torch.Tensor         # [B, H, K]
-    confidence: torch.Tensor    # [B, H, K]
-    local_k: Optional[torch.Tensor] = None  # [B, H, W, d]
-    local_v: Optional[torch.Tensor] = None  # [B, H, W, d]
+    slot_k: torch.Tensor
+    slot_v: torch.Tensor
+    age: torch.Tensor
+    usage: torch.Tensor
+    confidence: torch.Tensor
+    local_k: Optional[torch.Tensor] = None
+    local_v: Optional[torch.Tensor] = None
     position: int = 0
 
 
@@ -89,14 +89,15 @@ class MultiHeadDSRA2(nn.Module):
         self.qkv = nn.Linear(cfg.dim, 3 * cfg.dim, bias=False)
         self.out_proj = nn.Linear(cfg.dim, cfg.dim, bias=False)
 
-        # Per-head slot initialization. slot_k is normalized in init_state.
-        self.slot_k_init = nn.Parameter(torch.randn(cfg.heads, cfg.slots, self.d_head) / (self.d_head ** 0.5))
-        self.slot_v_init = nn.Parameter(torch.randn(cfg.heads, cfg.slots, self.d_head) / (self.d_head ** 0.5))
+        self.slot_k_init = nn.Parameter(
+            torch.randn(cfg.heads, cfg.slots, self.d_head) / (self.d_head**0.5)
+        )
+        self.slot_v_init = nn.Parameter(
+            torch.randn(cfg.heads, cfg.slots, self.d_head) / (self.d_head**0.5)
+        )
 
-        # Continuous gates. They reduce dead slots and avoid hard dependence on
-        # a single global softmax over all history.
         self.token_write_gate = nn.Linear(self.d_head, 1)
-        self.fuse_gate = nn.Linear(self.d_head, 3)  # slot, local, retrieved
+        self.fuse_gate = nn.Linear(self.d_head, 3)
 
         self.log_tau_read = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_init))))
         self.log_tau_write = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_write_init))))
@@ -112,7 +113,7 @@ class MultiHeadDSRA2(nn.Module):
         return MHDSRA2State(k.contiguous(), v.contiguous(), zeros, zeros.clone(), conf)
 
     def _to_heads(self, x: torch.Tensor) -> torch.Tensor:
-        b, t, d = x.shape
+        b, t, _ = x.shape
         return x.view(b, t, self.heads, self.d_head).transpose(1, 2).contiguous()
 
     def _from_heads(self, x: torch.Tensor) -> torch.Tensor:
@@ -121,7 +122,6 @@ class MultiHeadDSRA2(nn.Module):
 
     @staticmethod
     def _gather_slots(slots: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
-        # slots: [B,H,K,d], idx: [B,H,T,R] -> [B,H,T,R,d]
         b, h, k, d = slots.shape
         t, r = idx.shape[2], idx.shape[3]
         expanded = slots.unsqueeze(2).expand(b, h, t, k, d)
@@ -130,7 +130,6 @@ class MultiHeadDSRA2(nn.Module):
 
     @staticmethod
     def _scatter_mass(idx: torch.Tensor, weights: torch.Tensor, slots: int) -> torch.Tensor:
-        # idx, weights: [B,H,T,R] -> mass [B,H,K]
         b, h, t, r = idx.shape
         idx_flat = idx.reshape(b * h, t * r, 1)
         src = weights.reshape(b * h, t * r, 1).to(dtype=torch.float32)
@@ -139,9 +138,9 @@ class MultiHeadDSRA2(nn.Module):
         return out.view(b, h, slots)
 
     @staticmethod
-    def _scatter_values(idx: torch.Tensor, weights: torch.Tensor, values: torch.Tensor, slots: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # idx, weights: [B,H,T,R], values: [B,H,T,d]
-        # returns agg [B,H,K,d], mass [B,H,K,1]
+    def _scatter_values(
+        idx: torch.Tensor, weights: torch.Tensor, values: torch.Tensor, slots: int
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         b, h, t, r = idx.shape
         d = values.shape[-1]
         idx_flat = idx.reshape(b * h, t * r)
@@ -155,14 +154,18 @@ class MultiHeadDSRA2(nn.Module):
         return out.view(b, h, slots, d), mass.view(b, h, slots, 1)
 
     @staticmethod
-    def _causal_prefix_mask(t_q: int, t_k: int, prefix_len: int, device, dtype) -> torch.Tensor:
+    def _causal_prefix_mask(
+        t_q: int, t_k: int, prefix_len: int, device, dtype
+    ) -> torch.Tensor:
         q_pos = torch.arange(t_q, device=device).unsqueeze(1) + prefix_len
         k_pos = torch.arange(t_k, device=device).unsqueeze(0)
         mask = torch.zeros(t_q, t_k, device=device, dtype=dtype)
         mask = mask.masked_fill(k_pos > q_pos, float("-inf"))
         return mask.unsqueeze(0).unsqueeze(0)
 
-    def _slot_read(self, q: torch.Tensor, state: MHDSRA2State) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def _slot_read(
+        self, q: torch.Tensor, state: MHDSRA2State
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         cfg = self.cfg
         slot_k = state.slot_k.to(dtype=q.dtype)
         slot_v = state.slot_v.to(dtype=q.dtype)
@@ -180,9 +183,16 @@ class MultiHeadDSRA2(nn.Module):
         selected_v = self._gather_slots(slot_v, top_idx)
         out = (probs.unsqueeze(-1) * selected_v).sum(dim=3)
         read_mass = self._scatter_mass(top_idx, probs, cfg.slots)
-        return out, {"read_idx": top_idx, "read_probs": probs, "read_mass": read_mass, "read_logits_top": top_logits}
+        return out, {
+            "read_idx": top_idx,
+            "read_probs": probs,
+            "read_mass": read_mass,
+            "read_logits_top": top_logits,
+        }
 
-    def _local_attention(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
+    def _local_attention(
+        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
         cfg = self.cfg
         if not cfg.use_local or cfg.local_window <= 0:
             return torch.zeros_like(q), None, None
@@ -191,8 +201,8 @@ class MultiHeadDSRA2(nn.Module):
             prev_k = state.local_k.to(device=q.device, dtype=q.dtype)
             prev_v = state.local_v.to(device=q.device, dtype=q.dtype)
             if prev_k.shape[2] > cfg.local_window:
-                prev_k = prev_k[:, :, -cfg.local_window:, :]
-                prev_v = prev_v[:, :, -cfg.local_window:, :]
+                prev_k = prev_k[:, :, -cfg.local_window :, :]
+                prev_v = prev_v[:, :, -cfg.local_window :, :]
             k_cat = torch.cat([prev_k, k], dim=2)
             v_cat = torch.cat([prev_v, v], dim=2)
             prefix = prev_k.shape[2]
@@ -204,7 +214,6 @@ class MultiHeadDSRA2(nn.Module):
         mask = self._causal_prefix_mask(q.shape[2], k_cat.shape[2], prefix, q.device, q.dtype)
         out = F.scaled_dot_product_attention(q, k_cat, v_cat, attn_mask=mask, is_causal=False)
 
-        # Keep a strict sliding window; never grows with sequence length.
         keep = min(cfg.local_window, k_cat.shape[2])
         new_k = k_cat[:, :, -keep:, :]
         new_v = v_cat[:, :, -keep:, :]
@@ -213,14 +222,16 @@ class MultiHeadDSRA2(nn.Module):
             new_v = new_v.detach()
         return out, new_k.contiguous(), new_v.contiguous()
 
-    def _retrieval_attention(self, q: torch.Tensor, retrieved_k: Optional[torch.Tensor], retrieved_v: Optional[torch.Tensor]) -> torch.Tensor:
-        # retrieved_k/v can be [B,H,R,d] for a chunk-level exact-memory recall, or
-        # [B,H,T,R,d] for per-token recall. The latter is more precise but uses
-        # more memory. We use sigmoid-normalized weights to reduce softmax diffusion.
+    def _retrieval_attention(
+        self,
+        q: torch.Tensor,
+        retrieved_k: Optional[torch.Tensor],
+        retrieved_v: Optional[torch.Tensor],
+    ) -> torch.Tensor:
         cfg = self.cfg
         if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
             return torch.zeros_like(q)
-        scale = self.d_head ** -0.5
+        scale = self.d_head**-0.5
         if retrieved_k.dim() == 4:
             logits = torch.einsum("bhtd,bhrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
             weights = torch.sigmoid(2.0 * logits)
@@ -233,7 +244,9 @@ class MultiHeadDSRA2(nn.Module):
             return torch.einsum("bhtr,bhtrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
         raise ValueError("retrieved_k/v must be [B,H,R,d] or [B,H,T,R,d]")
 
-    def _slot_write(self, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State, read_mass: torch.Tensor) -> MHDSRA2State:
+    def _slot_write(
+        self, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State, read_mass: torch.Tensor
+    ) -> MHDSRA2State:
         cfg = self.cfg
         slot_k = state.slot_k.to(dtype=k.dtype)
         slot_v = state.slot_v.to(dtype=v.dtype)
@@ -245,8 +258,12 @@ class MultiHeadDSRA2(nn.Module):
 
         tau = self.log_tau_write.exp().to(dtype=k.dtype)
         write_logits = sim * tau
-        write_logits = write_logits - cfg.usage_prior * torch.log1p(state.usage).to(dtype=k.dtype).unsqueeze(2)
-        write_logits = write_logits + cfg.age_write_bias * torch.log1p(state.age).to(dtype=k.dtype).unsqueeze(2)
+        write_logits = write_logits - cfg.usage_prior * torch.log1p(state.usage).to(
+            dtype=k.dtype
+        ).unsqueeze(2)
+        write_logits = write_logits + cfg.age_write_bias * torch.log1p(state.age).to(
+            dtype=k.dtype
+        ).unsqueeze(2)
 
         w_top = min(cfg.write_topk, cfg.slots)
         top_logits, top_idx = torch.topk(write_logits, w_top, dim=-1)
@@ -261,8 +278,14 @@ class MultiHeadDSRA2(nn.Module):
         new_v = agg_v / mass_safe
         has_write = (mass > cfg.eps).to(dtype=k.dtype)
 
-        conflict = (1.0 - F.cosine_similarity(new_k, slot_k, dim=-1, eps=cfg.eps)).clamp(0.0, 2.0).unsqueeze(-1)
-        write_gate = (1.0 - torch.exp(-cfg.eta * mass)).to(dtype=k.dtype).clamp(0.0, cfg.max_update) * has_write
+        conflict = (
+            (1.0 - F.cosine_similarity(new_k, slot_k, dim=-1, eps=cfg.eps))
+            .clamp(0.0, 2.0)
+            .unsqueeze(-1)
+        )
+        write_gate = (1.0 - torch.exp(-cfg.eta * mass)).to(dtype=k.dtype).clamp(
+            0.0, cfg.max_update
+        ) * has_write
 
         age_term = cfg.forget_age * torch.log1p(state.age).unsqueeze(-1).to(dtype=k.dtype)
         forget = cfg.forget_base + age_term + cfg.forget_conflict * write_gate * conflict
@@ -272,12 +295,13 @@ class MultiHeadDSRA2(nn.Module):
         slot_k_next = F.normalize(slot_k_next, dim=-1)
         slot_v_next = (1.0 - forget) * slot_v + write_gate * new_v
 
-        # Metadata is float32 for numerical stability.
         wg32 = write_gate.squeeze(-1).to(dtype=torch.float32)
         fg32 = forget.squeeze(-1).to(dtype=torch.float32)
         age_next = (state.age + k.shape[2]).to(dtype=torch.float32)
         age_next = age_next * (1.0 - wg32).clamp(0.0, 1.0)
-        usage_next = cfg.usage_decay * state.usage + read_mass + mass.squeeze(-1).to(dtype=torch.float32)
+        usage_next = cfg.usage_decay * state.usage + read_mass + mass.squeeze(-1).to(
+            dtype=torch.float32
+        )
         conf_new = (1.0 - conflict.squeeze(-1).clamp(0.0, 1.0)).to(dtype=torch.float32)
         conf_next = cfg.conf_decay * state.confidence * (1.0 - fg32) + wg32 * conf_new
         conf_next = conf_next.clamp(0.0, 1.0)
@@ -325,7 +349,7 @@ class MultiHeadDSRA2(nn.Module):
         local_out, new_local_k, new_local_v = self._local_attention(q, k, v, state)
         retrieval_out = self._retrieval_attention(q, retrieved_k, retrieved_v)
 
-        gate_logits = self.fuse_gate(q)  # [B,H,T,3]
+        gate_logits = self.fuse_gate(q)
         gates = torch.sigmoid(gate_logits)
         if not cfg.use_local or cfg.local_window <= 0:
             gates[..., 1] = 0.0
@@ -333,7 +357,11 @@ class MultiHeadDSRA2(nn.Module):
             gates[..., 2] = 0.0
         gates = gates / gates.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
 
-        y_heads = gates[..., 0:1] * slot_out + gates[..., 1:2] * local_out + gates[..., 2:3] * retrieval_out
+        y_heads = (
+            gates[..., 0:1] * slot_out
+            + gates[..., 1:2] * local_out
+            + gates[..., 2:3] * retrieval_out
+        )
         y = self.out_proj(self._from_heads(y_heads))
 
         next_state = self._slot_write(k, v, state, aux_read["read_mass"])
@@ -343,7 +371,7 @@ class MultiHeadDSRA2(nn.Module):
 
         if return_aux:
             aux = {
-                "gates_mean": gates.detach().mean(dim=(0, 2)),  # [H, 3]
+                "gates_mean": gates.detach().mean(dim=(0, 2)),
                 "read_mass": aux_read["read_mass"].detach(),
                 "slot_usage": next_state.usage.detach(),
                 "slot_confidence": next_state.confidence.detach(),
@@ -361,7 +389,7 @@ class MultiHeadDSRA2(nn.Module):
         gram = torch.einsum("bhkd,bhld->bhkl", sk, sk)
         eye = torch.eye(gram.shape[-1], device=gram.device, dtype=gram.dtype)
         off = gram - eye.view(1, 1, gram.shape[-1], gram.shape[-1])
-        return (off ** 2).mean()
+        return (off**2).mean()
 
 
 def estimate_attention_memory_bytes(
@@ -397,7 +425,9 @@ def estimate_attention_memory_bytes(
     mem["slots_key_value"] = 2 * batch_size * heads * slots * d_head * dtype_bytes
     mem["slot_metadata_fp32"] = 3 * batch_size * heads * slots * 4
     mem["slot_logits"] = batch_size * heads * chunk_size * slots * dtype_bytes
-    mem["topk_read_write"] = batch_size * heads * chunk_size * (read_topk + write_topk) * (dtype_bytes + 4)
+    mem["topk_read_write"] = batch_size * heads * chunk_size * (read_topk + write_topk) * (
+        dtype_bytes + 4
+    )
     mem["local_kv_cache"] = 2 * batch_size * heads * local_window * d_head * dtype_bytes
     mem["retrieval_kv"] = 2 * batch_size * heads * retrieval_tokens * d_head * dtype_bytes
     mem["retrieval_logits"] = batch_size * heads * chunk_size * retrieval_tokens * dtype_bytes

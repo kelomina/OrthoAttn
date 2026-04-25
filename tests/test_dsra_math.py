@@ -1,7 +1,6 @@
 import unittest
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from dsra_layer import DSRA_Chunk_Layer
 
 class TestDSRAMath(unittest.TestCase):
@@ -101,8 +100,6 @@ class TestDSRAMath(unittest.TestCase):
         x = torch.randn(B, T, self.dim).to(self.device)
         
         # Overwrite W_v so V is exactly equal to the first T elements of S_init
-        S_init_cloned = self.layer.S_init.clone().detach() # [K, dim]
-        
         # We need to simulate the case where V is identical to existing S
         # A simple way is to make V composed entirely of the first row of S
         const_vec = self.layer.S_init[0].unsqueeze(0).unsqueeze(0).expand(B, T, -1) # [B, T, dim]

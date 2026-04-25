@@ -21,9 +21,12 @@ dev = [
 ]
 
 [tool.ruff]
-exclude = [".env"]
+exclude = [".env", "archive"]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+per-file-ignores = { "scripts/main.py" = ["E402"], "scripts/verify_mhdsra2.py" = ["E402"] }
 
 [tool.pytest.ini_options]
 norecursedirs = [".env"]

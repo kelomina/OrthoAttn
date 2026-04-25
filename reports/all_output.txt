@@ -1,0 +1,32 @@
+
+==================================================
+Running MHDSRA2 Verification
+==================================================
+[OK] smoke test passed
+gates_mean_after_retrieval [slot, local, retrieval] per head:
+tensor([[0.3488, 0.3095, 0.3417],
+        [0.3272, 0.3215, 0.3513],
+        [0.3545, 0.3187, 0.3268],
+        [0.3566, 0.3204, 0.3229]])
+
+Estimated GPU attention working-set memory
+------------------------------------------
+chunk_input                  2.00 MB
+qkv_chunk                    6.00 MB
+chunk_output                 2.00 MB
+slots_key_value              512.00 KB
+slot_metadata_fp32           12.00 KB
+slot_logits                  2.00 MB
+topk_read_write              576.00 KB
+local_kv_cache               2.00 MB
+retrieval_kv                 512.00 KB
+retrieval_logits             2.00 MB
+page_landmarks_gpu           1.91 MB
+estimated_total              19.48 MB
+------------------------------------------
+seq_len=2,000,000, chunk=1024, dim=1024, heads=8
+Note: external exact token memory is assumed to live on CPU/NVMe; only retrieved tokens and landmarks are counted on GPU.
+
+==================================================
+All requested tests completed successfully!
+==================================================

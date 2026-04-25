@@ -1,8 +1,13 @@
 import argparse
 import contextlib
+import os
 from pathlib import Path
-import unittest
 import sys
+import unittest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.dsra.report_utils import ensure_reports_dir, write_markdown
 
@@ -142,9 +147,41 @@ def run_ablation():
     from scripts.ablation_study import main as ablation
     return ablation(reports_dir=get_reports_dir())
 
+
+def run_mhdsra2_verify():
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 Verification")
+    print("=" * 50)
+    from scripts.verify_mhdsra2 import main as verify_mhdsra2_main
+
+    return verify_mhdsra2_main([])
+
+
+
 def main():
-    parser = argparse.ArgumentParser(description="DSRA (Decoupled Sparse Routing Attention) Unified Test Runner")
-    
+    parser = argparse.ArgumentParser(
+        description="DSRA (Decoupled Sparse Routing Attention) Unified Test Runner",
+        epilog=(
+            "Environment variables:\n"
+            "  DSRA_FAST_ALL=1\n"
+            "    - Effect: when running `python main.py all`, execute a minimal suite for fast CI/regression.\n"
+            "    - Reports: still generates `reports/all_output.txt` and `reports/run_summary.md`.\n"
+            "\n"
+            "Machine-readable output (stdout):\n"
+            "  When running `python main.py report` (or `python scripts/main.py report`):\n"
+            "    DSRA_REPORT_STATUS=ok\n"
+            "    DSRA_REPORT_RUN_SUMMARY=reports/run_summary.md\n"
+            "    DSRA_REPORT_EXECUTED_SUITES=0\n"
+            "\n"
+            "  When running `python main.py all` (or `python scripts/main.py all`):\n"
+            "    DSRA_ALL_STATUS=ok\n"
+            "    DSRA_ALL_LOG=reports/all_output.txt\n"
+            "    DSRA_ALL_RUN_SUMMARY=reports/run_summary.md\n"
+            "    DSRA_ALL_EXECUTED_SUITES=<N>\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
     # Define available test suites
     test_choices = [
         'unit',         # test_dsra_math.py, test_llm_compatibility.py
@@ -156,6 +193,7 @@ def main():
         'json_retrieval',
         'json_retrieval_generalization',
         'attention_family_benchmark',
+        'mhdsra2',
         'ablation',     # ablation_study.py
         'report',
         'all'           # Run everything in sequence
@@ -175,16 +213,22 @@ def main():
     reports_dir = get_reports_dir()
     
     if args.test_name == 'all':
+        fast_all = os.environ.get("DSRA_FAST_ALL", "").strip().lower() in {"1", "true", "yes"}
         tests_to_run = [
-            ("unit", run_unittests),
-            ("benchmark", run_benchmark),
-            ("saturation", run_saturation),
-            ("recall", run_associative_recall),
-            ("needle", run_needle_in_haystack),
-            ("needle_capacity", run_needle_capacity_reports),
-            ("json_retrieval", run_json_retrieval),
-            ("ablation", run_ablation),
+            ("mhdsra2", run_mhdsra2_verify),
         ]
+        if not fast_all:
+            tests_to_run = [
+                ("unit", run_unittests),
+                ("benchmark", run_benchmark),
+                ("saturation", run_saturation),
+                ("recall", run_associative_recall),
+                ("needle", run_needle_in_haystack),
+                ("needle_capacity", run_needle_capacity_reports),
+                ("json_retrieval", run_json_retrieval),
+                ("mhdsra2", run_mhdsra2_verify),
+                ("ablation", run_ablation),
+            ]
     else:
         mapping = {
             'unit': ("unit", run_unittests),
@@ -196,6 +240,7 @@ def main():
             'json_retrieval': ("json_retrieval", run_json_retrieval),
             'json_retrieval_generalization': ("json_retrieval_generalization", run_json_retrieval_generalization),
             'attention_family_benchmark': ("attention_family_benchmark", run_attention_family_benchmark),
+            'mhdsra2': ("mhdsra2", run_mhdsra2_verify),
             'ablation': ("ablation", run_ablation),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }
@@ -215,16 +260,37 @@ def main():
                 print("All requested tests completed successfully!")
                 print("="*50)
         write_run_report(reports_dir, executed_tests)
+        run_summary = reports_dir / "run_summary.md"
+        try:
+            run_summary_display = run_summary.relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            run_summary_display = run_summary.as_posix()
+        try:
+            log_path_display = log_path.relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            log_path_display = log_path.as_posix()
+        print("DSRA_ALL_STATUS=ok")
+        print(f"DSRA_ALL_LOG={log_path_display}")
+        print(f"DSRA_ALL_RUN_SUMMARY={run_summary_display}")
+        print(f"DSRA_ALL_EXECUTED_SUITES={len(executed_tests)}")
     else:
         test_name, test_func = tests_to_run[0]
         executed_tests.append(test_name)
         test_func()
         if test_name == "report":
-            print("\nReport files generated successfully.")
-        
-        print("\n" + "="*50)
+            run_summary = reports_dir / "run_summary.md"
+            try:
+                run_summary_display = run_summary.relative_to(PROJECT_ROOT).as_posix()
+            except ValueError:
+                run_summary_display = run_summary.as_posix()
+            print("DSRA_REPORT_STATUS=ok")
+            print(f"DSRA_REPORT_RUN_SUMMARY={run_summary_display}")
+            print("DSRA_REPORT_EXECUTED_SUITES=0")
+            return
+
+        print("\n" + "=" * 50)
         print("All requested tests completed successfully!")
-        print("="*50)
+        print("=" * 50)
 
 if __name__ == '__main__':
     main()

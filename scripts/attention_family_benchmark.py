@@ -427,7 +427,6 @@ def run_attention_family_benchmark_suite(
     reports_dir = ensure_reports_dir(
         Path(reports_dir) if reports_dir is not None else Path(__file__).resolve().parents[1] / "reports"
     )
-    complexity_reports_dir = reports_dir / "attention_family_complexity"
     task_reports_dir = reports_dir / "attention_family_json_retrieval"
     complexity_results = benchmark_attention_family_complexity(
         model_types=model_types,

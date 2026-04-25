@@ -1,6 +1,5 @@
 import torch
 import time
-import math
 from src.dsra.dsra_layer import DSRA_Chunk_Layer
 import torch.nn.functional as F
 
@@ -63,11 +62,10 @@ def benchmark_dsra(seq_lengths, dim=128, K=128, kr=16, chunk_size=256, batch_siz
                         torch.cuda.synchronize()
                     end_attn = time.perf_counter()
                     attn_time = (end_attn - start_attn) * 1000
-                    attn_measured = True
                     del Q, K_attn, V_attn
                 except torch.cuda.OutOfMemoryError:
                     attn_time = float('inf')
-                except Exception as e:
+                except Exception:
                     attn_time = float('inf')
 
             if skip_attn_after_inf and not skip_attn and attn_time == float('inf'):
