@@ -51,6 +51,8 @@ def write_run_report(reports_dir, executed_tests):
             "- `reports/json_retrieval_report.json`",
             "- `reports/json_retrieval_generalization_report.md`",
             "- `reports/json_retrieval_generalization_report.json`",
+            "- `reports/mhdsra2_vs_dsra_compare.md`",
+            "- `reports/mhdsra2_vs_dsra_compare.json`",
         ]
     )
     write_markdown(reports_dir / "run_summary.md", lines)
@@ -157,6 +159,46 @@ def run_mhdsra2_verify():
     return verify_mhdsra2_main([])
 
 
+def run_mhdsra2_compare():
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 vs DSRA Comparison")
+    print("=" * 50)
+    from scripts.compare_mhdsra2_vs_dsra import main as compare_main
+
+    fast_compare = os.environ.get("DSRA_FAST_COMPARE", "").strip().lower() in {"1", "true", "yes"}
+    if fast_compare:
+        return compare_main(
+            [
+                "--seq-lengths",
+                "256",
+                "512",
+                "1024",
+                "--batch-size",
+                "1",
+                "--slots",
+                "32",
+                "64",
+                "--read-topk",
+                "4",
+                "8",
+                "--chunk-sizes",
+                "16",
+                "32",
+                "64",
+                "128",
+                "--warmup-runs",
+                "1",
+                "--repeat-runs",
+                "2",
+                "--device",
+                "cpu",
+                "--reports-dir",
+                str(get_reports_dir()),
+            ]
+        )
+    return compare_main(["--reports-dir", str(get_reports_dir())])
+
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -166,6 +208,9 @@ def main():
             "  DSRA_FAST_ALL=1\n"
             "    - Effect: when running `python main.py all`, execute a minimal suite for fast CI/regression.\n"
             "    - Reports: still generates `reports/all_output.txt` and `reports/run_summary.md`.\n"
+            "  DSRA_FAST_COMPARE=1\n"
+            "    - Effect: when running `python main.py mhdsra2_compare`, execute a smaller CPU comparison workload.\n"
+            "    - Reports: generates `reports/mhdsra2_vs_dsra_compare.json` and `.md`.\n"
             "\n"
             "Machine-readable output (stdout):\n"
             "  When running `python main.py report` (or `python scripts/main.py report`):\n"
@@ -194,6 +239,7 @@ def main():
         'json_retrieval_generalization',
         'attention_family_benchmark',
         'mhdsra2',
+        'mhdsra2_compare',
         'ablation',     # ablation_study.py
         'report',
         'all'           # Run everything in sequence
@@ -227,6 +273,7 @@ def main():
                 ("needle_capacity", run_needle_capacity_reports),
                 ("json_retrieval", run_json_retrieval),
                 ("mhdsra2", run_mhdsra2_verify),
+                ("mhdsra2_compare", run_mhdsra2_compare),
                 ("ablation", run_ablation),
             ]
     else:
@@ -241,6 +288,7 @@ def main():
             'json_retrieval_generalization': ("json_retrieval_generalization", run_json_retrieval_generalization),
             'attention_family_benchmark': ("attention_family_benchmark", run_attention_family_benchmark),
             'mhdsra2': ("mhdsra2", run_mhdsra2_verify),
+            'mhdsra2_compare': ("mhdsra2_compare", run_mhdsra2_compare),
             'ablation': ("ablation", run_ablation),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }
