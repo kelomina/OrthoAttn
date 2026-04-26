@@ -803,6 +803,275 @@ def save_reports(payload: dict, reports_dir: Path) -> tuple[Path, Path]:
     return json_path, md_path
 
 
+def build_benchmark_comparison_row(
+    suite: str,
+    task: str,
+    metric: str,
+    dsra_value: float | None,
+    mhdsra2_value: float | None,
+    split: str = "overall",
+    higher_is_better: bool = True,
+    notes: str = "",
+    metadata: dict | None = None,
+) -> dict:
+    """Normalize one DSRA-vs-MHDSRA2 benchmark metric into a unified row.
+
+    中文说明:
+    - 调用方 / Called by: `build_benchmark_payload`,
+      `scripts.next_round_benchmark_runner.run_next_round_benchmark`
+    - 调用对象 / Calls: 无
+    - 作用 / Purpose: 把不同任务口径的指标统一为一条可排序、可汇总、可落表的对比记录
+    - 变量 / Variables:
+      `suite/task/split/metric` 描述指标来源, `dsra_value/mhdsra2_value` 为对比数值,
+      `higher_is_better` 控制 winner 判定方向, `metadata` 存储补充上下文
+    - 接入 / Integration: 后续新增 benchmark 只需继续产出同结构 row 即可复用摘要和报告
+    - 错误处理 / Error handling: 任一数值缺失时 winner 标记为 `missing`，差值与比值设为 `None`
+    - 关键词 / Keywords:
+      benchmark|row|compare|metric|summary|report|normalize|dsra|mhdsra2|统一表格
+    """
+    row = {
+        "suite": suite,
+        "task": task,
+        "split": split,
+        "metric": metric,
+        "higher_is_better": bool(higher_is_better),
+        "dsra": None if dsra_value is None else float(dsra_value),
+        "mhdsra2": None if mhdsra2_value is None else float(mhdsra2_value),
+        "delta": None,
+        "ratio": None,
+        "winner": "missing",
+        "notes": notes,
+        "metadata": metadata or {},
+    }
+    if row["dsra"] is None or row["mhdsra2"] is None:
+        return row
+
+    delta = row["mhdsra2"] - row["dsra"]
+    row["delta"] = float(delta)
+    if row["dsra"] != 0.0:
+        row["ratio"] = float(row["mhdsra2"] / row["dsra"])
+
+    if abs(delta) <= 1e-12:
+        row["winner"] = "tie"
+    elif higher_is_better:
+        row["winner"] = "mhdsra2" if delta > 0 else "dsra"
+    else:
+        row["winner"] = "mhdsra2" if delta < 0 else "dsra"
+    return row
+
+
+def build_benchmark_summary(rows: list[dict]) -> dict:
+    """Aggregate unified benchmark rows into suite-level and overall summaries.
+
+    中文说明:
+    - 调用方 / Called by: `build_benchmark_payload`
+    - 调用对象 / Calls: `_average`, `sorted`
+    - 作用 / Purpose: 生成统一 benchmark 的总计、分套件胜负数与最佳/最弱指标摘要
+    - 变量 / Variables:
+      `rows` 为标准化对比行, `valid_rows` 为数值完整记录, `suite_breakdown` 为分任务聚合结果
+    - 接入 / Integration: markdown/json 报告与后续可视化都可直接消费本结构
+    - 错误处理 / Error handling: 空列表时返回结构化空摘要
+    - 关键词 / Keywords:
+      benchmark|summary|aggregate|suite|winner|delta|ratio|report|compare|汇总
+    """
+    if not rows:
+        return {
+            "overall": {
+                "total_rows": 0,
+                "valid_rows": 0,
+                "mhdsra2_wins": 0,
+                "dsra_wins": 0,
+                "ties": 0,
+                "avg_delta": 0.0,
+                "avg_ratio": 0.0,
+            },
+            "suite_breakdown": [],
+            "best_mhdsra2_row": None,
+            "worst_mhdsra2_row": None,
+        }
+
+    valid_rows = [row for row in rows if row["delta"] is not None]
+    mhdsra2_wins = [row for row in valid_rows if row["winner"] == "mhdsra2"]
+    dsra_wins = [row for row in valid_rows if row["winner"] == "dsra"]
+    ties = [row for row in valid_rows if row["winner"] == "tie"]
+    ratio_rows = [row["ratio"] for row in valid_rows if row["ratio"] is not None]
+
+    suite_breakdown = []
+    for suite in sorted({row["suite"] for row in rows}):
+        suite_rows = [row for row in valid_rows if row["suite"] == suite]
+        suite_breakdown.append(
+            {
+                "suite": suite,
+                "rows": len(suite_rows),
+                "mhdsra2_wins": sum(1 for row in suite_rows if row["winner"] == "mhdsra2"),
+                "dsra_wins": sum(1 for row in suite_rows if row["winner"] == "dsra"),
+                "ties": sum(1 for row in suite_rows if row["winner"] == "tie"),
+                "avg_delta": _average([row["delta"] for row in suite_rows]),
+                "avg_ratio": _average(
+                    [row["ratio"] for row in suite_rows if row["ratio"] is not None]
+                ),
+            }
+        )
+
+    def _rank_score(row: dict) -> float:
+        return row["delta"] if row["higher_is_better"] else -row["delta"]
+
+    ranked = sorted(valid_rows, key=_rank_score, reverse=True)
+    best_row = ranked[0] if ranked else None
+    worst_row = ranked[-1] if ranked else None
+
+    return {
+        "overall": {
+            "total_rows": len(rows),
+            "valid_rows": len(valid_rows),
+            "mhdsra2_wins": len(mhdsra2_wins),
+            "dsra_wins": len(dsra_wins),
+            "ties": len(ties),
+            "avg_delta": _average([row["delta"] for row in valid_rows]),
+            "avg_ratio": _average(ratio_rows),
+        },
+        "suite_breakdown": suite_breakdown,
+        "best_mhdsra2_row": best_row,
+        "worst_mhdsra2_row": worst_row,
+    }
+
+
+def build_benchmark_payload(config: dict, sections: list[dict]) -> dict:
+    """Build the next-round benchmark payload from sectioned rows.
+
+    中文说明:
+    - 调用方 / Called by: `scripts.next_round_benchmark_runner.run_next_round_benchmark`
+    - 调用对象 / Calls: `build_benchmark_summary`
+    - 作用 / Purpose: 把多个任务分节结果拍平成统一结构，便于落 JSON/Markdown 报告
+    - 变量 / Variables:
+      `config` 为 runner 配置, `sections` 为每个 benchmark 套件的标题、说明与 rows
+    - 接入 / Integration: 统一 benchmark runner 应优先调用本函数，而不是各自手写输出结构
+    - 错误处理 / Error handling: 缺失 `rows` 的 section 按空列表处理
+    - 关键词 / Keywords:
+      payload|benchmark|sections|rows|summary|report|runner|compare|json|统一结构
+    """
+    rows = []
+    normalized_sections = []
+    for section in sections:
+        section_rows = list(section.get("rows", []))
+        rows.extend(section_rows)
+        normalized_sections.append(
+            {
+                "title": section["title"],
+                "description": section.get("description", ""),
+                "rows": section_rows,
+            }
+        )
+    return {
+        "config": config,
+        "sections": normalized_sections,
+        "rows": rows,
+        "summary": build_benchmark_summary(rows),
+    }
+
+
+def save_benchmark_reports(
+    payload: dict,
+    reports_dir: Path,
+    file_stem: str = "mhdsra2_vs_dsra_next_round_benchmark",
+) -> tuple[Path, Path]:
+    """Persist the unified next-round benchmark report artifacts.
+
+    中文说明:
+    - 调用方 / Called by: `scripts.next_round_benchmark_runner.main`
+    - 调用对象 / Calls: `ensure_reports_dir`, `write_json`, `write_markdown`
+    - 作用 / Purpose: 输出统一对比表和汇总报告，避免重 benchmark runner 自己维护模板
+    - 变量 / Variables:
+      `payload` 为 `build_benchmark_payload` 返回值, `file_stem` 控制产物前缀
+    - 接入 / Integration: 其他跨任务对比 runner 也可复用本报告函数
+    - 错误处理 / Error handling: 自动创建 `reports/`，文件写入异常直接上抛
+    - 关键词 / Keywords:
+      save_reports|benchmark|markdown|json|table|summary|runner|artifact|reports|统一报告
+    """
+    reports_dir = ensure_reports_dir(reports_dir)
+    json_path = reports_dir / f"{file_stem}.json"
+    md_path = reports_dir / f"{file_stem}.md"
+    write_json(json_path, payload)
+
+    summary = payload["summary"]
+    lines = [
+        "# MHDSRA2 vs DSRA Next-Round Benchmark",
+        "",
+        "## Config",
+    ]
+    for key, value in payload["config"].items():
+        lines.append(f"- {key}: `{value}`")
+
+    lines.extend(
+        [
+            "",
+            "## Summary",
+            f"- total rows: `{summary['overall']['total_rows']}`",
+            f"- valid rows: `{summary['overall']['valid_rows']}`",
+            f"- MHDSRA2 wins: `{summary['overall']['mhdsra2_wins']}`",
+            f"- DSRA wins: `{summary['overall']['dsra_wins']}`",
+            f"- ties: `{summary['overall']['ties']}`",
+            f"- average delta (MHDSRA2-DSRA): `{summary['overall']['avg_delta']:.6f}`",
+            f"- average ratio (MHDSRA2/DSRA): `{summary['overall']['avg_ratio']:.6f}`",
+            "",
+            "## Suite Breakdown",
+            "",
+            "| Suite | Rows | MHDSRA2 Wins | DSRA Wins | Ties | Avg Delta | Avg Ratio |",
+            "|---|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for item in summary["suite_breakdown"]:
+        lines.append(
+            "| {suite} | {rows} | {mh_wins} | {dsra_wins} | {ties} | {avg_delta:.6f} | {avg_ratio:.6f} |".format(
+                suite=item["suite"],
+                rows=item["rows"],
+                mh_wins=item["mhdsra2_wins"],
+                dsra_wins=item["dsra_wins"],
+                ties=item["ties"],
+                avg_delta=item["avg_delta"],
+                avg_ratio=item["avg_ratio"],
+            )
+        )
+
+    for section in payload["sections"]:
+        lines.extend(
+            [
+                "",
+                f"## {section['title']}",
+            ]
+        )
+        if section["description"]:
+            lines.extend(["", section["description"]])
+        lines.extend(
+            [
+                "",
+                "| Task | Split | Metric | DSRA | MHDSRA2 | Delta | Ratio | Winner | Notes |",
+                "|---|---|---|---:|---:|---:|---:|---|---|",
+            ]
+        )
+        for row in section["rows"]:
+            dsra_display = "NA" if row["dsra"] is None else f"{row['dsra']:.6f}"
+            mh_display = "NA" if row["mhdsra2"] is None else f"{row['mhdsra2']:.6f}"
+            delta_display = "NA" if row["delta"] is None else f"{row['delta']:.6f}"
+            ratio_display = "NA" if row["ratio"] is None else f"{row['ratio']:.6f}"
+            lines.append(
+                "| {task} | {split} | {metric} | {dsra} | {mh} | {delta} | {ratio} | {winner} | {notes} |".format(
+                    task=row["task"],
+                    split=row["split"],
+                    metric=row["metric"],
+                    dsra=dsra_display,
+                    mh=mh_display,
+                    delta=delta_display,
+                    ratio=ratio_display,
+                    winner=row["winner"],
+                    notes=row["notes"] or "",
+                )
+            )
+
+    write_markdown(md_path, lines)
+    return json_path, md_path
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build CLI parser for the comparison runner.
 

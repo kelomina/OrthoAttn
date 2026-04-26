@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-from src.dsra.dsra_model import MultiLayerDSRAModel
+from src.dsra.dsra_model import MultiLayerDSRAModel, MultiLayerMHDSRA2Model
 from src.dsra.report_utils import build_capacity_markdown, ensure_reports_dir, write_json, write_markdown
 
 DEFAULT_SEQ_LENGTHS = [
@@ -96,20 +96,61 @@ def extract_query_targets(X, Y, logits):
     return logits_target, targets
 
 
-def build_niah_model(device, vocab_size=100, dim=64, num_layers=2, K=64, kr=8, chunk_size=256):
-    return MultiLayerDSRAModel(
-        vocab_size, dim, num_layers, K, kr, chunk_size,
-        use_orthogonal_update=True, use_bypass=True
-    ).to(device)
+def build_niah_model(
+    device,
+    vocab_size=100,
+    dim=64,
+    num_layers=2,
+    K=64,
+    kr=8,
+    chunk_size=256,
+    model_type="dsra",
+):
+    """Build the long-context Needle-In-A-Haystack benchmark model.
+
+    中文说明:
+    - 调用方 / Called by: `run_single_niah_test`, `run_single_niah_capacity_test`,
+      `scripts.next_round_benchmark_runner.run_next_round_benchmark`
+    - 调用对象 / Calls: `MultiLayerDSRAModel`, `MultiLayerMHDSRA2Model`
+    - 作用 / Purpose: 统一构造 NIAH 基准模型，使 DSRA 与 MHDSRA2 共享相同训练/评测口径
+    - 变量 / Variables:
+      `model_type` 支持 `dsra/mhdsra2`, 其余参数为维度、层数、槽位与 chunk 配置
+    - 接入 / Integration: 新增长上下文模型时优先扩展本函数，避免分散在多个训练入口
+    - 错误处理 / Error handling: 未知 `model_type` 抛出 `ValueError`
+    - 关键词 / Keywords:
+      niah|build_model|dsra|mhdsra2|factory|benchmark|needle|haystack|long_context|构建
+    """
+    if model_type == "dsra":
+        return MultiLayerDSRAModel(
+            vocab_size, dim, num_layers, K, kr, chunk_size,
+            use_orthogonal_update=True, use_bypass=True
+        ).to(device)
+    if model_type == "mhdsra2":
+        return MultiLayerMHDSRA2Model(
+            vocab_size, dim, num_layers, K, kr, chunk_size
+        ).to(device)
+    raise ValueError(f"Unsupported model_type: {model_type}")
 
 
-def run_single_niah_test(seq_len, device, vocab_size=100, dim=64, num_layers=2, K=64, kr=8):
+def run_single_niah_test(
+    seq_len,
+    device,
+    vocab_size=100,
+    dim=64,
+    num_layers=2,
+    K=64,
+    kr=8,
+    model_type="dsra",
+):
     runtime_cfg = get_niah_runtime_config(seq_len)
     batch_size = runtime_cfg["batch_size"]
     epochs = runtime_cfg["epochs"]
     chunk_size = runtime_cfg["chunk_size"]
 
-    print(f"\n--- Running Needle-In-A-Haystack Test ({seq_len} tokens) on {device} ---")
+    print(
+        f"\n--- Running Needle-In-A-Haystack Test ({seq_len} tokens) on {device} "
+        f"| model_type={model_type} ---"
+    )
     print(
         f"Config | batch_size={batch_size} | epochs={epochs} | chunk_size={chunk_size}"
     )
@@ -122,6 +163,7 @@ def run_single_niah_test(seq_len, device, vocab_size=100, dim=64, num_layers=2, 
         K=K,
         kr=kr,
         chunk_size=chunk_size,
+        model_type=model_type,
     )
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -292,10 +334,13 @@ def save_niah_capacity_reports(forward_results, train_results, reports_dir):
     )
 
 
-def run_niah_test(seq_lengths=None):
+def run_niah_test(seq_lengths=None, model_type="dsra"):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     seq_lengths = seq_lengths or DEFAULT_SEQ_LENGTHS
-    print(f"--- Running Needle-In-A-Haystack Long-Context Sweep on {device} ---")
+    print(
+        f"--- Running Needle-In-A-Haystack Long-Context Sweep on {device} "
+        f"| model_type={model_type} ---"
+    )
 
     vocab_size = 100
     dim = 64
@@ -314,6 +359,7 @@ def run_niah_test(seq_lengths=None):
                 num_layers=num_layers,
                 K=K,
                 kr=kr,
+                model_type=model_type,
             )
             results[seq_len] = best_acc
         except torch.cuda.OutOfMemoryError:

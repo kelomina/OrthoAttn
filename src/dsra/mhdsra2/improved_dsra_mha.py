@@ -351,10 +351,12 @@ class MultiHeadDSRA2(nn.Module):
 
         gate_logits = self.fuse_gate(q)
         gates = torch.sigmoid(gate_logits)
+        gate_mask = torch.ones_like(gates)
         if not cfg.use_local or cfg.local_window <= 0:
-            gates[..., 1] = 0.0
+            gate_mask[..., 1] = 0.0
         if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
-            gates[..., 2] = 0.0
+            gate_mask[..., 2] = 0.0
+        gates = gates * gate_mask
         gates = gates / gates.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
 
         y_heads = (
@@ -378,6 +380,62 @@ class MultiHeadDSRA2(nn.Module):
             }
             return y, next_state, aux
         return y, next_state
+
+    def forward_step(
+        self,
+        x_t: torch.Tensor,
+        S_prev: Optional[MHDSRA2State] = None,
+        kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        retrieved_k: Optional[torch.Tensor] = None,
+        retrieved_v: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, MHDSRA2State, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]]:
+        """Run one autoregressive decoding step with DSRA-compatible outputs.
+
+        中文说明:
+        - 调用方 / Called by: `MHDSRA2CompatChunkLayer.forward_step`,
+          `scripts.json_retrieval_test.greedy_generate_answer`,
+          `scripts.json_retrieval_test.rollout_generation_logits`
+        - 调用对象 / Calls: `init_state`, `forward`
+        - 作用 / Purpose: 为 MHDSRA2 提供逐 token 解码接口，兼容现有 DSRA generation 评测口径
+        - 变量 / Variables:
+          `x_t` 当前步输入 `[B, 1, D]`, `S_prev` 上一步状态,
+          `kv_cache` 为兼容旧接口传入的局部缓存 `(local_k, local_v)`,
+          `retrieved_k/retrieved_v` 为可选外部检索记忆
+        - 接入 / Integration: 现有按 `model.dsra.forward_step(...)` 调用的脚本可直接接入 MHDSRA2
+        - 错误处理 / Error handling:
+          当输入不是三维或步长不为 `1` 时抛出 `ValueError`；缺失状态时自动初始化
+        - 关键词 / Keywords:
+          forward_step|generation|autoregressive|decode|streaming|kv_cache|state|mhdsra2|compat|逐步解码
+        """
+        if x_t.dim() != 3:
+            raise ValueError(f"expected x_t rank=3, got shape={tuple(x_t.shape)}")
+        if x_t.shape[1] != 1:
+            raise ValueError(
+                f"forward_step expects one token, got sequence length={x_t.shape[1]}"
+            )
+
+        state = S_prev
+        if state is None:
+            state = self.init_state(x_t.shape[0], device=x_t.device, dtype=x_t.dtype)
+
+        if (
+            kv_cache is not None
+            and state.local_k is None
+            and state.local_v is None
+        ):
+            cached_k, cached_v = kv_cache
+            state.local_k = cached_k
+            state.local_v = cached_v
+
+        out_t, next_state = self.forward(
+            x_t,
+            state=state,
+            retrieved_k=retrieved_k,
+            retrieved_v=retrieved_v,
+            return_aux=False,
+        )
+        next_kv_cache = (next_state.local_k, next_state.local_v)
+        return out_t, next_state, next_kv_cache
 
     def diversity_loss(self, state: MHDSRA2State) -> torch.Tensor:
         """Optional training regularizer; not needed for inference.

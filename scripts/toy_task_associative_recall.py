@@ -7,6 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from src.dsra.dsra_layer import DSRA_Chunk_Layer
+from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
 
 class LocalContextTokenModel(nn.Module):
     def __init__(self, vocab_size, dim, chunk_size=256, local_context_size=4, local_context_mode='sum'):
@@ -79,6 +80,68 @@ def _forward_chunked_hidden(model, x):
     return model.norm(out)
 
 
+class MHDSRA2CompatChunkLayer(nn.Module):
+    def __init__(self, dim, K=128, kr=8, local_window=256):
+        super().__init__()
+        self.layer = MultiHeadDSRA2(
+            MHDSRA2Config(
+                dim=dim,
+                heads=max(1, min(8, dim // 16 if dim >= 16 else 1)),
+                slots=K,
+                read_topk=max(1, min(kr, K)),
+                write_topk=max(1, min(kr, K)),
+                local_window=max(1, int(local_window)),
+                use_local=True,
+                use_retrieval=True,
+                detach_state=True,
+            )
+        )
+
+    def forward(self, chunk, S_prev=None, bypass_kv=None, S_time_prev=None, chunk_idx=None):
+        """Expose DSRA-style chunk forward over MHDSRA2.
+
+        中文说明:
+        - 调用方 / Called by: `_forward_chunked_hidden`,
+          `scripts.json_retrieval_test.greedy_generate_answer`
+        - 调用对象 / Calls: `MultiHeadDSRA2.forward`
+        - 作用 / Purpose: 把 MHDSRA2 适配为 DSRA 现有四元组接口，避免改重现有评测脚本
+        - 变量 / Variables:
+          `chunk` 当前 chunk hidden, `S_prev` 为 `MHDSRA2State`,
+          `bypass_kv` 为兼容字段，会映射到 `local_k/local_v`
+        - 接入 / Integration: 可挂到 `model.dsra` 上复用现有 chunked forward/generation 逻辑
+        - 错误处理 / Error handling: 底层张量形状异常直接向上抛出
+        - 关键词 / Keywords:
+          compat|chunk|forward|mhdsra2|dsra|adapter|state|local_cache|generation|兼容
+        """
+        if (
+            S_prev is not None
+            and bypass_kv is not None
+            and S_prev.local_k is None
+            and S_prev.local_v is None
+        ):
+            S_prev.local_k, S_prev.local_v = bypass_kv
+        out_chunk, next_state = self.layer(chunk, state=S_prev)
+        return out_chunk, next_state, (next_state.local_k, next_state.local_v), None
+
+    def forward_step(self, step_input, S_prev=None, kv_cache=None):
+        """Expose DSRA-style autoregressive step API over MHDSRA2.
+
+        中文说明:
+        - 调用方 / Called by: `scripts.json_retrieval_test.greedy_generate_answer`,
+          `scripts.json_retrieval_test.rollout_generation_logits`
+        - 调用对象 / Calls: `MultiHeadDSRA2.forward_step`
+        - 作用 / Purpose: 让现有 generation 评测无需分支即可调用 MHDSRA2
+        - 变量 / Variables:
+          `step_input` 当前步 embedding, `S_prev` 为 MHDSRA2 流式状态,
+          `kv_cache` 为兼容旧接口传入的局部 KV 缓存
+        - 接入 / Integration: 与 `DSRA_Chunk_Layer.forward_step` 保持同签名
+        - 错误处理 / Error handling: 依赖底层 `forward_step` 的输入维度校验
+        - 关键词 / Keywords:
+          forward_step|generation|compat|mhdsra2|decode|autoregressive|kv_cache|adapter|token|兼容
+        """
+        return self.layer.forward_step(step_input, S_prev=S_prev, kv_cache=kv_cache)
+
+
 class DSRAModel(LocalContextTokenModel):
     def __init__(
         self,
@@ -112,6 +175,53 @@ class DSRAModel(LocalContextTokenModel):
         self.out_proj = nn.Linear(dim, vocab_size)
 
     def forward(self, x, return_hidden=False):
+        out = _forward_chunked_hidden(self, x)
+        logits = self.out_proj(out)
+
+        if return_hidden:
+            return logits, out
+        return logits
+
+
+class MHDSRA2Model(LocalContextTokenModel):
+    def __init__(
+        self,
+        vocab_size,
+        dim,
+        K=128,
+        kr=8,
+        chunk_size=256,
+        local_context_size=4,
+        local_context_mode='sum',
+    ):
+        super().__init__(
+            vocab_size=vocab_size,
+            dim=dim,
+            chunk_size=chunk_size,
+            local_context_size=local_context_size,
+            local_context_mode=local_context_mode,
+        )
+        local_window = max(chunk_size, local_context_size)
+        self.dsra = MHDSRA2CompatChunkLayer(dim, K=K, kr=kr, local_window=local_window)
+        self.norm = nn.LayerNorm(dim)
+        self.out_proj = nn.Linear(dim, vocab_size)
+
+    def forward(self, x, return_hidden=False):
+        """Run chunked MHDSRA2 token modeling with DSRA-compatible scaffolding.
+
+        中文说明:
+        - 调用方 / Called by: `scripts.json_retrieval_test.evaluate_teacher_forced`,
+          `scripts.json_retrieval_test.evaluate_generation`
+        - 调用对象 / Calls: `_forward_chunked_hidden`, `nn.Linear`
+        - 作用 / Purpose: 在保留 `LocalContextTokenModel` 接口的前提下接入 MHDSRA2 检索任务模型
+        - 变量 / Variables:
+          `x` token ids, `out` hidden states, `logits` 词表 logits,
+          `return_hidden` 控制是否返回隐藏状态
+        - 接入 / Integration: 由 `build_retrieval_model(model_type="mhdsra2")` 创建
+        - 错误处理 / Error handling: 继承 chunk 前向与线性层的异常抛出行为
+        - 关键词 / Keywords:
+          mhdsra2|retrieval_model|forward|token_model|chunked|hidden|logits|adapter|benchmark|接入
+        """
         out = _forward_chunked_hidden(self, x)
         logits = self.out_proj(out)
 

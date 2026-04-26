@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from .dsra_layer import DSRA_Chunk_Layer
+from .mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
 
 class MultiLayerDSRAModel(nn.Module):
     def __init__(self, vocab_size, dim, num_layers=2, K=128, kr=16, chunk_size=256, use_orthogonal_update=True, use_bypass=True, pe_mode='none'):
@@ -76,4 +77,70 @@ class MultiLayerDSRAModel(nn.Module):
         out = self.final_norm(out)
         logits = self.out_proj(out)
         
+        return logits
+
+
+class MultiLayerMHDSRA2Model(nn.Module):
+    def __init__(self, vocab_size, dim, num_layers=2, K=128, kr=16, chunk_size=256):
+        super().__init__()
+        heads = max(1, min(8, dim // 16 if dim >= 16 else 1))
+        self.dim = dim
+        self.num_layers = num_layers
+        self.chunk_size = chunk_size
+        self.embedding = nn.Embedding(vocab_size, dim)
+        self.layers = nn.ModuleList(
+            [
+                MultiHeadDSRA2(
+                    MHDSRA2Config(
+                        dim=dim,
+                        heads=heads,
+                        slots=K,
+                        read_topk=max(1, min(kr, K)),
+                        write_topk=max(1, min(kr, K)),
+                        local_window=max(1, int(chunk_size)),
+                        use_local=True,
+                        use_retrieval=False,
+                        detach_state=True,
+                    )
+                )
+                for _ in range(num_layers)
+            ]
+        )
+        self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(num_layers)])
+        self.final_norm = nn.LayerNorm(dim)
+        self.out_proj = nn.Linear(dim, vocab_size)
+
+    def forward(self, x):
+        """Run a stacked MHDSRA2 token model over long sequences.
+
+        中文说明:
+        - 调用方 / Called by: `scripts.needle_in_haystack_test.build_niah_model`
+        - 调用对象 / Calls: `nn.Embedding`, `MultiHeadDSRA2.forward`, `nn.LayerNorm`, `nn.Linear`
+        - 作用 / Purpose: 为 Needle-In-A-Haystack 基准提供与 `MultiLayerDSRAModel` 对齐的多层 MHDSRA2 模型
+        - 变量 / Variables:
+          `x` 为 token ids, `hidden` 为嵌入后的序列, `chunk` 为当前分块,
+          `state_list` 为各层流式状态
+        - 接入 / Integration: 通过 `build_niah_model(model_type="mhdsra2")` 使用
+        - 错误处理 / Error handling: 依赖底层层配置与张量形状检查；异常直接向上抛出
+        - 关键词 / Keywords:
+          multilayer|mhdsra2|needle|forward|chunked|streaming|stack|logits|benchmark|长序列
+        """
+        _, seq_len = x.shape
+        hidden = self.embedding(x)
+        state_list = [None] * self.num_layers
+        out_list = []
+
+        for start in range(0, seq_len, self.chunk_size):
+            chunk = hidden[:, start:start + self.chunk_size, :]
+            for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
+                residual = chunk
+                chunk_normed = norm(chunk)
+                out_chunk, next_state = layer(chunk_normed, state=state_list[layer_idx])
+                state_list[layer_idx] = next_state
+                chunk = residual + out_chunk
+            out_list.append(chunk)
+
+        out = torch.cat(out_list, dim=1)
+        out = self.final_norm(out)
+        logits = self.out_proj(out)
         return logits

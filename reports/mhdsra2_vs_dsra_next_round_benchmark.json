@@ -1,0 +1,425 @@
+{
+  "config": {
+    "seed": 7,
+    "niah_seq_lengths": [
+      8192,
+      16384
+    ],
+    "niah_dim": 64,
+    "niah_num_layers": 2,
+    "niah_slots": 64,
+    "niah_read_topk": 8,
+    "json_epochs": 80,
+    "json_dim": 128,
+    "json_slots": 128,
+    "json_read_topk": 32,
+    "json_chunk_size": 256,
+    "json_lr": 0.0005,
+    "json_generalization_score_mode": "teacher_forced",
+    "json_local_context_size": 4,
+    "json_local_context_mode": "concat"
+  },
+  "sections": [
+    {
+      "title": "Needle In Haystack",
+      "description": "Uses the `run_single_niah_test()` best accuracy criterion from `needle_in_haystack_test.py`.",
+      "rows": [
+        {
+          "suite": "needle_in_haystack",
+          "task": "seq_len=8192",
+          "split": "overall",
+          "metric": "best_accuracy",
+          "higher_is_better": true,
+          "dsra": 1.0,
+          "mhdsra2": 1.0,
+          "delta": 0.0,
+          "ratio": 1.0,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "seq_len": 8192,
+            "device": "cuda:0"
+          }
+        },
+        {
+          "suite": "needle_in_haystack",
+          "task": "seq_len=16384",
+          "split": "overall",
+          "metric": "best_accuracy",
+          "higher_is_better": true,
+          "dsra": 1.0,
+          "mhdsra2": 1.0,
+          "delta": 0.0,
+          "ratio": 1.0,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "seq_len": 16384,
+            "device": "cuda:0"
+          }
+        }
+      ]
+    },
+    {
+      "title": "JSON Retrieval Generalization",
+      "description": "Uses pooled validation/test accuracy metrics from `run_json_retrieval_generalization_test()` covering teacher-forced and generation evaluation.",
+      "rows": [
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "validation",
+          "metric": "teacher_forced_exact_match_rate",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 0.0,
+          "delta": 0.0,
+          "ratio": null,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "metric_key": "teacher_forced_exact_match_rate"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "validation",
+          "metric": "teacher_forced_mean_sequence_accuracy",
+          "higher_is_better": true,
+          "dsra": 0.44249458606881265,
+          "mhdsra2": 0.6808176213434349,
+          "delta": 0.23832303527462229,
+          "ratio": 1.538589720140803,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "metric_key": "teacher_forced_mean_sequence_accuracy"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "validation",
+          "metric": "generation_exact_match_rate",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 0.0,
+          "delta": 0.0,
+          "ratio": null,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "metric_key": "generation_exact_match_rate"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "validation",
+          "metric": "generation_mean_sequence_accuracy",
+          "higher_is_better": true,
+          "dsra": 0.07549850293673115,
+          "mhdsra2": 0.07763856941237415,
+          "delta": 0.002140066475643007,
+          "ratio": 1.0283458133923056,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "metric_key": "generation_mean_sequence_accuracy"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "test",
+          "metric": "teacher_forced_exact_match_rate",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 0.0,
+          "delta": 0.0,
+          "ratio": null,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "metric_key": "teacher_forced_exact_match_rate"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "test",
+          "metric": "teacher_forced_mean_sequence_accuracy",
+          "higher_is_better": true,
+          "dsra": 0.4327179176755448,
+          "mhdsra2": 0.6287147486113089,
+          "delta": 0.19599683093576414,
+          "ratio": 1.4529436451085995,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "metric_key": "teacher_forced_mean_sequence_accuracy"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "test",
+          "metric": "generation_exact_match_rate",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 0.0,
+          "delta": 0.0,
+          "ratio": null,
+          "winner": "tie",
+          "notes": "",
+          "metadata": {
+            "metric_key": "generation_exact_match_rate"
+          }
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "test",
+          "metric": "generation_mean_sequence_accuracy",
+          "higher_is_better": true,
+          "dsra": 0.08683829463988986,
+          "mhdsra2": 0.07162965468673345,
+          "delta": -0.015208639953156411,
+          "ratio": 0.8248625215842251,
+          "winner": "dsra",
+          "notes": "",
+          "metadata": {
+            "metric_key": "generation_mean_sequence_accuracy"
+          }
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "suite": "needle_in_haystack",
+      "task": "seq_len=8192",
+      "split": "overall",
+      "metric": "best_accuracy",
+      "higher_is_better": true,
+      "dsra": 1.0,
+      "mhdsra2": 1.0,
+      "delta": 0.0,
+      "ratio": 1.0,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "seq_len": 8192,
+        "device": "cuda:0"
+      }
+    },
+    {
+      "suite": "needle_in_haystack",
+      "task": "seq_len=16384",
+      "split": "overall",
+      "metric": "best_accuracy",
+      "higher_is_better": true,
+      "dsra": 1.0,
+      "mhdsra2": 1.0,
+      "delta": 0.0,
+      "ratio": 1.0,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "seq_len": 16384,
+        "device": "cuda:0"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "validation",
+      "metric": "teacher_forced_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.0,
+      "delta": 0.0,
+      "ratio": null,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "metric_key": "teacher_forced_exact_match_rate"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "validation",
+      "metric": "teacher_forced_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.44249458606881265,
+      "mhdsra2": 0.6808176213434349,
+      "delta": 0.23832303527462229,
+      "ratio": 1.538589720140803,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "metric_key": "teacher_forced_mean_sequence_accuracy"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "validation",
+      "metric": "generation_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.0,
+      "delta": 0.0,
+      "ratio": null,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "metric_key": "generation_exact_match_rate"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "validation",
+      "metric": "generation_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.07549850293673115,
+      "mhdsra2": 0.07763856941237415,
+      "delta": 0.002140066475643007,
+      "ratio": 1.0283458133923056,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "metric_key": "generation_mean_sequence_accuracy"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "teacher_forced_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.0,
+      "delta": 0.0,
+      "ratio": null,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "metric_key": "teacher_forced_exact_match_rate"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "teacher_forced_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.4327179176755448,
+      "mhdsra2": 0.6287147486113089,
+      "delta": 0.19599683093576414,
+      "ratio": 1.4529436451085995,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "metric_key": "teacher_forced_mean_sequence_accuracy"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "generation_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.0,
+      "delta": 0.0,
+      "ratio": null,
+      "winner": "tie",
+      "notes": "",
+      "metadata": {
+        "metric_key": "generation_exact_match_rate"
+      }
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "generation_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.08683829463988986,
+      "mhdsra2": 0.07162965468673345,
+      "delta": -0.015208639953156411,
+      "ratio": 0.8248625215842251,
+      "winner": "dsra",
+      "notes": "",
+      "metadata": {
+        "metric_key": "generation_mean_sequence_accuracy"
+      }
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_rows": 10,
+      "valid_rows": 10,
+      "mhdsra2_wins": 3,
+      "dsra_wins": 1,
+      "ties": 6,
+      "avg_delta": 0.04212512927328731,
+      "avg_ratio": 1.1407902833709889
+    },
+    "suite_breakdown": [
+      {
+        "suite": "json_retrieval_generalization",
+        "rows": 8,
+        "mhdsra2_wins": 3,
+        "dsra_wins": 1,
+        "ties": 4,
+        "avg_delta": 0.05265641159160913,
+        "avg_ratio": 1.2111854250564833
+      },
+      {
+        "suite": "needle_in_haystack",
+        "rows": 2,
+        "mhdsra2_wins": 0,
+        "dsra_wins": 0,
+        "ties": 2,
+        "avg_delta": 0.0,
+        "avg_ratio": 1.0
+      }
+    ],
+    "best_mhdsra2_row": {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "validation",
+      "metric": "teacher_forced_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.44249458606881265,
+      "mhdsra2": 0.6808176213434349,
+      "delta": 0.23832303527462229,
+      "ratio": 1.538589720140803,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "metric_key": "teacher_forced_mean_sequence_accuracy"
+      }
+    },
+    "worst_mhdsra2_row": {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "generation_mean_sequence_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.08683829463988986,
+      "mhdsra2": 0.07162965468673345,
+      "delta": -0.015208639953156411,
+      "ratio": 0.8248625215842251,
+      "winner": "dsra",
+      "notes": "",
+      "metadata": {
+        "metric_key": "generation_mean_sequence_accuracy"
+      }
+    }
+  }
+}

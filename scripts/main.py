@@ -53,6 +53,8 @@ def write_run_report(reports_dir, executed_tests):
             "- `reports/json_retrieval_generalization_report.json`",
             "- `reports/mhdsra2_vs_dsra_compare.md`",
             "- `reports/mhdsra2_vs_dsra_compare.json`",
+            "- `reports/mhdsra2_vs_dsra_next_round_benchmark.md`",
+            "- `reports/mhdsra2_vs_dsra_next_round_benchmark.json`",
         ]
     )
     write_markdown(reports_dir / "run_summary.md", lines)
@@ -199,6 +201,14 @@ def run_mhdsra2_compare():
     return compare_main(["--reports-dir", str(get_reports_dir())])
 
 
+def run_next_round_benchmark():
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 Next-Round Benchmark")
+    print("=" * 50)
+    from scripts.next_round_benchmark_runner import main as next_round_benchmark_main
+
+    return next_round_benchmark_main(["--reports-dir", str(get_reports_dir())])
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -240,6 +250,7 @@ def main():
         'attention_family_benchmark',
         'mhdsra2',
         'mhdsra2_compare',
+        'next_round_benchmark',
         'ablation',     # ablation_study.py
         'report',
         'all'           # Run everything in sequence
@@ -289,6 +300,7 @@ def main():
             'attention_family_benchmark': ("attention_family_benchmark", run_attention_family_benchmark),
             'mhdsra2': ("mhdsra2", run_mhdsra2_verify),
             'mhdsra2_compare': ("mhdsra2_compare", run_mhdsra2_compare),
+            'next_round_benchmark': ("next_round_benchmark", run_next_round_benchmark),
             'ablation': ("ablation", run_ablation),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }

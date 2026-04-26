@@ -123,6 +123,44 @@ class TestMHDSRA2Core(unittest.TestCase):
         self.assertFalse(torch.allclose(state1.slot_k, state2.slot_k))
         self.assertGreater(state2.usage.sum().item(), state1.usage.sum().item())
 
+    def test_forward_step_returns_single_token_output_and_kv_cache(self):
+        """Validate autoregressive one-step decoding compatibility outputs.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `MultiHeadDSRA2.forward_step`
+        - 作用 / Purpose: 校验 MHDSRA2 已提供与 JSON generation 评测兼容的逐步解码接口
+        - 变量 / Variables:
+          `step_input_1/2` 两个连续 token hidden, `state1/state2` 连续流式状态,
+          `kv_cache1/2` 返回的局部缓存
+        - 接入 / Integration: 保护 `scripts.json_retrieval_test` 所依赖的 `forward_step` 接口
+        - 错误处理 / Error handling: 通过形状、缓存存在性和 position 递增断言发现回归
+        - 关键词 / Keywords:
+          forward_step|generation|decode|single_token|kv_cache|state|mhdsra2|compat|autoregressive|回归
+        """
+        step_input_1 = torch.randn(2, 1, self.dim)
+        step_input_2 = torch.randn(2, 1, self.dim)
+
+        out1, state1, kv_cache1 = self.layer.forward_step(step_input_1)
+        out2, state2, kv_cache2 = self.layer.forward_step(
+            step_input_2,
+            S_prev=state1,
+            kv_cache=kv_cache1,
+        )
+
+        self.assertEqual(out1.shape, (2, 1, self.dim))
+        self.assertEqual(out2.shape, (2, 1, self.dim))
+        self.assertIsNotNone(kv_cache1)
+        self.assertIsNotNone(kv_cache2)
+        self.assertIsNotNone(kv_cache1[0])
+        self.assertIsNotNone(kv_cache1[1])
+        self.assertIsNotNone(kv_cache2[0])
+        self.assertIsNotNone(kv_cache2[1])
+        self.assertEqual(state1.position, 1)
+        self.assertEqual(state2.position, 2)
+        self.assertLessEqual(kv_cache2[0].shape[2], self.local_window)
+        self.assertTrue(torch.isfinite(out2).all())
+
     def test_paged_exact_memory_retrieve_returns_expected_page(self):
         """Validate page retrieval shape and selected token positions.
 

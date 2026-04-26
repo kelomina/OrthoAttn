@@ -11,6 +11,7 @@ import torch.optim as optim
 from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown
 from scripts.toy_task_associative_recall import (
     DSRAModel,
+    MHDSRA2Model,
     LinearAttentionModel,
     SlidingWindowAttentionModel,
     SparseAttentionModel,
@@ -175,6 +176,24 @@ def build_retrieval_model(
     local_context_size,
     local_context_mode,
 ):
+    """Build retrieval benchmark model family by canonical model type.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_retrieval_test`,
+      `run_json_retrieval_generalization_test`,
+      `scripts.attention_family_benchmark.benchmark_attention_family_complexity`
+    - 调用对象 / Calls:
+      `DSRAModel`, `MHDSRA2Model`, `StandardAttentionModel`,
+      `SlidingWindowAttentionModel`, `SparseAttentionModel`, `LinearAttentionModel`
+    - 作用 / Purpose: 统一根据 `model_type` 构造 JSON retrieval 任务模型，确保 compare/runner 与原测试脚本口径一致
+    - 变量 / Variables:
+      `model_type` 模型家族名称, `vocab_size/dim/K/kr/chunk_size` 为结构参数,
+      `local_context_size/local_context_mode` 控制局部上下文编码方式
+    - 接入 / Integration: 新增模型家族时优先在本函数登记，避免各处重复分支
+    - 错误处理 / Error handling: 未知 `model_type` 抛出 `ValueError`
+    - 关键词 / Keywords:
+      build_model|json_retrieval|mhdsra2|dsra|attention|factory|benchmark|model_type|统一入口|构建
+    """
     if model_type == "dsra":
         return DSRAModel(
             vocab_size=vocab_size,
@@ -185,6 +204,16 @@ def build_retrieval_model(
             pe_mode="none",
             use_orthogonal_update=True,
             use_bypass=True,
+            local_context_size=local_context_size,
+            local_context_mode=local_context_mode,
+        )
+    if model_type == "mhdsra2":
+        return MHDSRA2Model(
+            vocab_size=vocab_size,
+            dim=dim,
+            K=K,
+            kr=kr,
+            chunk_size=chunk_size,
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
         )
