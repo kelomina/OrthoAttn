@@ -8,6 +8,7 @@ from scripts.compare_mhdsra2_vs_dsra import (
     save_benchmark_reports,
 )
 from scripts.json_retrieval_test import build_retrieval_model
+from scripts.next_round_benchmark_runner import build_parser
 
 
 class TestNextRoundBenchmarkRunner(unittest.TestCase):
@@ -117,6 +118,26 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
             markdown_text = md_path.read_text(encoding="utf-8")
             self.assertIn("Five-model diagnostic summary", markdown_text)
             self.assertIn("MH-DSRA-v2 (paged recall)", markdown_text)
+
+    def test_next_round_parser_accepts_diagnostic_retrieval_tau(self):
+        """Validate retrieval tau is exposed through the benchmark CLI.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `build_parser`, `ArgumentParser.parse_args`
+        - 作用 / Purpose: 校验 next-round benchmark CLI 能接收并解析 `--diagnostic-retrieval-tau`
+        - 变量 / Variables:
+          `parser` 为 benchmark 参数解析器, `args` 为解析后的命名空间,
+          `diagnostic_retrieval_tau` 为 MHDSRA2 paged recall softmax 锐度参数
+        - 接入 / Integration: 调优 retrieval attention 时可直接通过 CLI 传入 tau，无需改代码
+        - 错误处理 / Error handling: 参数缺失或类型错误会由 argparse 或断言暴露
+        - 关键词 / Keywords:
+          retrieval_tau|diagnostic|cli|parser|benchmark|next_round|mhdsra2|paged_recall|softmax|参数
+        """
+        parser = build_parser()
+        args = parser.parse_args(["--diagnostic-retrieval-tau", "10.0"])
+
+        self.assertEqual(args.diagnostic_retrieval_tau, 10.0)
 
 
 if __name__ == "__main__":

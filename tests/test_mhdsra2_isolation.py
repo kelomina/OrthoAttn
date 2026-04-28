@@ -58,6 +58,7 @@ class TestMHDSRA2Isolation(unittest.TestCase):
             diagnostic_page_size=4,
             diagnostic_retrieved_top_pages=1,
             diagnostic_retrieved_max_tokens=4,
+            diagnostic_retrieval_tau=8.0,
             diagnostic_exact_seq_len=32,
             diagnostic_exact_fact_spacing=4,
             diagnostic_override_seq_len=32,
@@ -70,6 +71,30 @@ class TestMHDSRA2Isolation(unittest.TestCase):
         self.key_count = self.args.diagnostic_key_count
         self.value_count = self.args.diagnostic_value_count
         self.dim = self.slots + self.key_count + self.value_count
+
+    def test_build_mhdsra2_layer_applies_retrieval_tau(self):
+        """Validate diagnostic MHDSRA2 builder wires retrieval tau into config.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `_build_mhdsra2_layer`
+        - 作用 / Purpose: 确认 diagnostic benchmark 的 layer helper 会把 CLI/API 传入的 tau 写入配置
+        - 变量 / Variables:
+          `layer` 为构造出的诊断 MHDSRA2 层, `retrieval_tau` 为 paged recall softmax 锐度
+        - 接入 / Integration: benchmark runner 调用 `_build_mhdsra2_layer(..., retrieval_tau=...)` 即可调参
+        - 错误处理 / Error handling: 若配置未透传，断言立即失败
+        - 关键词 / Keywords:
+          retrieval_tau|builder|diagnostic|mhdsra2|config|paged_recall|softmax|cli|ablation|配置
+        """
+        layer = _build_mhdsra2_layer(
+            self.dim,
+            self.slots,
+            use_retrieval=True,
+            key_count=self.key_count,
+            retrieval_tau=10.0,
+        )
+
+        self.assertEqual(layer.cfg.retrieval_tau, 10.0)
 
     def _make_query_heads(self, layer, token_vector: torch.Tensor) -> torch.Tensor:
         """Convert one probing token into MHDSRA2 head-space query tensor.

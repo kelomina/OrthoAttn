@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 
 from scripts import diagnostic_memory_benchmark as diagnostic_benchmark
-from scripts.diagnostic_memory_benchmark import MODEL_ORDER, run_diagnostic_benchmarks
+from scripts.diagnostic_memory_benchmark import MODEL_ORDER, build_parser, run_diagnostic_benchmarks
 
 
 class TestDiagnosticMemoryBenchmark(unittest.TestCase):
@@ -42,6 +42,7 @@ class TestDiagnosticMemoryBenchmark(unittest.TestCase):
             diagnostic_page_size=8,
             diagnostic_retrieved_top_pages=2,
             diagnostic_retrieved_max_tokens=8,
+            diagnostic_retrieval_tau=8.0,
             diagnostic_exact_seq_len=96,
             diagnostic_exact_fact_spacing=8,
             diagnostic_override_seq_len=80,
@@ -81,6 +82,7 @@ class TestDiagnosticMemoryBenchmark(unittest.TestCase):
             diagnostic_page_size=8,
             diagnostic_retrieved_top_pages=2,
             diagnostic_retrieved_max_tokens=8,
+            diagnostic_retrieval_tau=8.0,
             diagnostic_exact_seq_len=64,
             diagnostic_exact_fact_spacing=8,
             diagnostic_override_seq_len=64,
@@ -103,6 +105,26 @@ class TestDiagnosticMemoryBenchmark(unittest.TestCase):
         self.assertEqual(first_case["models"]["sliding_window_attention"]["error"], "oom")
         self.assertIsNone(first_case["models"]["sliding_window_attention"]["is_correct"])
         self.assertEqual(sections[0]["model_tables"][1]["rows"][0][4], "OOM")
+
+    def test_diagnostic_parser_accepts_retrieval_tau(self):
+        """Validate diagnostic benchmark CLI exposes retrieval tau.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `build_parser`, `ArgumentParser.parse_args`
+        - 作用 / Purpose: 校验独立 diagnostic benchmark CLI 能接收 `--diagnostic-retrieval-tau`
+        - 变量 / Variables:
+          `parser` 为诊断脚本参数解析器, `args` 为解析结果,
+          `diagnostic_retrieval_tau` 为 retrieval softmax 温度
+        - 接入 / Integration: 做 tau 消融或复现实验时直接通过 CLI 配置 MHDSRA2 paged recall
+        - 错误处理 / Error handling: argparse 负责类型错误，断言负责字段缺失或数值错误
+        - 关键词 / Keywords:
+          retrieval_tau|diagnostic|cli|parser|ablation|benchmark|mhdsra2|paged_recall|softmax|参数
+        """
+        parser = build_parser()
+        args = parser.parse_args(["--diagnostic-retrieval-tau", "6.0"])
+
+        self.assertEqual(args.diagnostic_retrieval_tau, 6.0)
 
 
 if __name__ == "__main__":

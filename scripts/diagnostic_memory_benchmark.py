@@ -219,6 +219,7 @@ def _build_mhdsra2_layer(
     use_retrieval: bool,
     key_count: int | None = None,
     address_only_qk: bool = True,
+    retrieval_tau: float = 8.0,
 ) -> MultiHeadDSRA2:
     """Build a deterministic MHDSRA2 layer for synthetic diagnostics.
 
@@ -229,7 +230,8 @@ def _build_mhdsra2_layer(
       V 保留完整 token，从而验证 correction overwrite 时不被 value filler 干扰
     - 变量 / Variables:
       `dim` 为完整 probing 维度, `slots` 为路由槽位数, `key_count` 为 key 段长度,
-      `address_only_qk` 控制 Q/K 是否只编码地址段, `use_retrieval` 控制 retrieval 分支门控
+      `address_only_qk` 控制 Q/K 是否只编码地址段, `use_retrieval` 控制 retrieval 分支门控,
+      `retrieval_tau` 控制 paged recall softmax 锐度
     - 接入 / Integration: 新增 synthetic probe 时复用该 helper，并在 route/key/value 空间一致时传入 `key_count`
     - 错误处理 / Error handling: 依赖底层配置检查；`key_count=None` 时自动退回完整 identity Q/K
     - 关键词 / Keywords:
@@ -244,6 +246,7 @@ def _build_mhdsra2_layer(
         local_window=0,
         use_local=False,
         use_retrieval=use_retrieval,
+        retrieval_tau=retrieval_tau,
         detach_state=True,
     )
     layer = MultiHeadDSRA2(cfg)
@@ -307,6 +310,7 @@ def run_case_for_model(
     page_size: int,
     retrieved_top_pages: int,
     retrieved_max_tokens: int,
+    retrieval_tau: float = 8.0,
 ) -> dict:
     """Execute one diagnostic case for a specific memory family.
 
@@ -320,7 +324,7 @@ def run_case_for_model(
     - 变量 / Variables:
       `case` 为样例定义, `model_name` 为模型族名称, `chunk_size/page_size`
       控制流式分块与 paged recall, `retrieved_top_pages/max_tokens`
-      控制外部精确召回规模
+      控制外部精确召回规模, `retrieval_tau` 控制 MHDSRA2 retrieval softmax 温度
     - 接入 / Integration: 新模型族只需在本函数新增一个分支并返回统一字典
     - 错误处理 / Error handling: 未知 `model_name` 时抛出 `ValueError`
     - 关键词 / Keywords:
@@ -365,6 +369,7 @@ def run_case_for_model(
                 slots,
                 use_retrieval=use_retrieval,
                 key_count=key_count,
+                retrieval_tau=retrieval_tau,
             ).to(device)
             state = None
             memory = PagedExactMemory(page_size=page_size, dtype=torch.float32) if use_retrieval else None
@@ -837,6 +842,7 @@ def _run_case_for_model_with_oom_guard(
     page_size: int,
     retrieved_top_pages: int,
     retrieved_max_tokens: int,
+    retrieval_tau: float = 8.0,
 ) -> dict:
     """Execute one case with OOM capture so the benchmark can continue.
 
@@ -864,6 +870,7 @@ def _run_case_for_model_with_oom_guard(
             page_size=page_size,
             retrieved_top_pages=retrieved_top_pages,
             retrieved_max_tokens=retrieved_max_tokens,
+            retrieval_tau=retrieval_tau,
         )
     except torch.cuda.OutOfMemoryError as exc:
         _cleanup_after_oom()
@@ -897,6 +904,7 @@ def run_diagnostic_suite(args: argparse.Namespace, suite_name: str, cases: list[
       diagnostic_suite|section|rows|model_table|pairwise|streaming|benchmark|report|cases|套件执行
     """
     device = torch.device(args.diagnostic_device)
+    retrieval_tau = float(getattr(args, "diagnostic_retrieval_tau", 8.0))
     case_results = []
     for case in cases:
         model_results = {}
@@ -912,6 +920,7 @@ def run_diagnostic_suite(args: argparse.Namespace, suite_name: str, cases: list[
                 page_size=args.diagnostic_page_size,
                 retrieved_top_pages=args.diagnostic_retrieved_top_pages,
                 retrieved_max_tokens=args.diagnostic_retrieved_max_tokens,
+                retrieval_tau=retrieval_tau,
             )
         case_results.append({"case_id": case.case_id, "metadata": case.metadata, "models": model_results})
 
@@ -1010,6 +1019,7 @@ def add_diagnostic_cli_arguments(parser: argparse.ArgumentParser) -> argparse.Ar
     parser.add_argument("--diagnostic-page-size", type=int, default=128)
     parser.add_argument("--diagnostic-retrieved-top-pages", type=int, default=4)
     parser.add_argument("--diagnostic-retrieved-max-tokens", type=int, default=64)
+    parser.add_argument("--diagnostic-retrieval-tau", type=float, default=8.0)
     parser.add_argument("--diagnostic-exact-seq-len", type=int, default=2_000_000)
     parser.add_argument("--diagnostic-exact-fact-spacing", type=int, default=1024)
     parser.add_argument("--diagnostic-override-seq-len", type=int, default=16384)

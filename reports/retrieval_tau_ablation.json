@@ -1,0 +1,549 @@
+{
+  "config": {
+    "model": "mhdsra2_with_paged_recall",
+    "taus": [
+      4.0,
+      6.0,
+      8.0,
+      10.0
+    ],
+    "diagnostic_device": "cuda",
+    "diagnostic_exact_seq_len": 2000000,
+    "diagnostic_override_seq_len": 16384,
+    "diagnostic_fixation_seq_len": 65536,
+    "diagnostic_override_gap_grid": [
+      128,
+      1024,
+      4096
+    ],
+    "diagnostic_fixation_distractor_grid": [
+      16,
+      64,
+      256
+    ],
+    "scope": "MHDSRA2 paged recall branch only; baseline models are unchanged from full A/B/C reports."
+  },
+  "results": [
+    {
+      "retrieval_tau": 4.0,
+      "suites": [
+        {
+          "suite": "diagnostic_a_exact_recall",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "exact_recall.early",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 100000,
+                "position_bucket": "early",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.middle",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 1000000,
+                "position_bucket": "middle",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.late",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.3083455562591553,
+              "metadata": {
+                "target_position": 1997952,
+                "position_bucket": "late",
+                "fact_spacing": 1024
+              }
+            }
+          ]
+        },
+        {
+          "suite": "diagnostic_b_error_override",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "error_override.gap_128",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.0899209976196289,
+              "metadata": {
+                "gap": 128,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_1024",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.08693957328796387,
+              "metadata": {
+                "gap": 1024,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_4096",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.078299880027771,
+              "metadata": {
+                "gap": 4096,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            }
+          ],
+          "stale_fact_rate": 0.0
+        },
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "accuracy": 0.3333333333333333,
+          "cases": [
+            {
+              "case_id": "anti_fixation.distractors_16",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.1241934299468994,
+              "metadata": {
+                "distractor_count": 16,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_64",
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.04729962348937988,
+              "metadata": {
+                "distractor_count": 64,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_256",
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.6737793684005737,
+              "metadata": {
+                "distractor_count": 256,
+                "majority_value_id": 0
+              }
+            }
+          ],
+          "majority_trap_rate": 0.6666666666666666
+        }
+      ]
+    },
+    {
+      "retrieval_tau": 6.0,
+      "suites": [
+        {
+          "suite": "diagnostic_a_exact_recall",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "exact_recall.early",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 100000,
+                "position_bucket": "early",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.middle",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 1000000,
+                "position_bucket": "middle",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.late",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.3083455562591553,
+              "metadata": {
+                "target_position": 1997952,
+                "position_bucket": "late",
+                "fact_spacing": 1024
+              }
+            }
+          ]
+        },
+        {
+          "suite": "diagnostic_b_error_override",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "error_override.gap_128",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.0899209976196289,
+              "metadata": {
+                "gap": 128,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_1024",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.08693957328796387,
+              "metadata": {
+                "gap": 1024,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_4096",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.078299880027771,
+              "metadata": {
+                "gap": 4096,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            }
+          ],
+          "stale_fact_rate": 0.0
+        },
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "accuracy": 0.6666666666666666,
+          "cases": [
+            {
+              "case_id": "anti_fixation.distractors_16",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.403347134590149,
+              "metadata": {
+                "distractor_count": 16,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_64",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.4295032024383545,
+              "metadata": {
+                "distractor_count": 64,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_256",
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.26744353771209717,
+              "metadata": {
+                "distractor_count": 256,
+                "majority_value_id": 0
+              }
+            }
+          ],
+          "majority_trap_rate": 0.3333333333333333
+        }
+      ]
+    },
+    {
+      "retrieval_tau": 8.0,
+      "suites": [
+        {
+          "suite": "diagnostic_a_exact_recall",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "exact_recall.early",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 100000,
+                "position_bucket": "early",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.middle",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 1000000,
+                "position_bucket": "middle",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.late",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.3083455562591553,
+              "metadata": {
+                "target_position": 1997952,
+                "position_bucket": "late",
+                "fact_spacing": 1024
+              }
+            }
+          ]
+        },
+        {
+          "suite": "diagnostic_b_error_override",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "error_override.gap_128",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.0899209976196289,
+              "metadata": {
+                "gap": 128,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_1024",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.08693957328796387,
+              "metadata": {
+                "gap": 1024,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_4096",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.078299880027771,
+              "metadata": {
+                "gap": 4096,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            }
+          ],
+          "stale_fact_rate": 0.0
+        },
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "anti_fixation.distractors_16",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.5542938709259033,
+              "metadata": {
+                "distractor_count": 16,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_64",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.7909172773361206,
+              "metadata": {
+                "distractor_count": 64,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_256",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.09797537326812744,
+              "metadata": {
+                "distractor_count": 256,
+                "majority_value_id": 0
+              }
+            }
+          ],
+          "majority_trap_rate": 0.0
+        }
+      ]
+    },
+    {
+      "retrieval_tau": 10.0,
+      "suites": [
+        {
+          "suite": "diagnostic_a_exact_recall",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "exact_recall.early",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 100000,
+                "position_bucket": "early",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.middle",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.2878204584121704,
+              "metadata": {
+                "target_position": 1000000,
+                "position_bucket": "middle",
+                "fact_spacing": 1024
+              }
+            },
+            {
+              "case_id": "exact_recall.late",
+              "predicted_value_id": 16,
+              "target_value_id": 16,
+              "is_correct": 1.0,
+              "confidence_margin": 1.3083455562591553,
+              "metadata": {
+                "target_position": 1997952,
+                "position_bucket": "late",
+                "fact_spacing": 1024
+              }
+            }
+          ]
+        },
+        {
+          "suite": "diagnostic_b_error_override",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "error_override.gap_128",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.0899209976196289,
+              "metadata": {
+                "gap": 128,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_1024",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.08693957328796387,
+              "metadata": {
+                "gap": 1024,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            },
+            {
+              "case_id": "error_override.gap_4096",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.078299880027771,
+              "metadata": {
+                "gap": 4096,
+                "old_value_id": 0,
+                "new_value_id": 1
+              }
+            }
+          ],
+          "stale_fact_rate": 0.0
+        },
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "accuracy": 1.0,
+          "cases": [
+            {
+              "case_id": "anti_fixation.distractors_16",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.6299610137939453,
+              "metadata": {
+                "distractor_count": 16,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_64",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.0310263633728027,
+              "metadata": {
+                "distractor_count": 64,
+                "majority_value_id": 0
+              }
+            },
+            {
+              "case_id": "anti_fixation.distractors_256",
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.3912527561187744,
+              "metadata": {
+                "distractor_count": 256,
+                "majority_value_id": 0
+              }
+            }
+          ],
+          "majority_trap_rate": 0.0
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 530.9682598114014
+}

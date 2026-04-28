@@ -316,6 +316,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         "diagnostic_value_count": args.diagnostic_value_count,
         "diagnostic_chunk_size": args.diagnostic_chunk_size,
         "diagnostic_page_size": args.diagnostic_page_size,
+        "diagnostic_retrieval_tau": args.diagnostic_retrieval_tau,
         "diagnostic_exact_seq_len": args.diagnostic_exact_seq_len,
         "diagnostic_exact_fact_spacing": args.diagnostic_exact_fact_spacing,
         "diagnostic_override_seq_len": args.diagnostic_override_seq_len,
