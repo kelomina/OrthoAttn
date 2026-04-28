@@ -89,7 +89,19 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
         ]
         payload = build_benchmark_payload(
             config={"seed": 7},
-            sections=[{"title": "Synthetic", "rows": rows}],
+            sections=[
+                {
+                    "title": "Synthetic",
+                    "rows": rows,
+                    "model_tables": [
+                        {
+                            "title": "Five-model diagnostic summary",
+                            "columns": ["Model", "exact_match_rate"],
+                            "rows": [["Original DSRA", "0.2500"], ["MH-DSRA-v2 (paged recall)", "1.0000"]],
+                        }
+                    ],
+                }
+            ],
         )
 
         self.assertEqual(payload["summary"]["overall"]["total_rows"], 2)
@@ -102,6 +114,9 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
             json_path, md_path = save_benchmark_reports(payload, Path(tmp_dir))
             self.assertTrue(json_path.exists())
             self.assertTrue(md_path.exists())
+            markdown_text = md_path.read_text(encoding="utf-8")
+            self.assertIn("Five-model diagnostic summary", markdown_text)
+            self.assertIn("MH-DSRA-v2 (paged recall)", markdown_text)
 
 
 if __name__ == "__main__":

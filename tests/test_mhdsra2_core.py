@@ -198,6 +198,41 @@ class TestMHDSRA2Core(unittest.TestCase):
         self.assertTrue(torch.all((pos >= 4) & (pos < 8)))
         self.assertTrue(torch.allclose(rv[..., 1], torch.full_like(rv[..., 1], 20.0)))
 
+    def test_paged_exact_memory_retrieve_prefers_latest_position_on_tie(self):
+        """Validate latest-wins ordering for equal-score external memory matches.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `PagedExactMemory.append`, `PagedExactMemory.retrieve`
+        - 作用 / Purpose: 同一 key 多次写入且相似度相同的情况下，检索应返回最新 position 的 value
+        - 变量 / Variables:
+          `old_position/new_position` 为同 key 的两次写入位置, `pos` 为召回结果位置,
+          `rv` 为召回 value，用于确认最新写入的 value 胜出
+        - 接入 / Integration: 保护 external memory 的 latest-wins 语义，避免 Diagnostic B 回退到旧事实
+        - 错误处理 / Error handling: 如果返回空结果、旧位置或旧 value，断言立即失败
+        - 关键词 / Keywords:
+          latest_wins|external_memory|tie_break|position|retrieve|paged|same_key|value|regression|最新优先
+        """
+        mem = PagedExactMemory(page_size=4, dtype=torch.float32)
+        key = torch.zeros(1, self.heads, 8, self.d_head)
+        value = torch.zeros(1, self.heads, 8, self.d_head)
+        old_position = 1
+        new_position = 6
+        key[:, :, old_position, 2] = 1.0
+        key[:, :, new_position, 2] = 1.0
+        value[:, :, old_position, 0] = 1.0
+        value[:, :, new_position, 1] = 1.0
+        mem.append(key, value)
+
+        query = torch.zeros(1, self.heads, 1, self.d_head)
+        query[:, :, :, 2] = 1.0
+        _, rv, pos = mem.retrieve(query, top_pages=2, max_tokens=1)
+
+        self.assertIsNotNone(rv)
+        self.assertIsNotNone(pos)
+        self.assertEqual(int(pos[0].item()), new_position)
+        self.assertTrue(torch.all(rv[0, :, 0, 1] > rv[0, :, 0, 0]))
+
     def test_gates_degrade_when_local_disabled(self):
         """Validate fusion gates when local branch is disabled.
 
@@ -230,6 +265,44 @@ class TestMHDSRA2Core(unittest.TestCase):
         _, _, aux = layer(x, retrieved_k=rk, retrieved_v=rv, return_aux=True)
         self.assertTrue((aux["gates_mean"][:, 1] == 0).all().item())
         self.assertTrue(torch.isfinite(aux["gates_mean"]).all().item())
+
+    def test_retrieval_attention_prefers_exact_match_over_near_distractors(self):
+        """Validate retrieval attention is sharp enough for rare exact matches.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `MHDSRA2Config`, `MultiHeadDSRA2._retrieval_attention`
+        - 作用 / Purpose: 构造 1 个 exact right token 和 3 个 near wrong token，
+          验证 retrieval softmax 不会让多个近似错误项用数量压过最高分精确匹配
+        - 变量 / Variables:
+          `query` 为单步查询, `retrieved_k` 包含一个最高分 key 和三个次高分 key,
+          `retrieved_v` 的第 0/1 维分别代表 wrong/right value 分数
+        - 接入 / Integration: 保护 Diagnostic C 的 paged recall 分支，防止 anti-fixation 回退到 majority trap
+        - 错误处理 / Error handling: 如果 right value 不高于 wrong value，断言失败
+        - 关键词 / Keywords:
+          retrieval_attention|exact_match|near_distractor|softmax|retrieval_tau|anti_fixation|paged_recall|mhdsra2|test|精确匹配
+        """
+        cfg = MHDSRA2Config(
+            dim=4,
+            heads=1,
+            slots=2,
+            local_window=0,
+            use_local=False,
+            use_retrieval=True,
+            retrieval_tau=8.0,
+        )
+        layer = MultiHeadDSRA2(cfg)
+        query = torch.tensor([[[[1.0, 0.0, 0.0, 0.0]]]])
+        retrieved_k = torch.tensor(
+            [[[[4.0, 0.0, 0.0, 0.0], [3.6, 0.0, 0.0, 0.0], [3.6, 0.0, 0.0, 0.0], [3.6, 0.0, 0.0, 0.0]]]]
+        )
+        retrieved_v = torch.tensor(
+            [[[[0.0, 3.0, 0.0, 0.0], [3.0, 0.0, 0.0, 0.0], [3.0, 0.0, 0.0, 0.0], [3.0, 0.0, 0.0, 0.0]]]]
+        )
+
+        output = layer._retrieval_attention(query, retrieved_k, retrieved_v)
+
+        self.assertGreater(output[0, 0, 0, 1].item(), output[0, 0, 0, 0].item())
 
     def test_gates_degrade_when_retrieval_disabled(self):
         """Validate fusion gates when retrieval branch is disabled.

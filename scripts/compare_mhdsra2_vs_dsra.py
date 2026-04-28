@@ -955,13 +955,16 @@ def build_benchmark_payload(config: dict, sections: list[dict]) -> dict:
     for section in sections:
         section_rows = list(section.get("rows", []))
         rows.extend(section_rows)
-        normalized_sections.append(
-            {
-                "title": section["title"],
-                "description": section.get("description", ""),
-                "rows": section_rows,
-            }
-        )
+        normalized_section = {
+            "title": section["title"],
+            "description": section.get("description", ""),
+            "rows": section_rows,
+        }
+        if "model_tables" in section:
+            normalized_section["model_tables"] = list(section.get("model_tables", []))
+        if "diagnostic_cases" in section:
+            normalized_section["diagnostic_cases"] = list(section.get("diagnostic_cases", []))
+        normalized_sections.append(normalized_section)
     return {
         "config": config,
         "sections": normalized_sections,
@@ -1067,6 +1070,12 @@ def save_benchmark_reports(
                     notes=row["notes"] or "",
                 )
             )
+        for table in section.get("model_tables", []):
+            lines.extend(["", f"### {table['title']}", ""])
+            lines.append("| " + " | ".join(table["columns"]) + " |")
+            lines.append("|" + "|".join(["---"] * len(table["columns"])) + "|")
+            for row in table.get("rows", []):
+                lines.append("| " + " | ".join(str(item) for item in row) + " |")
 
     write_markdown(md_path, lines)
     return json_path, md_path

@@ -40,6 +40,7 @@ class MHDSRA2Config:
     usage_decay: float = 0.995
     conf_decay: float = 0.999
     usage_prior: float = 0.25
+    retrieval_tau: float = 8.0
     age_write_bias: float = 0.02
     conf_read_bias: float = 0.50
     age_read_penalty: float = 0.005
@@ -228,25 +229,58 @@ class MultiHeadDSRA2(nn.Module):
         retrieved_k: Optional[torch.Tensor],
         retrieved_v: Optional[torch.Tensor],
     ) -> torch.Tensor:
+        """Read exact external K/V memory with sharp score-normalized attention.
+
+        中文说明:
+        - 调用方 / Called by: `forward`
+        - 调用对象 / Calls: `torch.einsum`, `F.softmax`
+        - 作用 / Purpose: 对外部 paged recall 返回的 K/V 执行 retrieval 分支读出；
+          使用带温度的 softmax 让最高相似 token 胜出，避免多个相近 distractor 用数量压过 exact match
+        - 变量 / Variables:
+          `q` 为当前 query heads, `retrieved_k/retrieved_v` 为外部记忆召回的键和值,
+          `logits` 为缩放点积分数, `tau` 为 retrieval softmax 温度, `weights` 为 token 权重
+        - 接入 / Integration: 调用 `forward(..., retrieved_k=..., retrieved_v=...)` 时自动启用；
+          可通过 `MHDSRA2Config.retrieval_tau` 调整 retrieval 分支锐度
+        - 错误处理 / Error handling: 关闭 retrieval 或缺少 K/V 时返回零张量；非法 K/V 维度抛出 `ValueError`
+        - 关键词 / Keywords:
+          retrieval_attention|paged_recall|softmax|retrieval_tau|exact_match|distractor|external_memory|mhdsra2|recall|检索注意力
+        """
         cfg = self.cfg
         if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
             return torch.zeros_like(q)
         scale = self.d_head**-0.5
+        tau = torch.tensor(float(cfg.retrieval_tau), device=q.device, dtype=q.dtype)
         if retrieved_k.dim() == 4:
             logits = torch.einsum("bhtd,bhrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
-            weights = torch.sigmoid(2.0 * logits)
-            weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
+            weights = F.softmax(tau * logits, dim=-1)
             return torch.einsum("bhtr,bhrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
         if retrieved_k.dim() == 5:
             logits = torch.einsum("bhtd,bhtrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
-            weights = torch.sigmoid(2.0 * logits)
-            weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
+            weights = F.softmax(tau * logits, dim=-1)
             return torch.einsum("bhtr,bhtrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
         raise ValueError("retrieved_k/v must be [B,H,R,d] or [B,H,T,R,d]")
 
     def _slot_write(
         self, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State, read_mass: torch.Tensor
     ) -> MHDSRA2State:
+        """Update slot memory and expose overwrite diagnostics for one chunk.
+
+        中文说明:
+        - 调用方 / Called by: `forward`
+        - 调用对象 / Calls: `F.normalize`, `_scatter_values`, `F.cosine_similarity`, `torch.maximum`
+        - 作用 / Purpose: 根据当前 chunk 的 K/V、读出质量和新旧冲突强度更新 slot；
+          当 correction token 先读到旧槽位时，用 `read_mass` 强化同槽写回并遗忘旧值
+        - 变量 / Variables:
+          `k/v` 是当前 chunk 的 head-space token 表示, `state` 是写入前状态,
+          `read_mass` 是本 chunk 对旧 slot 的读出分布, `read_hint` 是写路由的同槽提示,
+          `mass/reinforced_mass` 是基础写入质量与读回强化后的写入质量,
+          `write_gate/forget` 是逐 slot 写入与遗忘门
+        - 接入 / Integration: 调用 `forward(..., return_aux=True)` 后读取 `aux["write_stats"]`
+          可获得 overwrite、forget gate 与 read/write mass 诊断数据
+        - 错误处理 / Error handling: 依赖上游张量维度与数值稳定性检查；异常直接向上抛出
+        - 关键词 / Keywords:
+          slot_write|overwrite|correction|latest_wins|forget_gate|write_mass|read_mass|state_update|mhdsra2|覆盖写入
+        """
         cfg = self.cfg
         slot_k = state.slot_k.to(dtype=k.dtype)
         slot_v = state.slot_v.to(dtype=v.dtype)
@@ -257,13 +291,16 @@ class MultiHeadDSRA2(nn.Module):
         novelty = (1.0 - max_sim).clamp(0.0, 1.0)
 
         tau = self.log_tau_write.exp().to(dtype=k.dtype)
-        write_logits = sim * tau
-        write_logits = write_logits - cfg.usage_prior * torch.log1p(state.usage).to(
+        read_hint = read_mass.to(dtype=k.dtype).unsqueeze(2).clamp(0.0, 1.0)
+        usage_penalty = cfg.usage_prior * torch.log1p(state.usage).to(
             dtype=k.dtype
         ).unsqueeze(2)
+        write_logits = sim * tau
+        write_logits = write_logits - usage_penalty * (1.0 - read_hint)
         write_logits = write_logits + cfg.age_write_bias * torch.log1p(state.age).to(
             dtype=k.dtype
         ).unsqueeze(2)
+        write_logits = write_logits + tau * read_hint
 
         w_top = min(cfg.write_topk, cfg.slots)
         top_logits, top_idx = torch.topk(write_logits, w_top, dim=-1)
@@ -283,12 +320,15 @@ class MultiHeadDSRA2(nn.Module):
             .clamp(0.0, 2.0)
             .unsqueeze(-1)
         )
-        write_gate = (1.0 - torch.exp(-cfg.eta * mass)).to(dtype=k.dtype).clamp(
+        read_mass_boost = read_mass.to(dtype=k.dtype).unsqueeze(-1).clamp(0.0, 1.0)
+        reinforced_mass = mass + read_mass_boost * has_write
+        write_gate = (1.0 - torch.exp(-cfg.eta * reinforced_mass)).to(dtype=k.dtype).clamp(
             0.0, cfg.max_update
         ) * has_write
 
         age_term = cfg.forget_age * torch.log1p(state.age).unsqueeze(-1).to(dtype=k.dtype)
         forget = cfg.forget_base + age_term + cfg.forget_conflict * write_gate * conflict
+        forget = torch.maximum(forget, write_gate * has_write)
         forget = forget.clamp(0.0, 0.95)
 
         slot_k_next = (1.0 - forget) * slot_k + write_gate * new_k
@@ -305,6 +345,23 @@ class MultiHeadDSRA2(nn.Module):
         conf_new = (1.0 - conflict.squeeze(-1).clamp(0.0, 1.0)).to(dtype=torch.float32)
         conf_next = cfg.conf_decay * state.confidence * (1.0 - fg32) + wg32 * conf_new
         conf_next = conf_next.clamp(0.0, 1.0)
+
+        write_mass = mass.squeeze(-1).to(dtype=torch.float32)
+        self.last_write_stats = {
+            "token_gate_mean": token_gate.detach().mean().to(dtype=torch.float32),
+            "write_mass_mean": write_mass.detach().mean(),
+            "write_mass_max": write_mass.detach().max(),
+            "write_gate_mean": write_gate.detach().mean().to(dtype=torch.float32),
+            "write_gate_max": write_gate.detach().max().to(dtype=torch.float32),
+            "forget_gate_mean": forget.detach().mean().to(dtype=torch.float32),
+            "forget_gate_max": forget.detach().max().to(dtype=torch.float32),
+            "conflict_mean": conflict.detach().mean().to(dtype=torch.float32),
+            "novelty_mean": novelty.detach().mean().to(dtype=torch.float32),
+            "write_mass": write_mass.detach(),
+            "write_gate": write_gate.detach().squeeze(-1).to(dtype=torch.float32),
+            "forget_gate": forget.detach().squeeze(-1).to(dtype=torch.float32),
+            "read_mass": read_mass.detach().to(dtype=torch.float32),
+        }
 
         if cfg.detach_state:
             slot_k_next = slot_k_next.detach()
@@ -377,6 +434,7 @@ class MultiHeadDSRA2(nn.Module):
                 "read_mass": aux_read["read_mass"].detach(),
                 "slot_usage": next_state.usage.detach(),
                 "slot_confidence": next_state.confidence.detach(),
+                "write_stats": getattr(self, "last_write_stats", None),
             }
             return y, next_state, aux
         return y, next_state

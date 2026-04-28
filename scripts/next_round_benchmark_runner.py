@@ -18,6 +18,10 @@ from scripts.compare_mhdsra2_vs_dsra import (
     build_benchmark_payload,
     save_benchmark_reports,
 )
+from scripts.diagnostic_memory_benchmark import (
+    add_diagnostic_cli_arguments,
+    run_diagnostic_benchmarks,
+)
 from scripts.needle_in_haystack_test import is_oom_error, run_single_niah_test
 from scripts.json_retrieval_test import (
     DEFAULT_LOCAL_CONTEXT_MODE,
@@ -269,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json-local-context-mode", type=str, default=DEFAULT_LOCAL_CONTEXT_MODE)
     parser.add_argument("--json-final-polish-epochs", type=int, default=0)
     parser.add_argument("--json-final-generation-polish-epochs", type=int, default=0)
-    return parser
+    return add_diagnostic_cli_arguments(parser)
 
 
 def run_next_round_benchmark(args: argparse.Namespace) -> dict:
@@ -289,6 +293,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         run_niah_section(args),
         run_json_generalization_section(args),
     ]
+    sections.extend(run_diagnostic_benchmarks(args))
     config = {
         "seed": args.seed,
         "niah_seq_lengths": list(args.niah_seq_lengths),
@@ -305,6 +310,18 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         "json_generalization_score_mode": args.json_generalization_score_mode,
         "json_local_context_size": args.json_local_context_size,
         "json_local_context_mode": args.json_local_context_mode,
+        "diagnostic_device": args.diagnostic_device,
+        "diagnostic_slots": args.diagnostic_slots,
+        "diagnostic_key_count": args.diagnostic_key_count,
+        "diagnostic_value_count": args.diagnostic_value_count,
+        "diagnostic_chunk_size": args.diagnostic_chunk_size,
+        "diagnostic_page_size": args.diagnostic_page_size,
+        "diagnostic_exact_seq_len": args.diagnostic_exact_seq_len,
+        "diagnostic_exact_fact_spacing": args.diagnostic_exact_fact_spacing,
+        "diagnostic_override_seq_len": args.diagnostic_override_seq_len,
+        "diagnostic_override_gap_grid": list(args.diagnostic_override_gap_grid),
+        "diagnostic_fixation_seq_len": args.diagnostic_fixation_seq_len,
+        "diagnostic_fixation_distractor_grid": list(args.diagnostic_fixation_distractor_grid),
     }
     return build_benchmark_payload(config=config, sections=sections)
 
