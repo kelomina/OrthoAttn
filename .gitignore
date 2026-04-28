@@ -2,3 +2,5 @@
 __pycache__/
 .trae/
 dsra_attn.egg-info/
+reports/archive/
+reports/paper_seed_*/
