@@ -236,6 +236,10 @@ class TestJsonRetrieval(unittest.TestCase):
             local_context_mode="concat",
             local_context_size=4,
         )
+        self.assertEqual(model.architecture, "mhdsra2")
+        self.assertEqual(model.archived_alias, "dsra")
+        self.assertTrue(model.dsra.layer.cfg.use_local)
+        self.assertTrue(model.dsra.layer.cfg.use_retrieval)
         raw_emb = torch.randn(1, 6, 8)
         full_context = model.build_causal_context(raw_emb)
 

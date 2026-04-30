@@ -1,0 +1,192 @@
+{
+  "config": {
+    "replay_ratios": [
+      0.25
+    ],
+    "stage_patiences": [
+      1
+    ],
+    "layer_counts": [
+      1
+    ],
+    "seeds": [
+      101
+    ],
+    "max_steps_per_stage": 2,
+    "max_steps_per_stage_values": [
+      2
+    ],
+    "curriculum_eval_interval": 1,
+    "stage_threshold": 0.95,
+    "target_stage_count": 2,
+    "target_stages": [
+      "unit_no_carry",
+      "unit_with_carry"
+    ]
+  },
+  "dataset": {
+    "name": "curriculum_rule_set",
+    "curriculum_stages": [
+      {
+        "name": "unit_no_carry",
+        "examples": [
+          "0+0=0",
+          "1+1=2",
+          "2+3=5",
+          "4+5=9"
+        ]
+      },
+      {
+        "name": "unit_with_carry",
+        "examples": [
+          "5+5=10",
+          "8+2=10",
+          "9+1=10",
+          "9+9=18"
+        ]
+      },
+      {
+        "name": "two_digit_rules",
+        "examples": [
+          "10+10=20",
+          "11+11=22",
+          "12+12=24",
+          "20+20=40",
+          "30+40=70",
+          "55+44=99"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "has_stable_target_strategy": false,
+    "stable_target_strategy_count": 0,
+    "best_strategy": {
+      "replay_ratio": 0.25,
+      "stage_patience": 1,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 2,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "ever_passed_stage_count_mean": 0.0,
+      "ever_passed_stage_count_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "final_loss_mean": 2.6482205390930176,
+      "final_loss_variance": 0.0
+    }
+  },
+  "grid_results": [
+    {
+      "replay_ratio": 0.25,
+      "stage_patience": 1,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 2,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "ever_passed_stage_count_mean": 0.0,
+      "ever_passed_stage_count_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "final_loss_mean": 2.6482205390930176,
+      "final_loss_variance": 0.0
+    }
+  ],
+  "grid_runs": [
+    {
+      "replay_ratio": 0.25,
+      "stage_patience": 1,
+      "max_steps_per_stage": 2,
+      "run": {
+        "dataset_name": "curriculum_rule_set",
+        "model_name": "mhdsra2",
+        "seed": 101,
+        "num_layers": 1,
+        "learning_rate": 0.03,
+        "training_strategy": "baseline",
+        "carry_replay_ratio": 0.75,
+        "train_exact_match": 0.0,
+        "headline_exact_match": 0.0,
+        "ood_exact_match": 0.0,
+        "final_loss": 2.6482205390930176,
+        "headline_prediction": "=====",
+        "headline_stopped_on_eos": false,
+        "completed_curriculum_stages": 0,
+        "ever_passed_stage_count": 0,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
+        "stopped_reason": "stage_max_steps_exhausted:unit_no_carry",
+        "stage_exact_matches": [
+          {
+            "stage_name": "unit_no_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "unit_with_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "two_digit_rules",
+            "exact_match": 0.0
+          }
+        ],
+        "curriculum_snapshots": [
+          {
+            "dataset_name": "curriculum_rule_set",
+            "model_name": "mhdsra2",
+            "seed": 101,
+            "num_layers": 1,
+            "step": 1,
+            "active_stage_name": "unit_no_carry",
+            "advanced_to_stage_name": null,
+            "stage_exact_matches": [
+              {
+                "stage_name": "unit_no_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "unit_with_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "two_digit_rules",
+                "exact_match": 0.0
+              }
+            ]
+          },
+          {
+            "dataset_name": "curriculum_rule_set",
+            "model_name": "mhdsra2",
+            "seed": 101,
+            "num_layers": 1,
+            "step": 2,
+            "active_stage_name": "unit_no_carry",
+            "advanced_to_stage_name": null,
+            "stage_exact_matches": [
+              {
+                "stage_name": "unit_no_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "unit_with_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "two_digit_rules",
+                "exact_match": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

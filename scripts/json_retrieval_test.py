@@ -8,9 +8,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown
+from src.dsra.application import JsonRetrievalSearchService, RetrievalModelFactory
+from src.dsra.domain import RetrievalModelSpec, normalize_model_type
+from src.dsra.infrastructure import JsonRetrievalReportRepository
 from scripts.toy_task_associative_recall import (
-    DSRAModel,
     MHDSRA2Model,
     LinearAttentionModel,
     SlidingWindowAttentionModel,
@@ -52,7 +53,7 @@ DEFAULT_GENERATION_POLISH_MONITOR_CASE_COUNT = 4
 DEFAULT_TAIL_ERROR_TOKEN_COUNT = 32
 DEFAULT_TAIL_ERROR_TOP_K = 3
 DEFAULT_GENERALIZATION_SCORE_MODE = "teacher_forced"
-DEFAULT_MODEL_TYPE = "dsra"
+DEFAULT_MODEL_TYPE = "mhdsra2"
 DEFAULT_LOCAL_CONTEXT_SIZE = 4
 DEFAULT_LOCAL_CONTEXT_MODE = "concat"
 DEFAULT_MUSEUM_SPAN_LOSS_WEIGHT = 1.0
@@ -194,62 +195,58 @@ def build_retrieval_model(
     - 关键词 / Keywords:
       build_model|json_retrieval|mhdsra2|dsra|attention|factory|benchmark|model_type|统一入口|构建
     """
-    if model_type == "dsra":
-        return DSRAModel(
-            vocab_size=vocab_size,
-            dim=dim,
-            K=K,
-            kr=kr,
-            chunk_size=chunk_size,
-            pe_mode="none",
-            use_orthogonal_update=True,
-            use_bypass=True,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    if model_type == "mhdsra2":
-        return MHDSRA2Model(
-            vocab_size=vocab_size,
-            dim=dim,
-            K=K,
-            kr=kr,
-            chunk_size=chunk_size,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    if model_type == "standard_attention":
-        return StandardAttentionModel(
-            vocab_size=vocab_size,
-            dim=dim,
-            chunk_size=chunk_size,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    if model_type == "sliding_window_attention":
-        return SlidingWindowAttentionModel(
-            vocab_size=vocab_size,
-            dim=dim,
-            chunk_size=chunk_size,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    if model_type == "sparse_attention":
-        return SparseAttentionModel(
-            vocab_size=vocab_size,
-            dim=dim,
-            chunk_size=chunk_size,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    if model_type == "linear_attention":
-        return LinearAttentionModel(
-            vocab_size=vocab_size,
-            dim=dim,
-            chunk_size=chunk_size,
-            local_context_size=local_context_size,
-            local_context_mode=local_context_mode,
-        )
-    raise ValueError(f"Unsupported model_type: {model_type}")
+    spec = RetrievalModelSpec(
+        requested_model_type=model_type,
+        vocab_size=vocab_size,
+        dim=dim,
+        slots=K,
+        topk=kr,
+        chunk_size=chunk_size,
+        local_context_size=local_context_size,
+        local_context_mode=local_context_mode,
+    )
+    factory = RetrievalModelFactory(
+        {
+            "mhdsra2": lambda item: MHDSRA2Model(
+                vocab_size=item.vocab_size,
+                dim=item.dim,
+                K=item.slots,
+                kr=item.topk,
+                chunk_size=item.chunk_size,
+                local_context_size=item.local_context_size,
+                local_context_mode=item.local_context_mode,
+            ),
+            "standard_attention": lambda item: StandardAttentionModel(
+                vocab_size=item.vocab_size,
+                dim=item.dim,
+                chunk_size=item.chunk_size,
+                local_context_size=item.local_context_size,
+                local_context_mode=item.local_context_mode,
+            ),
+            "sliding_window_attention": lambda item: SlidingWindowAttentionModel(
+                vocab_size=item.vocab_size,
+                dim=item.dim,
+                chunk_size=item.chunk_size,
+                local_context_size=item.local_context_size,
+                local_context_mode=item.local_context_mode,
+            ),
+            "sparse_attention": lambda item: SparseAttentionModel(
+                vocab_size=item.vocab_size,
+                dim=item.dim,
+                chunk_size=item.chunk_size,
+                local_context_size=item.local_context_size,
+                local_context_mode=item.local_context_mode,
+            ),
+            "linear_attention": lambda item: LinearAttentionModel(
+                vocab_size=item.vocab_size,
+                dim=item.dim,
+                chunk_size=item.chunk_size,
+                local_context_size=item.local_context_size,
+                local_context_mode=item.local_context_mode,
+            ),
+        }
+    )
+    return factory.build(spec)
 
 
 def load_json_retrieval_case(
@@ -2615,7 +2612,7 @@ def run_generation_polish(
 
 
 def save_json_retrieval_reports(case, config, history, teacher_forced_eval, generation_eval, search_results, reports_dir):
-    reports_dir = ensure_reports_dir(reports_dir)
+    report_repository = JsonRetrievalReportRepository(Path(reports_dir))
     payload = {
         "input_file": str(case["input_file"]),
         "metadata_file": str(case["metadata_file"]),
@@ -2629,7 +2626,6 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
         "generation_evaluation": generation_eval,
         "search_results": search_results,
     }
-    write_json(reports_dir / "json_retrieval_report.json", payload)
 
     lines = [
         "# JSON Retrieval Report",
@@ -2740,7 +2736,12 @@ def save_json_retrieval_reports(case, config, history, teacher_forced_eval, gene
                 f"gen_prefix={result['generation_prefix_match_length']}, "
                 f"teacher_seq_acc={result['teacher_forced_sequence_accuracy']*100:.2f}%"
             )
-    write_markdown(reports_dir / "json_retrieval_report.md", lines)
+    report_repository.write_report(
+        json_filename="json_retrieval_report.json",
+        markdown_filename="json_retrieval_report.md",
+        payload=payload,
+        markdown_lines=lines,
+    )
 
 
 def save_json_retrieval_generalization_reports(
@@ -2753,7 +2754,7 @@ def save_json_retrieval_generalization_reports(
     test_tail_error_analysis,
     reports_dir,
 ):
-    reports_dir = ensure_reports_dir(reports_dir)
+    report_repository = JsonRetrievalReportRepository(Path(reports_dir))
     payload = {
         "config": config,
         "history": history,
@@ -2763,7 +2764,6 @@ def save_json_retrieval_generalization_reports(
         "test_tail_error_analysis": test_tail_error_analysis,
         "search_results": search_results,
     }
-    write_json(reports_dir / "json_retrieval_generalization_report.json", payload)
 
     lines = [
         "# JSON Retrieval Generalization Report",
@@ -2974,7 +2974,12 @@ def save_json_retrieval_generalization_reports(
                     f"| artifact_span_seq={format_optional_percent(case_summary.get('artifact_span_sequence_accuracy'))} "
                     f"| first_mismatch={case_summary['first_mismatch_index']}"
                 )
-    write_markdown(reports_dir / "json_retrieval_generalization_report.md", lines)
+    report_repository.write_report(
+        json_filename="json_retrieval_generalization_report.json",
+        markdown_filename="json_retrieval_generalization_report.md",
+        payload=payload,
+        markdown_lines=lines,
+    )
 
 
 def train_single_configuration(
@@ -3026,6 +3031,7 @@ def train_single_configuration(
 ):
     if not isinstance(device, torch.device):
         device = torch.device(device)
+    active_model_type = normalize_model_type(model_type)
     curriculum_plan = build_curriculum_plan(case, epochs)
     if training_cases_override is None:
         training_cases = build_random_training_case_pool(
@@ -3040,7 +3046,7 @@ def train_single_configuration(
     training_case_sampler = random.Random(train_dataset_seed)
 
     model = build_retrieval_model(
-        model_type=model_type,
+        model_type=active_model_type,
         vocab_size=VOCAB_SIZE,
         dim=dim,
         K=K,
@@ -3329,7 +3335,8 @@ def train_single_configuration(
     final_generation = evaluate_generation(model, case, device)
     config = {
         "device": str(device),
-        "model_type": model_type,
+        "model_type": active_model_type,
+        "requested_model_type": model_type,
         "epochs": epochs,
         "eval_interval": eval_interval,
         "dim": dim,
@@ -3440,6 +3447,7 @@ def run_json_retrieval_test(
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    active_model_type = normalize_model_type(model_type)
     case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
     curriculum_plan = build_curriculum_plan(case, epochs)
 
@@ -3466,12 +3474,13 @@ def run_json_retrieval_test(
         for warmup_ratio_value in warmup_ratio_grid
         for scheduled_sampling_max_ratio_value in scheduled_sampling_max_ratio_grid
     ]
+    search_service = JsonRetrievalSearchService()
 
     print("\n--- Running JSON File Retrieval Test ---")
     print(f"Using device: {device}")
     print(
         f"Config | full_seq_len={len(case['sample_bytes']) + 1 + len(case['question_bytes']) + 1 + len(case['expected_answer_bytes']) - 1} "
-        f"| answer_len={len(case['expected_answer_bytes'])} | dim={dim} | K={K} | epochs={epochs} | model_type={model_type}"
+        f"| answer_len={len(case['expected_answer_bytes'])} | dim={dim} | K={K} | epochs={epochs} | model_type={active_model_type}"
     )
     print(
         f"Training Data | mode=random_case_pool | dataset_size={train_dataset_size} "
@@ -3584,25 +3593,14 @@ def run_json_retrieval_test(
             evidence_loss_weight=evidence_loss_weight,
             evidence_hint_weight=evidence_hint_weight,
             evidence_min_context_bytes=evidence_min_context_bytes,
-            model_type=model_type,
+            model_type=active_model_type,
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
         )
         search_results.append(summarize_search_result(result))
-        if best_result is None or score_search_result(result) > score_search_result(best_result):
-            best_result = result
+        best_result = search_service.choose_best(best_result, result, score_search_result)
 
-    search_results.sort(
-        key=lambda item: (
-            int(item["generation_exact_byte_match"]),
-            int(item["teacher_forced_exact_byte_match"]),
-            item["generation_prefix_match_length"],
-            item["generation_sequence_accuracy"],
-            item["teacher_forced_prefix_match_length"],
-            item["teacher_forced_sequence_accuracy"],
-        ),
-        reverse=True,
-    )
+    search_results = search_service.sort_single_case_summaries(search_results)
 
     if reports_dir is not None:
         save_json_retrieval_reports(
@@ -3705,6 +3703,7 @@ def run_json_retrieval_generalization_test(
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    active_model_type = normalize_model_type(model_type)
     reference_case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
     pair_split = split_museum_artifact_pairs(
         seed=pair_split_seed,
@@ -3769,12 +3768,13 @@ def run_json_retrieval_generalization_test(
         for warmup_ratio_value in warmup_ratio_grid
         for scheduled_sampling_max_ratio_value in scheduled_sampling_max_ratio_grid
     ]
+    search_service = JsonRetrievalSearchService()
 
     print("\n--- Running JSON Retrieval Generalization Test ---")
     print(f"Using device: {device}")
     print(
         f"Config | full_seq_len={len(reference_case['sample_bytes']) + 1 + len(reference_case['question_bytes']) + 1 + len(reference_case['expected_answer_bytes']) - 1} "
-        f"| answer_len={len(reference_case['expected_answer_bytes'])} | dim={dim} | K={K} | model_type={model_type}"
+        f"| answer_len={len(reference_case['expected_answer_bytes'])} | dim={dim} | K={K} | model_type={active_model_type}"
     )
     print(
         f"Case Pools | train={len(training_cases)} (seed={train_dataset_seed}) "
@@ -3885,7 +3885,7 @@ def run_json_retrieval_generalization_test(
             evidence_loss_weight=evidence_loss_weight,
             evidence_hint_weight=evidence_hint_weight,
             evidence_min_context_bytes=evidence_min_context_bytes,
-            model_type=model_type,
+            model_type=active_model_type,
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
             return_model=True,
@@ -3925,25 +3925,25 @@ def run_json_retrieval_generalization_test(
             f"| gen_seq_acc={test_eval['generation_mean_sequence_accuracy']*100:.2f}% "
             f"| tf_seq_acc={test_eval['teacher_forced_mean_sequence_accuracy']*100:.2f}%"
         )
-        if best_result is None or score_generalization_result(
-            result,
-            score_mode=generalization_score_mode,
-        ) > score_generalization_result(
+        best_result = search_service.choose_best_generalization(
             best_result,
-            score_mode=generalization_score_mode,
-        ):
-            best_result = result
+            result,
+            lambda item: score_generalization_result(
+                item,
+                score_mode=generalization_score_mode,
+            ),
+        )
 
         del trained_model
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    search_results.sort(
-        key=lambda item: score_generalization_summary(
+    search_results = search_service.sort_generalization_summaries(
+        search_results,
+        lambda item: score_generalization_summary(
             item,
             score_mode=generalization_score_mode,
         ),
-        reverse=True,
     )
 
     validation_tail_error_analysis = build_tail_error_analysis(best_result["validation_pool_evaluation"])

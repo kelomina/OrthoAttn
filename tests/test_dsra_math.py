@@ -1,7 +1,7 @@
 import unittest
 import torch
-import torch.nn as nn
 from dsra_layer import DSRA_Chunk_Layer
+from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2State
 
 class TestDSRAMath(unittest.TestCase):
     def setUp(self):
@@ -12,31 +12,55 @@ class TestDSRAMath(unittest.TestCase):
         self.layer = DSRA_Chunk_Layer(self.dim, K=self.K, kr=self.kr).to(self.device)
 
     def test_forward_dimensions(self):
+        """Validate DSRA compatibility output and MHDSRA2 state dimensions.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `DSRA_Chunk_Layer.forward`
+        - 作用 / Purpose: 确认旧 DSRA 入口已返回 MHDSRA2 状态且输出/缓存形状兼容
+        - 变量 / Variables: `x` 输入 chunk, `S_next` 新状态, `bypass_kv` 旧接口缓存
+        - 接入 / Integration: 保护 `dsra_layer.py` 的兼容前向接口
+        - 错误处理 / Error handling: 通过断言暴露状态形状或缓存形状回归
+        - 关键词 / Keywords:
+          forward|dimensions|mhdsra2|state|cache|compat|dsra|shape|test|维度
+        """
         B, T = 2, 128
         x = torch.randn(B, T, self.dim).to(self.device)
         
         out, S_next, bypass_kv, _ = self.layer(x)
         
         self.assertEqual(out.shape, (B, T, self.dim))
-        self.assertEqual(S_next.shape, (B, self.K, self.dim))
-        self.assertEqual(bypass_kv[0].shape, (B, T, self.dim))
-        self.assertEqual(bypass_kv[1].shape, (B, T, self.dim))
+        self.assertIsInstance(S_next, MHDSRA2State)
+        self.assertEqual(S_next.slot_v.shape[0], B)
+        self.assertEqual(S_next.slot_v.shape[2], self.K)
+        self.assertEqual(S_next.slot_v.shape[1] * S_next.slot_v.shape[3], self.dim)
+        expected_cache_tokens = min(T, self.layer.spec.local_window)
+        self.assertEqual(bypass_kv[0].shape, (B, expected_cache_tokens, self.dim))
+        self.assertEqual(bypass_kv[1].shape, (B, expected_cache_tokens, self.dim))
 
-    def test_orthogonality(self):
+    def test_mhdsra2_state_update_proxy_is_finite(self):
+        """Validate MHDSRA2 slot update diagnostics after replacing orthogonal writes.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `DSRA_Chunk_Layer.forward`, `torch.isfinite`
+        - 作用 / Purpose: 新机制不再使用旧正交逆矩阵，改为检查 slot 更新代理量稳定存在
+        - 变量 / Variables: `V_proxy` 是 `last_V_orth` 兼容诊断代理, `S_next` 是新状态
+        - 接入 / Integration: 保护饱和度脚本继续读取 `last_V_orth`
+        - 错误处理 / Error handling: NaN/Inf 或形状错误会触发断言失败
+        - 关键词 / Keywords:
+          mhdsra2|state_update|proxy|last_V_orth|finite|slot|diagnostic|compat|test|更新
+        """
         B, T = 2, 128
         x = torch.randn(B, T, self.dim).to(self.device)
         
-        out, S_next, _, _ = self.layer(x)
-        V_orth = self.layer.last_V_orth # [B, K, dim]
-        S_prev = self.layer.S_init.unsqueeze(0).expand(B, -1, -1) # [B, K, dim]
-        
-        # Test if V_orth is orthogonal to S_prev
-        # V_orth @ S_prev.T should be close to 0
-        dot_product = torch.bmm(V_orth, S_prev.transpose(1, 2)) # [B, K, K]
-        
-        # Mean absolute dot product should be very small
-        mean_abs_dot = dot_product.abs().mean().item()
-        self.assertTrue(mean_abs_dot < 1e-4, f"Orthogonality failed, mean abs dot product: {mean_abs_dot}")
+        _, S_next, _, _ = self.layer(x)
+        V_proxy = self.layer.last_V_orth
+
+        self.assertIsInstance(S_next, MHDSRA2State)
+        self.assertEqual(V_proxy.shape, (B, self.K, self.dim))
+        self.assertTrue(torch.isfinite(V_proxy).all())
+        self.assertTrue(torch.isfinite(S_next.slot_v).all())
 
     def test_gradient_flow_and_stability(self):
         B, T = 2, 64
@@ -66,19 +90,31 @@ class TestDSRAMath(unittest.TestCase):
         self.assertFalse(torch.isnan(self.layer.S_init.grad).any())
 
     def test_extreme_k_and_kr(self):
+        """Validate extreme slot counts under the MHDSRA2 compatibility layer.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `DSRA_Chunk_Layer.forward`
+        - 作用 / Purpose: 确认很小和很大的 slot/top-k 配置仍能生成有效 MHDSRA2 状态
+        - 变量 / Variables: `layer_small/layer_large` 是不同容量的兼容层
+        - 接入 / Integration: 保护 `K/kr` 参数继续从旧入口映射到新核心
+        - 错误处理 / Error handling: NaN 或状态槽位数错误会触发断言失败
+        - 关键词 / Keywords:
+          extreme|slots|topk|mhdsra2|compat|state|finite|K|kr|边界
+        """
         B, T = 2, 32
         x = torch.randn(B, T, self.dim).to(self.device)
         
         # Extreme small K
         layer_small = DSRA_Chunk_Layer(self.dim, K=2, kr=1).to(self.device)
         out, S_next, _, _ = layer_small(x)
-        self.assertEqual(S_next.shape, (B, 2, self.dim))
+        self.assertEqual(S_next.slot_v.shape[2], 2)
         self.assertFalse(torch.isnan(out).any())
         
         # Extreme large K
         layer_large = DSRA_Chunk_Layer(self.dim, K=1024, kr=1024).to(self.device)
         out, S_next, _, _ = layer_large(x)
-        self.assertEqual(S_next.shape, (B, 1024, self.dim))
+        self.assertEqual(S_next.slot_v.shape[2], 1024)
         self.assertFalse(torch.isnan(out).any())
 
     def test_extreme_chunk_size(self):
@@ -95,34 +131,28 @@ class TestDSRAMath(unittest.TestCase):
         out, _, _, _ = self.layer(x_one)
         self.assertEqual(out.shape, (B, T_one, self.dim))
 
-    def test_zero_novelty(self):
+    def test_repeated_input_keeps_mhdsra2_state_finite(self):
+        """Validate repeated inputs keep the replacement MHDSRA2 state stable.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `DSRA_Chunk_Layer.forward`
+        - 作用 / Purpose: 替代旧 zero-novelty 正交投影断言，确认重复信息不会破坏新状态
+        - 变量 / Variables: `x` 是重复输入, `S_next` 是第一次状态, `S_next_2` 是第二次状态
+        - 接入 / Integration: 保护 MHDSRA2 写入、遗忘和局部缓存组合的数值稳定性
+        - 错误处理 / Error handling: NaN/Inf 会触发断言失败
+        - 关键词 / Keywords:
+          repeated|input|state|finite|mhdsra2|novelty|compat|stability|test|稳定
+        """
         B, T = 2, 64
         x = torch.randn(B, T, self.dim).to(self.device)
-        
-        # Overwrite W_v so V is exactly equal to the first T elements of S_init
-        # We need to simulate the case where V is identical to existing S
-        # A simple way is to make V composed entirely of the first row of S
-        const_vec = self.layer.S_init[0].unsqueeze(0).unsqueeze(0).expand(B, T, -1) # [B, T, dim]
-        
-        # Override forward to pass this const_vec as V
-        class MockWV(nn.Module):
-            def __init__(self, const_vec):
-                super().__init__()
-                self.const_vec = const_vec
-            def forward(self, x):
-                return self.const_vec
 
-        original_wv = self.layer.W_v
-        self.layer.W_v = MockWV(const_vec)
-        
-        out, S_next, _, _ = self.layer(x)
-        
-        # Restore W_v
-        self.layer.W_v = original_wv
-        
-        # If V is just a vector from S_prev's span, it should be entirely projected away
-        V_orth = self.layer.last_V_orth
-        self.assertTrue(V_orth.abs().mean().item() < 1e-4, f"V_orth should be close to 0 when V is in span of S, got {V_orth.abs().mean().item()}")
+        _, S_next, bypass_kv, _ = self.layer(x)
+        out, S_next_2, _, _ = self.layer(x, S_prev=S_next, bypass_kv=bypass_kv)
+
+        self.assertFalse(torch.isnan(out).any())
+        self.assertTrue(torch.isfinite(S_next_2.slot_k).all())
+        self.assertTrue(torch.isfinite(S_next_2.slot_v).all())
 
     def test_pe_modes(self):
         B, T = 2, 32

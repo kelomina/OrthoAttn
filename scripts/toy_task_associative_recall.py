@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from src.dsra.dsra_layer import DSRA_Chunk_Layer
 from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
 
 class LocalContextTokenModel(nn.Module):
@@ -81,7 +80,7 @@ def _forward_chunked_hidden(model, x):
 
 
 class MHDSRA2CompatChunkLayer(nn.Module):
-    def __init__(self, dim, K=128, kr=8, local_window=256):
+    def __init__(self, dim, K=128, kr=8, local_window=256, use_local=True, use_retrieval=True):
         super().__init__()
         self.layer = MultiHeadDSRA2(
             MHDSRA2Config(
@@ -91,8 +90,8 @@ class MHDSRA2CompatChunkLayer(nn.Module):
                 read_topk=max(1, min(kr, K)),
                 write_topk=max(1, min(kr, K)),
                 local_window=max(1, int(local_window)),
-                use_local=True,
-                use_retrieval=True,
+                use_local=use_local,
+                use_retrieval=use_retrieval,
                 detach_state=True,
             )
         )
@@ -156,6 +155,20 @@ class DSRAModel(LocalContextTokenModel):
         local_context_size=4,
         local_context_mode='sum',
     ):
+        """Archived DSRA model name mapped to the active MHDSRA2 architecture.
+
+        中文说明:
+        - 调用方 / Called by: legacy tests, JSON retrieval compatibility imports, old scripts
+        - 调用对象 / Calls: `LocalContextTokenModel.__init__`, `MHDSRA2CompatChunkLayer`, `nn.LayerNorm`, `nn.Linear`
+        - 作用 / Purpose: 将历史 `DSRAModel` 明确归档为 MHDSRA2 兼容别名，不再构造旧 DSRA 机制
+        - 变量 / Variables:
+          `pe_mode/use_orthogonal_update/use_bypass` 是旧签名兼容字段,
+          `K/kr/chunk_size/local_context_*` 映射到 MHDSRA2 适配层
+        - 接入 / Integration: 旧代码可继续导入 `DSRAModel`，新代码应直接使用 `MHDSRA2Model`
+        - 错误处理 / Error handling: 底层 MHDSRA2 配置错误会直接向上抛出
+        - 关键词 / Keywords:
+          archived|dsra|alias|mhdsra2|compat|retrieval|model|legacy|migration|归档
+        """
         super().__init__(
             vocab_size=vocab_size,
             dim=dim,
@@ -163,13 +176,21 @@ class DSRAModel(LocalContextTokenModel):
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
         )
-        self.dsra = DSRA_Chunk_Layer(
-            dim,
+        self.architecture = "mhdsra2"
+        self.archived_alias = "dsra"
+        self.archived_dsra_options = {
+            "pe_mode": pe_mode,
+            "use_orthogonal_update": bool(use_orthogonal_update),
+            "use_bypass": bool(use_bypass),
+        }
+        local_window = max(chunk_size, local_context_size)
+        self.dsra = MHDSRA2CompatChunkLayer(
+            dim=dim,
             K=K,
             kr=kr,
-            pe_mode=pe_mode,
-            use_orthogonal_update=use_orthogonal_update,
-            use_bypass=use_bypass,
+            local_window=local_window,
+            use_local=use_bypass,
+            use_retrieval=True,
         )
         self.norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
@@ -193,6 +214,9 @@ class MHDSRA2Model(LocalContextTokenModel):
         chunk_size=256,
         local_context_size=4,
         local_context_mode='sum',
+        use_local=True,
+        use_retrieval=True,
+        local_window=None,
     ):
         super().__init__(
             vocab_size=vocab_size,
@@ -201,8 +225,18 @@ class MHDSRA2Model(LocalContextTokenModel):
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
         )
-        local_window = max(chunk_size, local_context_size)
-        self.dsra = MHDSRA2CompatChunkLayer(dim, K=K, kr=kr, local_window=local_window)
+        self.architecture = "mhdsra2"
+        resolved_local_window = max(chunk_size, local_context_size)
+        if local_window is not None:
+            resolved_local_window = max(1, int(local_window))
+        self.dsra = MHDSRA2CompatChunkLayer(
+            dim,
+            K=K,
+            kr=kr,
+            local_window=resolved_local_window,
+            use_local=use_local,
+            use_retrieval=use_retrieval,
+        )
         self.norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
 
@@ -773,7 +807,7 @@ def train():
     batch_size = 16
     epochs = 1500
 
-    model = DSRAModel(vocab_size=vocab_size, dim=dim, K=64, kr=8, chunk_size=chunk_size).to(device)
+    model = MHDSRA2Model(vocab_size=vocab_size, dim=dim, K=64, kr=8, chunk_size=chunk_size).to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 

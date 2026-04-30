@@ -7,7 +7,7 @@ import torch.optim as optim
 
 from src.dsra.report_utils import build_ablation_markdown, ensure_reports_dir, write_json, write_markdown
 from scripts.toy_task_associative_recall import (
-    DSRAModel,
+    MHDSRA2Model,
     build_fixed_associative_mapping,
     generate_associative_recall_data,
 )
@@ -199,15 +199,28 @@ def train_with_curriculum(
 
 
 def build_model(config, vocab_size, dim, K, kr, chunk_size, device):
-    return DSRAModel(
+    """Build an MHDSRA2 model for one ablation configuration.
+
+    中文说明:
+    - 调用方 / Called by: `run_ablation`
+    - 调用对象 / Calls: `MHDSRA2Model`
+    - 作用 / Purpose: 将消融研究从旧 DSRA 机制迁移到 MHDSRA2 的 local/retrieval/window 配置
+    - 变量 / Variables:
+      `config` 包含 `use_local/use_retrieval/local_window`, 其余参数为模型结构与设备
+    - 接入 / Integration: 新增 MHDSRA2 消融项时扩展 `config` 字段即可
+    - 错误处理 / Error handling: 非法配置由 MHDSRA2 底层抛出
+    - 关键词 / Keywords:
+      ablation|mhdsra2|build_model|local|retrieval|window|toy_task|config|migration|消融
+    """
+    return MHDSRA2Model(
         vocab_size=vocab_size,
         dim=dim,
         K=K,
         kr=kr,
         chunk_size=chunk_size,
-        pe_mode=config["pe_mode"],
-        use_orthogonal_update=config["use_orthogonal_update"],
-        use_bypass=config["use_bypass"],
+        use_local=config["use_local"],
+        use_retrieval=config["use_retrieval"],
+        local_window=config.get("local_window"),
     ).to(device)
 
 
@@ -300,12 +313,12 @@ def main(reports_dir=None):
         )
 
     baseline_config = {
-        "use_orthogonal_update": True,
-        "use_bypass": True,
-        "pe_mode": "none",
+        "use_local": True,
+        "use_retrieval": True,
+        "local_window": chunk_size,
     }
     baseline_result = run_ablation(
-        name="Full DSRA (NoPE)",
+        name="Full MHDSRA2 (local+slot)",
         config=baseline_config,
         device=device,
         eval_batches=eval_batches,
@@ -318,25 +331,24 @@ def main(reports_dir=None):
         data_mode=DATA_MODE,
     )
 
-    results = {"Full DSRA (NoPE)": baseline_result}
+    results = {"Full MHDSRA2 (local+slot)": baseline_result}
     baseline_threshold = 0.9
 
     if baseline_result["final_eval_acc"] < baseline_threshold:
         print(
-            "\nBaseline has not learned the task reliably yet; skipping position-encoding ablations "
-            "until the shared backbone reaches at least 50% validation accuracy."
+            "\nBaseline has not learned the task reliably yet; running the minimal MHDSRA2 "
+            "local/window ablations and skipping wider variants."
         )
         ablations = [
-            ("No Orthogonal Update", {"use_orthogonal_update": False, "use_bypass": True, "pe_mode": "none"}),
-            ("No Bypass", {"use_orthogonal_update": True, "use_bypass": False, "pe_mode": "none"}),
+            ("MHDSRA2 Slot Only (no local)", {"use_local": False, "use_retrieval": True, "local_window": chunk_size}),
+            ("MHDSRA2 Narrow Local Window", {"use_local": True, "use_retrieval": True, "local_window": max(1, chunk_size // 4)}),
         ]
     else:
         ablations = [
-            ("No Orthogonal Update", {"use_orthogonal_update": False, "use_bypass": True, "pe_mode": "none"}),
-            ("No Bypass", {"use_orthogonal_update": True, "use_bypass": False, "pe_mode": "none"}),
-            ("Full DSRA (RoPE)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "rope"}),
-            ("Full DSRA (ALiBi)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "alibi"}),
-            ("Full DSRA (Timestamps)", {"use_orthogonal_update": True, "use_bypass": True, "pe_mode": "timestamps"}),
+            ("MHDSRA2 Slot Only (no local)", {"use_local": False, "use_retrieval": True, "local_window": chunk_size}),
+            ("MHDSRA2 Narrow Local Window", {"use_local": True, "use_retrieval": True, "local_window": max(1, chunk_size // 4)}),
+            ("MHDSRA2 Wide Local Window", {"use_local": True, "use_retrieval": True, "local_window": chunk_size * 2}),
+            ("MHDSRA2 Retrieval Flag Off", {"use_local": True, "use_retrieval": False, "local_window": chunk_size}),
         ]
 
     for name, config in ablations:

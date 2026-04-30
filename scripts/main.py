@@ -55,6 +55,12 @@ def write_run_report(reports_dir, executed_tests):
             "- `reports/mhdsra2_vs_dsra_compare.json`",
             "- `reports/mhdsra2_vs_dsra_next_round_benchmark.md`",
             "- `reports/mhdsra2_vs_dsra_next_round_benchmark.json`",
+            "- `reports/mhdsra2_layer_emergence_curve.md`",
+            "- `reports/mhdsra2_layer_emergence_curve.json`",
+            "- `reports/mhdsra2_curriculum_strategy_grid.md`",
+            "- `reports/mhdsra2_curriculum_strategy_grid.json`",
+            "- `reports/mhdsra2_carry_diagnostic_grid.md`",
+            "- `reports/mhdsra2_carry_diagnostic_grid.json`",
         ]
     )
     write_markdown(reports_dir / "run_summary.md", lines)
@@ -210,6 +216,63 @@ def run_next_round_benchmark():
     return next_round_benchmark_main(["--reports-dir", str(get_reports_dir())])
 
 
+def run_mhdsra2_layer_emergence():
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 Decimal Arithmetic Emergence")
+    print("=" * 50)
+    from scripts.mhdsra2_layer_emergence_report import main as layer_emergence_main
+
+    return layer_emergence_main(["--reports-dir", str(get_reports_dir())])
+
+
+def run_mhdsra2_curriculum_strategy_grid():
+    """Run the MHDSRA2 curriculum strategy grid report.
+
+    中文说明:
+    - 调用方 / Called by: `main` dispatch mapping.
+    - 调用对象 / Calls: `scripts.mhdsra2_curriculum_strategy_grid_report.main`.
+    - 作用 / Purpose: 从统一主入口触发 replay ratio/stage patience 小型网格扫描。
+    - 变量 / Variables: `reports_dir` 由 `get_reports_dir` 间接提供给报告脚本。
+    - 接入 / Integration: `python scripts/main.py mhdsra2_curriculum_strategy_grid`。
+    - 错误处理 / Error handling: 报告脚本失败时异常向上传播, 不吞掉错误。
+    - 关键词 / Keywords:
+      main|dispatch|strategy_grid|replay_ratio|stage_patience|mhdsra2|reports|curriculum|调度|网格
+    """
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 Curriculum Strategy Grid")
+    print("=" * 50)
+    from scripts.mhdsra2_curriculum_strategy_grid_report import (
+        main as strategy_grid_main,
+    )
+
+    return strategy_grid_main(["--reports-dir", str(get_reports_dir())])
+
+
+def run_mhdsra2_carry_diagnostic_grid():
+    """Run the MHDSRA2 carry-rule diagnostic grid report.
+
+    中文说明:
+    - 调用方 / Called by: `main` dispatch mapping.
+    - 调用对象 / Calls: `scripts.mhdsra2_carry_diagnostic_grid_report.main`.
+    - 作用 / Purpose: 从统一主入口触发可恢复 carry 诊断完整网格。
+    - 变量 / Variables: `reports_dir` 由 `get_reports_dir` 提供给报告脚本。
+    - 接入 / Integration: `python scripts/main.py mhdsra2_carry_diagnostic_grid`。
+    - 错误处理 / Error handling: 报告脚本失败时异常向上传播。
+    - 关键词 / Keywords:
+      main|dispatch|carry_diagnostic|full_grid|resume|checkpoint|mhdsra2|reports|调度|进位
+    """
+    print("\n" + "=" * 50)
+    print("Running MHDSRA2 Carry Diagnostic Grid")
+    print("=" * 50)
+    from scripts.mhdsra2_carry_diagnostic_grid_report import (
+        main as carry_diagnostic_main,
+    )
+
+    return carry_diagnostic_main(
+        ["--full-grid", "--resume", "--reports-dir", str(get_reports_dir())]
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="DSRA (Decoupled Sparse Routing Attention) Unified Test Runner",
@@ -251,6 +314,9 @@ def main():
         'mhdsra2',
         'mhdsra2_compare',
         'next_round_benchmark',
+        'mhdsra2_layer_emergence',
+        'mhdsra2_curriculum_strategy_grid',
+        'mhdsra2_carry_diagnostic_grid',
         'ablation',     # ablation_study.py
         'report',
         'all'           # Run everything in sequence
@@ -285,6 +351,7 @@ def main():
                 ("json_retrieval", run_json_retrieval),
                 ("mhdsra2", run_mhdsra2_verify),
                 ("mhdsra2_compare", run_mhdsra2_compare),
+                ("mhdsra2_layer_emergence", run_mhdsra2_layer_emergence),
                 ("ablation", run_ablation),
             ]
     else:
@@ -301,6 +368,15 @@ def main():
             'mhdsra2': ("mhdsra2", run_mhdsra2_verify),
             'mhdsra2_compare': ("mhdsra2_compare", run_mhdsra2_compare),
             'next_round_benchmark': ("next_round_benchmark", run_next_round_benchmark),
+            'mhdsra2_layer_emergence': ("mhdsra2_layer_emergence", run_mhdsra2_layer_emergence),
+            'mhdsra2_curriculum_strategy_grid': (
+                "mhdsra2_curriculum_strategy_grid",
+                run_mhdsra2_curriculum_strategy_grid,
+            ),
+            'mhdsra2_carry_diagnostic_grid': (
+                "mhdsra2_carry_diagnostic_grid",
+                run_mhdsra2_carry_diagnostic_grid,
+            ),
             'ablation': ("ablation", run_ablation),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }

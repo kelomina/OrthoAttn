@@ -1,4 +1,3 @@
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -98,7 +97,10 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
                         {
                             "title": "Five-model diagnostic summary",
                             "columns": ["Model", "exact_match_rate"],
-                            "rows": [["Original DSRA", "0.2500"], ["MH-DSRA-v2 (paged recall)", "1.0000"]],
+                            "rows": [
+                                ["Archived DSRA alias / MHDSRA2", "0.2500"],
+                                ["MH-DSRA-v2 (paged recall)", "1.0000"],
+                            ],
                         }
                     ],
                 }
@@ -111,13 +113,14 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
         self.assertEqual(payload["rows"][0]["winner"], "mhdsra2")
         self.assertEqual(payload["rows"][1]["winner"], "dsra")
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            json_path, md_path = save_benchmark_reports(payload, Path(tmp_dir))
-            self.assertTrue(json_path.exists())
-            self.assertTrue(md_path.exists())
-            markdown_text = md_path.read_text(encoding="utf-8")
-            self.assertIn("Five-model diagnostic summary", markdown_text)
-            self.assertIn("MH-DSRA-v2 (paged recall)", markdown_text)
+        project_root = Path(__file__).resolve().parents[1]
+        reports_dir = project_root / "reports" / "test_next_round_benchmark" / "reports"
+        json_path, md_path = save_benchmark_reports(payload, reports_dir)
+        self.assertTrue(json_path.exists())
+        self.assertTrue(md_path.exists())
+        markdown_text = md_path.read_text(encoding="utf-8")
+        self.assertIn("Five-model diagnostic summary", markdown_text)
+        self.assertIn("MH-DSRA-v2 (paged recall)", markdown_text)
 
     def test_next_round_parser_accepts_diagnostic_retrieval_tau(self):
         """Validate retrieval tau is exposed through the benchmark CLI.

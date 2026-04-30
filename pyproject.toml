@@ -21,7 +21,7 @@ dev = [
 ]
 
 [tool.ruff]
-exclude = [".env", "archive"]
+exclude = [".env", ".pytest_cache", ".ruff_cache", "__pycache__", "archive", "tmp_*"]
 line-length = 100
 target-version = "py310"
 
@@ -29,6 +29,7 @@ target-version = "py310"
 per-file-ignores = { "scripts/main.py" = ["E402"], "scripts/verify_mhdsra2.py" = ["E402"] }
 
 [tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
 norecursedirs = [".env"]
 python_files = ["test_*.py"]
 testpaths = ["tests"]

@@ -1,6 +1,10 @@
 .env/
+.pytest_cache/
+.ruff_cache/
 __pycache__/
 .trae/
 dsra_attn.egg-info/
+tmp_*/
 reports/archive/
 reports/paper_seed_*/
+reports/test_*/

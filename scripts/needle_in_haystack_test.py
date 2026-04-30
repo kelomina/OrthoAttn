@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-from src.dsra.dsra_model import MultiLayerDSRAModel, MultiLayerMHDSRA2Model
+from src.dsra.dsra_model import MultiLayerMHDSRA2Model
+from src.dsra.domain import normalize_model_type
 from src.dsra.report_utils import build_capacity_markdown, ensure_reports_dir, write_json, write_markdown
 
 DEFAULT_SEQ_LENGTHS = [
@@ -104,7 +105,7 @@ def build_niah_model(
     K=64,
     kr=8,
     chunk_size=256,
-    model_type="dsra",
+    model_type="mhdsra2",
 ):
     """Build the long-context Needle-In-A-Haystack benchmark model.
 
@@ -120,12 +121,8 @@ def build_niah_model(
     - 关键词 / Keywords:
       niah|build_model|dsra|mhdsra2|factory|benchmark|needle|haystack|long_context|构建
     """
-    if model_type == "dsra":
-        return MultiLayerDSRAModel(
-            vocab_size, dim, num_layers, K, kr, chunk_size,
-            use_orthogonal_update=True, use_bypass=True
-        ).to(device)
-    if model_type == "mhdsra2":
+    active_model_type = normalize_model_type(model_type)
+    if active_model_type == "mhdsra2":
         return MultiLayerMHDSRA2Model(
             vocab_size, dim, num_layers, K, kr, chunk_size
         ).to(device)
@@ -140,7 +137,7 @@ def run_single_niah_test(
     num_layers=2,
     K=64,
     kr=8,
-    model_type="dsra",
+    model_type="mhdsra2",
 ):
     runtime_cfg = get_niah_runtime_config(seq_len)
     batch_size = runtime_cfg["batch_size"]
@@ -334,7 +331,7 @@ def save_niah_capacity_reports(forward_results, train_results, reports_dir):
     )
 
 
-def run_niah_test(seq_lengths=None, model_type="dsra"):
+def run_niah_test(seq_lengths=None, model_type="mhdsra2"):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     seq_lengths = seq_lengths or DEFAULT_SEQ_LENGTHS
     print(

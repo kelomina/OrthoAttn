@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import argparse
 import gc
-import math
-import random
+import importlib
 from dataclasses import dataclass
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -22,14 +21,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.compare_mhdsra2_vs_dsra import build_benchmark_comparison_row
-from scripts.toy_task_associative_recall import (
-    LinearAttentionChunkLayer,
-    SlidingWindowAttentionChunkLayer,
-)
-from src.dsra.dsra_layer import DSRA_Chunk_Layer
-from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
-from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+_compare_module = importlib.import_module("scripts.compare_mhdsra2_vs_dsra")
+_toy_recall_module = importlib.import_module("scripts.toy_task_associative_recall")
+_dsra_layer_module = importlib.import_module("src.dsra.dsra_layer")
+_mhdsra2_module = importlib.import_module("src.dsra.mhdsra2.improved_dsra_mha")
+_paged_memory_module = importlib.import_module("src.dsra.mhdsra2.paged_exact_memory")
+
+build_benchmark_comparison_row = _compare_module.build_benchmark_comparison_row
+LinearAttentionChunkLayer = _toy_recall_module.LinearAttentionChunkLayer
+SlidingWindowAttentionChunkLayer = _toy_recall_module.SlidingWindowAttentionChunkLayer
+DSRA_Chunk_Layer = _dsra_layer_module.DSRA_Chunk_Layer
+MHDSRA2Config = _mhdsra2_module.MHDSRA2Config
+MultiHeadDSRA2 = _mhdsra2_module.MultiHeadDSRA2
+PagedExactMemory = _paged_memory_module.PagedExactMemory
 
 MODEL_ORDER = (
     "dsra",
@@ -39,7 +43,7 @@ MODEL_ORDER = (
     "linear_attention",
 )
 MODEL_LABELS = {
-    "dsra": "Original DSRA",
+    "dsra": "Archived DSRA alias / MHDSRA2",
     "mhdsra2_without_paged_recall": "MH-DSRA-v2 (no paged recall)",
     "mhdsra2_with_paged_recall": "MH-DSRA-v2 (paged recall)",
     "sliding_window_attention": "Sliding window attention",

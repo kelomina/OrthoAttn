@@ -1,6 +1,5 @@
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import torch
 
@@ -133,23 +132,23 @@ class TestAttentionFamilyBenchmark(unittest.TestCase):
         benchmark_module.run_json_retrieval_generalization_test = _fake_run
         benchmark_module.build_retrieval_model = _fake_build
         try:
-            with TemporaryDirectory() as tmp_dir:
-                output_root = Path(tmp_dir) / "attention_family_json_retrieval"
-                results = benchmark_module.run_attention_family_json_retrieval_benchmark(
-                    reports_dir=output_root,
-                    model_types=("dsra",),
-                    task_variants=("baseline",),
-                    task_seed_roots=(7,),
-                    generalization_kwargs={"dim": 8, "K": 8, "kr_grid": [2], "chunk_size_grid": [4]},
-                )
+            project_root = Path(__file__).resolve().parents[1]
+            output_root = project_root / "reports" / "test_attention_family_json_retrieval"
+            results = benchmark_module.run_attention_family_json_retrieval_benchmark(
+                reports_dir=output_root,
+                model_types=("dsra",),
+                task_variants=("baseline",),
+                task_seed_roots=(7,),
+                generalization_kwargs={"dim": 8, "K": 8, "kr_grid": [2], "chunk_size_grid": [4]},
+            )
 
-                expected_seed_report = output_root / "baseline" / "dsra" / "seed_7" / "reports"
-                self.assertTrue(expected_seed_report.exists())
-                self.assertFalse((output_root / "reports").exists())
-                self.assertEqual(
-                    results["task_variants"]["baseline"]["model_results"][0]["seed_runs"][0]["report_dir"],
-                    str(expected_seed_report),
-                )
+            expected_seed_report = output_root / "baseline" / "dsra" / "seed_7" / "reports"
+            self.assertTrue(expected_seed_report.exists())
+            self.assertFalse((output_root / "reports").exists())
+            self.assertEqual(
+                results["task_variants"]["baseline"]["model_results"][0]["seed_runs"][0]["report_dir"],
+                str(expected_seed_report),
+            )
         finally:
             benchmark_module.run_json_retrieval_generalization_test = original_run
             benchmark_module.build_retrieval_model = original_build

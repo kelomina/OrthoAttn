@@ -12,3 +12,13 @@
 - `reports/json_retrieval_report.json`
 - `reports/json_retrieval_generalization_report.md`
 - `reports/json_retrieval_generalization_report.json`
+- `reports/mhdsra2_vs_dsra_compare.md`
+- `reports/mhdsra2_vs_dsra_compare.json`
+- `reports/mhdsra2_vs_dsra_next_round_benchmark.md`
+- `reports/mhdsra2_vs_dsra_next_round_benchmark.json`
+- `reports/mhdsra2_layer_emergence_curve.md`
+- `reports/mhdsra2_layer_emergence_curve.json`
+- `reports/mhdsra2_curriculum_strategy_grid.md`
+- `reports/mhdsra2_curriculum_strategy_grid.json`
+- `reports/mhdsra2_carry_diagnostic_grid.md`
+- `reports/mhdsra2_carry_diagnostic_grid.json`

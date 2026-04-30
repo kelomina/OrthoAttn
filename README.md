@@ -1,5 +1,72 @@
 # DSRA (Decoupled Sparse Routing Attention)
 
+## 当前 MHDSRA2 Carry Diagnostic 结论
+
+截至 2026-04-30，`mhdsra2_carry_diagnostic_grid` 完整网格已按用户要求提前停止，保留当前 checkpoint：
+
+- Checkpoint: `reports/mhdsra2_carry_diagnostic_grid.checkpoint.jsonl`
+- 已完成进度：`81 / 1296` runs，约 `6.25%`
+- 当前已完成部分主要覆盖 `curriculum_rule_set` 的 baseline 早期组合，尚未覆盖 `unit_with_carry_only`，因此“单独进位规则学习能力”还没有最终结论。
+
+当前主实验默认参数：
+
+```text
+training_strategy = baseline
+learning_rate = 0.01
+max_steps_per_stage = 512
+curriculum_eval_interval = 8
+stage_patience = 3
+replay_ratio = 0.75
+layers = 1, 2, 4, 8, 16
+device = auto
+```
+
+依据当前 checkpoint，低学习率与 `max_steps_per_stage=256` 是最强稳定因素；在多个 `curriculum_eval_interval` 和层数组合下，已出现 3 seeds 稳定达到：
+
+```text
+carry_em = 1.0
+target_rate = 1.0
+retained = 2
+```
+
+CUDA 三 seed 小对照使用 `cuda:0 = NVIDIA GeForce RTX 4070 Laptop GPU`，固定 `max_steps_per_stage=256`、`curriculum_eval_interval=8`、`replay_ratio=0.75`、`stage_patience=3`、`training_strategy=baseline`，比较 `learning_rate=0.003` 与 `0.01`：
+
+```text
+lr=0.003, layers=4: carry_mean=0.8333, retained_mean=1.3333, target_retention_rate=0.3333
+lr=0.003, layers=8: carry_mean=0.7500, retained_mean=1.3333, target_retention_rate=0.3333
+lr=0.010, layers=4: carry_mean=1.0000, retained_mean=2.0000, target_retention_rate=1.0000
+lr=0.010, layers=8: carry_mean=1.0000, retained_mean=1.3333, target_retention_rate=0.6667
+```
+
+因此主实验默认学习率设为 `0.01`；`0.003` 仍可作为更保守的诊断候选。正式主实验报告入口现在通过 `--device auto` 选择设备，当前机器 CUDA 可用时会使用 GPU，否则回退 CPU。
+
+使用上述默认参数重跑 `scripts/mhdsra2_layer_emergence_report.py --device auto --reports-dir reports` 后，正式报告确认：
+
+```text
+device = cuda
+max_steps_per_stage = 512
+learning_rate = 0.01
+minimum_curriculum_mastery_layers = null
+minimum_arithmetic_emergent_layers = null
+```
+
+阶段聚合显示 `4/8/16` 层均已稳定通过并保留 `unit_no_carry + unit_with_carry`，但 `two_digit_rules` 仍未达到阶段阈值，`100+100=200` 百位外推仍未涌现。
+
+可选轻量配置：
+
+```text
+training_strategy = baseline
+learning_rate = 0.01
+max_steps_per_stage = 512
+curriculum_eval_interval = 8
+stage_patience = 3
+replay_ratio = 0.75
+layers = 4
+device = auto
+```
+
+目前判断：此前 `unit_with_carry` 失败更可能来自学习率偏高或每阶段训练预算不足，而不是单纯层数不足。后续若继续诊断，应优先补跑 `unit_with_carry_only` 子网格，确认 MHDSRA2 是否能单独学会进位规则。
+
 这是一个基于"固定容量可微状态库 + 语义路由 + 正交增量更新"的流式长序列注意力机制的可行性验证与测试套件。
 
 ## 目录结构

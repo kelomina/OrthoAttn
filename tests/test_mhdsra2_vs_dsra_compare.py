@@ -4,7 +4,6 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import scripts.compare_mhdsra2_vs_dsra as compare_module
 
@@ -38,66 +37,66 @@ class TestMHDSRA2VsDSRACompare(unittest.TestCase):
         - 关键词 / Keywords:
           script|reports_dir|artifact|payload|json|markdown|smoke|compare|structure|回归
         """
-        with TemporaryDirectory() as tmp_dir:
-            reports_dir = Path(tmp_dir) / "reports"
-            payload = compare_module.main(
-                [
-                    "--seq-lengths",
-                    "8",
-                    "16",
-                    "--batch-size",
-                    "1",
-                    "--dim",
-                    "32",
-                    "--slots",
-                    "8",
-                    "--read-topk",
-                    "4",
-                    "--chunk-sizes",
-                    "8",
-                    "--warmup-runs",
-                    "1",
-                    "--repeat-runs",
-                    "2",
-                    "--device",
-                    "cpu",
-                    "--reports-dir",
-                    str(reports_dir),
-                ]
-            )
-            json_path = reports_dir / "mhdsra2_vs_dsra_compare.json"
-            md_path = reports_dir / "mhdsra2_vs_dsra_compare.md"
+        project_root = Path(__file__).resolve().parents[1]
+        reports_dir = project_root / "reports" / "test_mhdsra2_vs_dsra_compare" / "reports"
+        payload = compare_module.main(
+            [
+                "--seq-lengths",
+                "8",
+                "16",
+                "--batch-size",
+                "1",
+                "--dim",
+                "32",
+                "--slots",
+                "8",
+                "--read-topk",
+                "4",
+                "--chunk-sizes",
+                "8",
+                "--warmup-runs",
+                "1",
+                "--repeat-runs",
+                "2",
+                "--device",
+                "cpu",
+                "--reports-dir",
+                str(reports_dir),
+            ]
+        )
+        json_path = reports_dir / "mhdsra2_vs_dsra_compare.json"
+        md_path = reports_dir / "mhdsra2_vs_dsra_compare.md"
 
-            self.assertTrue(json_path.exists())
-            self.assertTrue(md_path.exists())
-            self.assertEqual(len(payload["results"]), 2)
-            self.assertEqual(payload["results"][0]["chunk_size"], 8)
-            self.assertEqual(payload["results"][0]["slots"], 8)
-            self.assertEqual(payload["results"][0]["read_topk"], 4)
-            self.assertEqual(payload["results"][0]["batch_size"], 1)
-            self.assertEqual(payload["results"][0]["dim"], 32)
-            self.assertIn("elapsed_ms_std", payload["results"][0]["dsra"])
-            self.assertIn("elapsed_ms_samples", payload["results"][0]["mhdsra2"])
-            self.assertEqual(payload["config"]["warmup_runs"], 1)
-            self.assertEqual(payload["config"]["repeat_runs"], 2)
-            self.assertEqual(payload["config"]["batch_size"], [1])
-            self.assertEqual(payload["config"]["dim"], [32])
-            self.assertIn("summary", payload)
-            self.assertEqual(payload["summary"]["overall"]["total_cases"], 2)
-            self.assertEqual(len(payload["summary"]["grouped"]["seq_len"]), 2)
-            self.assertEqual(len(payload["summary"]["grouped"]["batch_size"]), 1)
-            self.assertEqual(len(payload["summary"]["grouped"]["dim"]), 1)
-            self.assertIn("mhdsra2_min_state_overhead_case", payload["summary"])
-            self.assertIn("mhdsra2_max_state_overhead_case", payload["summary"])
+        self.assertTrue(json_path.exists())
+        self.assertTrue(md_path.exists())
+        self.assertEqual(len(payload["results"]), 2)
+        self.assertEqual(payload["results"][0]["chunk_size"], 8)
+        self.assertEqual(payload["results"][0]["slots"], 8)
+        self.assertEqual(payload["results"][0]["read_topk"], 4)
+        self.assertEqual(payload["results"][0]["batch_size"], 1)
+        self.assertEqual(payload["results"][0]["dim"], 32)
+        self.assertIn("elapsed_ms_std", payload["results"][0]["dsra"])
+        self.assertIn("elapsed_ms_samples", payload["results"][0]["mhdsra2"])
+        self.assertEqual(payload["config"]["warmup_runs"], 1)
+        self.assertEqual(payload["config"]["repeat_runs"], 2)
+        self.assertEqual(payload["config"]["batch_size"], [1])
+        self.assertEqual(payload["config"]["dim"], [32])
+        self.assertIn("summary", payload)
+        self.assertEqual(payload["summary"]["overall"]["total_cases"], 2)
+        self.assertEqual(len(payload["summary"]["grouped"]["seq_len"]), 2)
+        self.assertEqual(len(payload["summary"]["grouped"]["batch_size"]), 1)
+        self.assertEqual(len(payload["summary"]["grouped"]["dim"]), 1)
+        self.assertIn("mhdsra2_min_state_overhead_case", payload["summary"])
+        self.assertIn("mhdsra2_max_state_overhead_case", payload["summary"])
 
-            payload_from_disk = json.loads(json_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload_from_disk["results"][0]["dsra"]["model"], "dsra")
-            self.assertEqual(payload_from_disk["results"][0]["mhdsra2"]["model"], "mhdsra2")
-            self.assertIn("MHDSRA2 vs DSRA Comparison", md_path.read_text(encoding="utf-8"))
-            self.assertIn("Automatic Summary", md_path.read_text(encoding="utf-8"))
-            self.assertIn("DSRA std ms", md_path.read_text(encoding="utf-8"))
-            self.assertIn("MHDSRA2/DSRA", md_path.read_text(encoding="utf-8"))
-            self.assertIn("Batch Size", md_path.read_text(encoding="utf-8"))
+        payload_from_disk = json.loads(json_path.read_text(encoding="utf-8"))
+        self.assertEqual(payload_from_disk["results"][0]["dsra"]["model"], "dsra")
+        self.assertEqual(payload_from_disk["results"][0]["mhdsra2"]["model"], "mhdsra2")
+        self.assertIn("MHDSRA2 vs DSRA Comparison", md_path.read_text(encoding="utf-8"))
+        self.assertIn("Automatic Summary", md_path.read_text(encoding="utf-8"))
+        self.assertIn("DSRA std ms", md_path.read_text(encoding="utf-8"))
+        self.assertIn("MHDSRA2/DSRA", md_path.read_text(encoding="utf-8"))
+        self.assertIn("Batch Size", md_path.read_text(encoding="utf-8"))
 
     def test_main_entry_runs_compare_suite(self):
         """Validate `python main.py mhdsra2_compare` runs and writes project reports.

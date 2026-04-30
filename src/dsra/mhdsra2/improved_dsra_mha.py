@@ -5,9 +5,9 @@ long contexts. It keeps only a bounded local KV cache and a fixed number of
 per-head global slots on GPU. Optional exact retrieval KV can be supplied by an
 external CPU/NVMe memory index.
 
-The implementation is intentionally conservative: it removes the O(K^3)
-orthogonal inverse in the original DSRA and replaces dense top-k distributions
-with gather/scatter top-k operations so the main buffers scale with
+The implementation is intentionally conservative: Archived DSRA alias / MHDSRA2
+removes the archived O(K^3) orthogonal inverse and replaces dense top-k
+distributions with gather/scatter top-k operations so the main buffers scale with
 O(B * H * C * K) per chunk, not O(B * H * T^2).
 """
 from __future__ import annotations

@@ -7,21 +7,30 @@ still producing stable report artifacts in the project `reports/` directory.
 from __future__ import annotations
 
 import argparse
+import importlib
 import itertools
 import statistics
+import sys
 import time
 from pathlib import Path
-import sys
+
+import torch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import torch
+_dsra_layer_module = importlib.import_module("src.dsra.dsra_layer")
+_mhdsra2_module = importlib.import_module("src.dsra.mhdsra2.improved_dsra_mha")
+_report_utils_module = importlib.import_module("src.dsra.report_utils")
 
-from src.dsra.dsra_layer import DSRA_Chunk_Layer
-from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
-from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown
+DSRA_Chunk_Layer = _dsra_layer_module.DSRA_Chunk_Layer
+MHDSRA2Config = _mhdsra2_module.MHDSRA2Config
+MHDSRA2State = _mhdsra2_module.MHDSRA2State
+MultiHeadDSRA2 = _mhdsra2_module.MultiHeadDSRA2
+ensure_reports_dir = _report_utils_module.ensure_reports_dir
+write_json = _report_utils_module.write_json
+write_markdown = _report_utils_module.write_markdown
 
 
 def _tensor_bytes(tensor: torch.Tensor | None) -> int:
@@ -42,20 +51,26 @@ def _tensor_bytes(tensor: torch.Tensor | None) -> int:
     return tensor.element_size() * tensor.numel()
 
 
-def _estimate_dsra_state_bytes(state: torch.Tensor | None, bypass_kv) -> int:
+def _estimate_dsra_state_bytes(
+    state: torch.Tensor | MHDSRA2State | None,
+    bypass_kv: tuple[torch.Tensor | None, torch.Tensor | None] | None,
+) -> int:
     """Estimate baseline DSRA streaming state memory in bytes.
 
     中文说明:
     - 调用方 / Called by: `run_dsra_baseline_once`
     - 调用对象 / Calls: `_tensor_bytes`
     - 作用 / Purpose: 统计 DSRA 的槽状态与局部 bypass KV 缓存开销
-    - 变量 / Variables: `state` 为 `S_prev`，`bypass_kv` 为 `(K_cache, V_cache)`
-    - 接入 / Integration: 若 DSRA 后续新增流式状态，可在此函数扩展统计项
+    - 变量 / Variables: `state` 为旧 Tensor 或新 MHDSRA2 状态，`bypass_kv` 为 `(K_cache, V_cache)`
+    - 接入 / Integration: 旧 DSRA 入口迁移到 MHDSRA2 后仍复用本函数统计兼容层状态
     - 错误处理 / Error handling: 空状态或空缓存按 `0` 处理
     - 关键词 / Keywords:
-      dsra|state_bytes|bypass|cache|memory|slots|streaming|baseline|measure|统计
+      dsra|state_bytes|mhdsra2|bypass|cache|memory|slots|streaming|baseline|统计
     """
-    total = _tensor_bytes(state)
+    if isinstance(state, torch.Tensor) or state is None:
+        total = _tensor_bytes(state)
+    else:
+        total = _estimate_mhdsra2_state_bytes(state)
     if bypass_kv is None:
         return total
     return total + _tensor_bytes(bypass_kv[0]) + _tensor_bytes(bypass_kv[1])
