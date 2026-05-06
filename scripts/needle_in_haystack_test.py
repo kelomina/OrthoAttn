@@ -106,6 +106,7 @@ def build_niah_model(
     kr=8,
     chunk_size=256,
     model_type="mhdsra2",
+    mhdsra2_config_override=None,
 ):
     """Build the long-context Needle-In-A-Haystack benchmark model.
 
@@ -124,7 +125,8 @@ def build_niah_model(
     active_model_type = normalize_model_type(model_type)
     if active_model_type == "mhdsra2":
         return MultiLayerMHDSRA2Model(
-            vocab_size, dim, num_layers, K, kr, chunk_size
+            vocab_size, dim, num_layers, K, kr, chunk_size,
+            mhdsra2_config_override=mhdsra2_config_override,
         ).to(device)
     raise ValueError(f"Unsupported model_type: {model_type}")
 
@@ -138,6 +140,7 @@ def run_single_niah_test(
     K=64,
     kr=8,
     model_type="mhdsra2",
+    mhdsra2_config_override=None,
 ):
     runtime_cfg = get_niah_runtime_config(seq_len)
     batch_size = runtime_cfg["batch_size"]
@@ -161,6 +164,7 @@ def run_single_niah_test(
         kr=kr,
         chunk_size=chunk_size,
         model_type=model_type,
+        mhdsra2_config_override=mhdsra2_config_override,
     )
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -184,6 +188,12 @@ def run_single_niah_test(
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
+
+        # Momentum-QKV: update slow QKV for all layers
+        if hasattr(model, 'layers'):
+            for layer in model.layers:
+                if hasattr(layer, 'update_momentum'):
+                    layer.update_momentum()
 
         if epoch % 20 == 0:
             preds = logits_target.argmax(dim=-1)

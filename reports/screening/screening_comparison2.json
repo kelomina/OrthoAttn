@@ -1,0 +1,130 @@
+{
+  "I": [
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "two_digit_replay",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 3.0,
+      "forgetting_gap": 3,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.7857142857142857,
+      "stage_ems": {
+        "unit_no_carry": 0.5,
+        "unit_with_carry": 0.75,
+        "two_digit_rules": 1.0
+      }
+    },
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "combined",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 2.0,
+      "forgetting_gap": 2,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.42857142857142855,
+      "stage_ems": {
+        "unit_no_carry": 0.5,
+        "unit_with_carry": 1.0,
+        "two_digit_rules": 0.0
+      }
+    }
+  ],
+  "II": [
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "two_digit_replay",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 3.0,
+      "forgetting_gap": 3,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.42857142857142855,
+      "stage_ems": {
+        "unit_no_carry": 0.25,
+        "unit_with_carry": 0.0,
+        "two_digit_rules": 0.8333333333333334
+      }
+    },
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "combined",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 2.0,
+      "forgetting_gap": 2,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.21428571428571427,
+      "stage_ems": {
+        "unit_no_carry": 0.0,
+        "unit_with_carry": 0.75,
+        "two_digit_rules": 0.0
+      }
+    }
+  ],
+  "III": [
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "two_digit_replay",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 3.0,
+      "forgetting_gap": 3,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.7142857142857143,
+      "stage_ems": {
+        "unit_no_carry": 0.75,
+        "unit_with_carry": 0.5,
+        "two_digit_rules": 0.8333333333333334
+      }
+    },
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "combined",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 2.0,
+      "forgetting_gap": 2,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.42857142857142855,
+      "stage_ems": {
+        "unit_no_carry": 0.5,
+        "unit_with_carry": 1.0,
+        "two_digit_rules": 0.0
+      }
+    }
+  ],
+  "I+II+III": [
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "two_digit_replay",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 3.0,
+      "forgetting_gap": 3,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.21428571428571427,
+      "stage_ems": {
+        "unit_no_carry": 0.5,
+        "unit_with_carry": 0.0,
+        "two_digit_rules": 0.16666666666666666
+      }
+    },
+    {
+      "dataset": "curriculum_rule_set",
+      "strategy": "combined",
+      "num_runs": 1,
+      "retained_stage_count_mean": 0.0,
+      "ever_passed_stage_count_mean": 2.0,
+      "forgetting_gap": 2,
+      "is_catastrophic": true,
+      "train_exact_match_mean": 0.21428571428571427,
+      "stage_ems": {
+        "unit_no_carry": 0.0,
+        "unit_with_carry": 0.75,
+        "two_digit_rules": 0.0
+      }
+    }
+  ]
+}

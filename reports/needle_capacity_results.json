@@ -1,0 +1,84 @@
+{
+  "forward_only": {
+    "16384": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 28.39306640625
+    },
+    "32768": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 46.89306640625
+    },
+    "65536": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 84.89306640625
+    },
+    "131072": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 157.89306640625
+    },
+    "262144": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 305.89306640625
+    },
+    "524288": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 601.89306640625
+    },
+    "1048576": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 1193.89306640625
+    },
+    "2097152": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 2377.89306640625
+    }
+  },
+  "train_step": {
+    "16384": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 316.14111328125
+    },
+    "32768": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 613.60205078125
+    },
+    "65536": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 1206.97705078125
+    },
+    "131072": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 2387.72705078125
+    },
+    "262144": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 4753.22705078125
+    },
+    "524288": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 9485.20361328125
+    },
+    "1048576": {
+      "status": "ok",
+      "accuracy": 0.0,
+      "peak_mem_mb": 18953.45361328125
+    },
+    "2097152": {
+      "status": "oom"
+    }
+  }
+}

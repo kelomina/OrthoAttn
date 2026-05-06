@@ -46,6 +46,14 @@ class MHDSRA2Config:
     age_read_penalty: float = 0.005
     detach_state: bool = True
     eps: float = 1e-6
+    # CCFM: Context-Conditioned Feature Modulation
+    use_context_film: bool = False
+    max_contexts: int = 8
+    # Momentum-QKV: slow-moving QKV for stable slot reading
+    momentum_qkv: bool = False
+    momentum_decay: float = 0.9999
+    # RoPE position encoding for slot read
+    slot_pe: str = "none"  # "none" or "rope"
 
     def __post_init__(self) -> None:
         if self.dim % self.heads != 0:
@@ -66,6 +74,44 @@ class MHDSRA2State:
     local_k: Optional[torch.Tensor] = None
     local_v: Optional[torch.Tensor] = None
     position: int = 0
+    stage_dominance: Optional[torch.Tensor] = None
+    slot_positions: Optional[torch.Tensor] = None  # [B, H, slots] last-write positions for RoPE
+
+
+class RotaryEmbedding(nn.Module):
+    """Rotary Position Embedding for MHDSRA2 slot read.
+
+    Computes cos/sin for each position and applies rotation to queries/slot keys.
+    """
+
+    def __init__(self, dim: int, max_len: int = 1000000):
+        super().__init__()
+        half = dim // 2
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, half, dtype=torch.float32) / half))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self.max_len = max_len
+
+    def _compute_cis(self, positions: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return (cos, sin) for given positions. positions: [..., 1] with position values."""
+        flat_pos = positions.squeeze(-1).float()  # [...]
+        freqs = torch.einsum("...i,j->...ij", flat_pos, self.inv_freq)  # [..., half]
+        # Flatten the last two dims: interleave cos/sin
+        cos = freqs.cos().to(dtype=positions.dtype)
+        sin = freqs.sin().to(dtype=positions.dtype)
+        # Duplicate to full dim: cos/sin for each pair
+        cos = torch.cat([cos, cos], dim=-1)  # [..., dim]
+        sin = torch.cat([sin, sin], dim=-1)
+        return cos, sin
+
+    @staticmethod
+    def rotate_half(x: torch.Tensor) -> torch.Tensor:
+        d = x.shape[-1]
+        x1, x2 = x[..., : d // 2], x[..., d // 2:]
+        return torch.cat((-x2, x1), dim=-1)
+
+    def apply(self, x: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
+        cos, sin = self._compute_cis(positions)
+        return x * cos + self.rotate_half(x) * sin
 
 
 class MultiHeadDSRA2(nn.Module):
@@ -100,8 +146,75 @@ class MultiHeadDSRA2(nn.Module):
         self.token_write_gate = nn.Linear(self.d_head, 1)
         self.fuse_gate = nn.Linear(self.d_head, 3)
 
+        # CCFM: Context-Conditioned Feature Modulation (per-feature FiLM)
+        if cfg.use_context_film:
+            self.context_embed = nn.Embedding(cfg.max_contexts, cfg.dim)
+            # FiLM network outputs 6*dim values: scale_q, bias_q, scale_k, bias_k, scale_v, bias_v
+            # Each is a per-feature vector (not scalar), applied as: q_i * (1+tanh(s_i)) + b_i
+            self.film_net = nn.Sequential(
+                nn.Linear(cfg.dim, 8),
+                nn.ReLU(),
+                nn.Linear(8, 6 * cfg.dim),
+            )
+            self._active_context_id = 0
+        else:
+            self.context_embed = None
+            self.film_net = None
+
+        # Momentum-QKV: slow-moving QKV for stable slot reading
+        if cfg.momentum_qkv:
+            self.qkv_slow = nn.Linear(cfg.dim, 3 * cfg.dim, bias=False)
+            self.qkv_slow.weight.data.copy_(self.qkv.weight.data)
+            self.qkv_slow.requires_grad_(False)
+        else:
+            self.qkv_slow = None
+
+        # RoPE for slot read
+        if cfg.slot_pe == "rope":
+            self.rotary = RotaryEmbedding(self.d_head)
+        else:
+            self.rotary = None
+
         self.log_tau_read = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_init))))
         self.log_tau_write = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_write_init))))
+
+    def set_context(self, context_id: int) -> None:
+        """Set active context ID for CCFM modulation. Context IDs range from 0 to max_contexts-1.
+
+        中文说明:
+        - 调用方 / Called by: training loop, inference entry point.
+        - 调用对象 / Calls: none; only sets an internal integer.
+        - 作用 / Purpose: 切换当前层的上下文调制参数。
+        - 变量 / Variables: ``context_id`` 是上下文索引。
+        - 接入 / Integration: 训练循环在切换任务/阶段时调用本函数。
+        - 错误处理 / Error handling: 越界时由 nn.Embedding 抛出 IndexError。
+        - 关键词 / Keywords:
+          context|film|modulation|ccfm|task_switch|mhdsra2|layer|set|set_context|上下文
+
+        English documentation:
+        Function name:
+            set_context
+        Purpose:
+            Set the active context ID for CCFM modulation.
+        Called by:
+            Training loop and inference entry point.
+        Calls:
+            None.
+        Parameters:
+            - context_id: integer context index [0, max_contexts).
+        Integration:
+            Call before forward pass to switch task/stage conditioning.
+        English keywords:
+            context, film, modulation, ccfm, task_switch, set_context
+        """
+        self._active_context_id = int(context_id)
+
+    def update_momentum(self) -> None:
+        """EMA update of slow QKV from fast QKV. Call after optimizer.step()."""
+        if self.qkv_slow is not None:
+            with torch.no_grad():
+                decay = self.cfg.momentum_decay
+                self.qkv_slow.weight.data.mul_(decay).add_(self.qkv.weight.data, alpha=1 - decay)
 
     def init_state(self, batch_size: int, device=None, dtype=None) -> MHDSRA2State:
         cfg = self.cfg
@@ -111,7 +224,11 @@ class MultiHeadDSRA2(nn.Module):
         v = v.to(device=device, dtype=dtype)
         zeros = torch.zeros(batch_size, cfg.heads, cfg.slots, device=device, dtype=torch.float32)
         conf = torch.full_like(zeros, 0.5)
-        return MHDSRA2State(k.contiguous(), v.contiguous(), zeros, zeros.clone(), conf)
+        return MHDSRA2State(
+            k.contiguous(), v.contiguous(), zeros, zeros.clone(), conf,
+            stage_dominance=None,
+            slot_positions=torch.zeros(batch_size, cfg.heads, cfg.slots, device=device, dtype=torch.long) if cfg.slot_pe == "rope" else None,
+        )
 
     def _to_heads(self, x: torch.Tensor) -> torch.Tensor:
         b, t, _ = x.shape
@@ -170,8 +287,22 @@ class MultiHeadDSRA2(nn.Module):
         cfg = self.cfg
         slot_k = state.slot_k.to(dtype=q.dtype)
         slot_v = state.slot_v.to(dtype=q.dtype)
-        qn = F.normalize(q, dim=-1)
-        sk = F.normalize(slot_k, dim=-1)
+
+        # RoPE: apply position-aware rotation to q and slot_k
+        if cfg.slot_pe == "rope" and self.rotary is not None and state.slot_positions is not None:
+            B, H, T, D = q.shape
+            # q positions: global token indices within this chunk
+            q_pos = torch.arange(state.position, state.position + T, device=q.device, dtype=torch.float32)
+            q_pos = q_pos.view(1, 1, T, 1).expand(B, H, T, 1)  # [B, H, T, 1]
+            # k positions: last-write positions for each slot
+            k_pos = state.slot_positions.to(device=q.device, dtype=torch.float32).unsqueeze(-1)  # [B, H, S, 1]
+            q = self.rotary.apply(q, q_pos)
+            slot_k = self.rotary.apply(slot_k, k_pos)
+            qn = F.normalize(q, dim=-1)
+            sk = F.normalize(slot_k, dim=-1)
+        else:
+            qn = F.normalize(q, dim=-1)
+            sk = F.normalize(slot_k, dim=-1)
 
         tau = self.log_tau_read.exp().to(dtype=q.dtype)
         logits = torch.einsum("bhtd,bhkd->bhtk", qn, sk) * tau
@@ -261,7 +392,8 @@ class MultiHeadDSRA2(nn.Module):
         raise ValueError("retrieved_k/v must be [B,H,R,d] or [B,H,T,R,d]")
 
     def _slot_write(
-        self, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State, read_mass: torch.Tensor
+        self, k: torch.Tensor, v: torch.Tensor, state: MHDSRA2State, read_mass: torch.Tensor,
+        stage_id: int | None = None,
     ) -> MHDSRA2State:
         """Update slot memory and expose overwrite diagnostics for one chunk.
 
@@ -346,6 +478,13 @@ class MultiHeadDSRA2(nn.Module):
         conf_next = cfg.conf_decay * state.confidence * (1.0 - fg32) + wg32 * conf_new
         conf_next = conf_next.clamp(0.0, 1.0)
 
+        # RoPE: update slot positions for written slots
+        slot_positions_next = state.slot_positions
+        if cfg.slot_pe == "rope" and state.slot_positions is not None:
+            wrote_mask = (mass.squeeze(-1) > cfg.eps).to(device=k.device)
+            new_pos = torch.full_like(state.slot_positions, state.position + k.shape[2], dtype=torch.long)
+            slot_positions_next = torch.where(wrote_mask, new_pos, state.slot_positions.to(device=k.device))
+
         write_mass = mass.squeeze(-1).to(dtype=torch.float32)
         self.last_write_stats = {
             "token_gate_mean": token_gate.detach().mean().to(dtype=torch.float32),
@@ -379,6 +518,8 @@ class MultiHeadDSRA2(nn.Module):
             local_k=state.local_k,
             local_v=state.local_v,
             position=state.position + k.shape[2],
+            stage_dominance=None,
+            slot_positions=slot_positions_next,
         )
 
     def forward(
@@ -388,21 +529,42 @@ class MultiHeadDSRA2(nn.Module):
         retrieved_k: Optional[torch.Tensor] = None,
         retrieved_v: Optional[torch.Tensor] = None,
         return_aux: bool = False,
+        stage_id: int | None = None,
+        context_id: int | None = None,
     ):
         cfg = self.cfg
         b, t, d = x.shape
         if d != self.dim:
             raise ValueError(f"expected dim={self.dim}, got {d}")
+
+        # CCFM: Update active context if provided
+        if context_id is not None and cfg.use_context_film:
+            self._active_context_id = int(context_id)
         if state is None:
             state = self.init_state(b, device=x.device, dtype=x.dtype)
 
         qkv = self.qkv(x)
         q, k, v = qkv.chunk(3, dim=-1)
+
+        # CCFM: Context-Conditioned Feature Modulation (per-feature FiLM)
+        if cfg.use_context_film and self.film_net is not None:
+            ctx = self.context_embed(torch.tensor(self._active_context_id, device=x.device)).to(dtype=x.dtype)
+            film = self.film_net(ctx)  # [6 * dim]
+            sq, bq, sk, bk, sv, bv = film.chunk(6, dim=-1)
+            q = q * (1.0 + torch.tanh(sq)) + bq
+            k = k * (1.0 + torch.tanh(sk)) + bk
+            v = v * (1.0 + torch.tanh(sv)) + bv
+
+        # Momentum-QKV: slow q for slot read, fast q/k/v for write and local
         q = self._to_heads(q)
         k = self._to_heads(k)
         v = self._to_heads(v)
 
-        slot_out, aux_read = self._slot_read(q, state)
+        if cfg.momentum_qkv and self.qkv_slow is not None:
+            q_slow = self._to_heads(self.qkv_slow(x).chunk(3, dim=-1)[0])
+            slot_out, aux_read = self._slot_read(q_slow, state)
+        else:
+            slot_out, aux_read = self._slot_read(q, state)
         local_out, new_local_k, new_local_v = self._local_attention(q, k, v, state)
         retrieval_out = self._retrieval_attention(q, retrieved_k, retrieved_v)
 
@@ -423,7 +585,7 @@ class MultiHeadDSRA2(nn.Module):
         )
         y = self.out_proj(self._from_heads(y_heads))
 
-        next_state = self._slot_write(k, v, state, aux_read["read_mass"])
+        next_state = self._slot_write(k, v, state, aux_read["read_mass"], stage_id=stage_id)
         next_state.local_k = new_local_k
         next_state.local_v = new_local_v
         next_state.position = state.position + t

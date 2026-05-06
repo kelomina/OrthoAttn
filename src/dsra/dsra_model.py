@@ -42,6 +42,7 @@ class MultiLayerMHDSRA2Model(nn.Module):
         *,
         use_retrieval: bool = False,
         model_type: str = "mhdsra2",
+        mhdsra2_config_override: dict | None = None,
     ) -> None:
         """Create a stacked MHDSRA2 token model.
 
@@ -70,29 +71,30 @@ class MultiLayerMHDSRA2Model(nn.Module):
         self.num_layers = num_layers
         self.chunk_size = chunk_size
         self.embedding = nn.Embedding(vocab_size, dim)
+        base_cfg = MHDSRA2Config(
+            dim=dim,
+            heads=heads,
+            slots=K,
+            read_topk=max(1, min(kr, K)),
+            write_topk=max(1, min(kr, K)),
+            local_window=max(1, int(chunk_size)),
+            use_local=True,
+            use_retrieval=use_retrieval,
+            detach_state=True,
+        )
+        if mhdsra2_config_override:
+            for key, value in mhdsra2_config_override.items():
+                if hasattr(base_cfg, key):
+                    setattr(base_cfg, key, value)
         self.layers = nn.ModuleList(
-            [
-                MultiHeadDSRA2(
-                    MHDSRA2Config(
-                        dim=dim,
-                        heads=heads,
-                        slots=K,
-                        read_topk=max(1, min(kr, K)),
-                        write_topk=max(1, min(kr, K)),
-                        local_window=max(1, int(chunk_size)),
-                        use_local=True,
-                        use_retrieval=use_retrieval,
-                        detach_state=True,
-                    )
-                )
-                for _ in range(num_layers)
-            ]
+            [MultiHeadDSRA2(base_cfg) for _ in range(num_layers)]
         )
         self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(num_layers)])
         self.final_norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, stage_id: int | None = None,
+                context_id: int | None = None) -> torch.Tensor:
         """Run a stacked MHDSRA2 token model over chunked long sequences.
 
         中文说明:
@@ -117,7 +119,10 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)
-                out_chunk, next_state = layer(chunk_normed, state=state_list[layer_idx])
+                out_chunk, next_state = layer(
+                    chunk_normed, state=state_list[layer_idx], stage_id=stage_id,
+                    context_id=context_id,
+                )
                 state_list[layer_idx] = next_state
                 chunk = residual + out_chunk
             out_list.append(chunk)

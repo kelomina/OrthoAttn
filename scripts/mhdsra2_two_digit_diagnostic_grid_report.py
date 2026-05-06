@@ -170,6 +170,7 @@ def build_checkpoint_key(
     max_steps_per_stage: int,
     num_layers: int,
     seed: int,
+    two_digit_replay_ratio: float = 0.75,
 ) -> str:
     """Build a stable checkpoint key for one two-digit diagnostic grid point.
 
@@ -177,16 +178,17 @@ def build_checkpoint_key(
     - 调用方 / Called by: checkpoint read/write loop and tests.
     - 调用对象 / Calls: `json.dumps`.
     - 作用 / Purpose: 用确定性 key 支持 `--resume` 跳过已完成 cell。
-    - 变量 / Variables: 所有入参共同唯一标识一个 dataset/strategy/lr/step/layer/seed。
+    - 变量 / Variables: 所有入参共同唯一标识一个 dataset/strategy/replay_ratio/lr/step/layer/seed。
     - 接入 / Integration: JSONL 每行包含本 key 和对应 run row。
     - 错误处理 / Error handling: 纯序列化逻辑, 不吞异常。
     - 关键词 / Keywords:
-      checkpoint|key|resume|two_digit|learning_rate|strategy|seed|mhdsra2|键|恢复
+      checkpoint|key|resume|two_digit|learning_rate|strategy|replay_ratio|seed|mhdsra2|键|恢复
     """
     return json.dumps(
         {
             "dataset_name": dataset_name,
             "training_strategy": training_strategy,
+            "two_digit_replay_ratio": f"{two_digit_replay_ratio:.12g}",
             "learning_rate": f"{learning_rate:.12g}",
             "max_steps_per_stage": max_steps_per_stage,
             "num_layers": num_layers,
@@ -272,6 +274,7 @@ def checkpoint_keys_from_rows(rows: Sequence[Mapping[str, object]]) -> set[str]:
                 max_steps_per_stage=int(row["max_steps_per_stage"]),
                 num_layers=int(row["num_layers"]),
                 seed=int(row["seed"]),
+                two_digit_replay_ratio=float(row.get("two_digit_replay_ratio", 0.75)),
             )
         )
     return keys
@@ -343,7 +346,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seeds", type=parse_csv_ints, default=DEFAULT_SEEDS)
     parser.add_argument("--replay-ratio", type=float, default=0.75)
     parser.add_argument("--stage-patience", type=int, default=3)
-    parser.add_argument("--two-digit-replay-ratio", type=float, default=DEFAULT_TWO_DIGIT_REPLAY_RATIO)
+    parser.add_argument(
+        "--two-digit-replay-ratios",
+        type=parse_csv_floats,
+        default=(DEFAULT_TWO_DIGIT_REPLAY_RATIO,),
+    )
     parser.add_argument(
         "--stage-loss-weights",
         type=parse_stage_loss_weights,
@@ -393,38 +400,40 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
             for learning_rate in args.learning_rates:
                 for max_steps_per_stage in args.max_steps_per_stage_values:
                     for num_layers in args.layers:
-                        for seed in args.seeds:
-                            checkpoint_key = build_checkpoint_key(
-                                dataset_name=dataset_spec.name,
-                                training_strategy=normalized_strategy,
-                                learning_rate=learning_rate,
-                                max_steps_per_stage=max_steps_per_stage,
-                                num_layers=num_layers,
-                                seed=seed,
-                            )
-                            if checkpoint_key in completed_keys:
-                                continue
-                            diagnostic_run = run_one_two_digit_diagnostic_grid_point(
-                                dataset_spec=dataset_spec,
-                                training_strategy=normalized_strategy,
-                                learning_rate=learning_rate,
-                                max_steps_per_stage=max_steps_per_stage,
-                                num_layers=num_layers,
-                                seed=seed,
-                                replay_ratio=args.replay_ratio,
-                                stage_patience=args.stage_patience,
-                                two_digit_replay_ratio=args.two_digit_replay_ratio,
-                                stage_loss_weights=validated_stage_loss_weights,
-                                device=args.device,
-                            )
-                            row = serialize_two_digit_diagnostic_run(diagnostic_run)
-                            append_checkpoint_row(
-                                checkpoint_path=checkpoint_path,
-                                checkpoint_key=checkpoint_key,
-                                row=row,
-                            )
-                            rows.append(row)
-                            completed_keys.add(checkpoint_key)
+                        for two_digit_replay_ratio in args.two_digit_replay_ratios:
+                            for seed in args.seeds:
+                                checkpoint_key = build_checkpoint_key(
+                                    dataset_name=dataset_spec.name,
+                                    training_strategy=normalized_strategy,
+                                    learning_rate=learning_rate,
+                                    max_steps_per_stage=max_steps_per_stage,
+                                    num_layers=num_layers,
+                                    seed=seed,
+                                    two_digit_replay_ratio=two_digit_replay_ratio,
+                                )
+                                if checkpoint_key in completed_keys:
+                                    continue
+                                diagnostic_run = run_one_two_digit_diagnostic_grid_point(
+                                    dataset_spec=dataset_spec,
+                                    training_strategy=normalized_strategy,
+                                    learning_rate=learning_rate,
+                                    max_steps_per_stage=max_steps_per_stage,
+                                    num_layers=num_layers,
+                                    seed=seed,
+                                    replay_ratio=args.replay_ratio,
+                                    stage_patience=args.stage_patience,
+                                    two_digit_replay_ratio=two_digit_replay_ratio,
+                                    stage_loss_weights=validated_stage_loss_weights,
+                                    device=args.device,
+                                )
+                                row = serialize_two_digit_diagnostic_run(diagnostic_run)
+                                append_checkpoint_row(
+                                    checkpoint_path=checkpoint_path,
+                                    checkpoint_key=checkpoint_key,
+                                    row=row,
+                                )
+                                rows.append(row)
+                                completed_keys.add(checkpoint_key)
     payload = build_two_digit_diagnostic_grid_payload(
         run_rows=rows,
         datasets=args.datasets,
@@ -435,7 +444,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
         seeds=args.seeds,
         replay_ratio=args.replay_ratio,
         stage_patience=args.stage_patience,
-        two_digit_replay_ratio=args.two_digit_replay_ratio,
+        two_digit_replay_ratios=args.two_digit_replay_ratios,
         stage_loss_weights=validated_stage_loss_weights,
         target_stage_count=args.target_stage_count,
         checkpoint_path=str(checkpoint_path),

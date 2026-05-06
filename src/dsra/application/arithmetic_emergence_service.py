@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import random
 import statistics
 from collections.abc import Mapping, Sequence
@@ -10,6 +11,7 @@ from typing import Literal, cast
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 
 from scripts.toy_task_associative_recall import StandardAttentionModel
@@ -355,7 +357,7 @@ class ArithmeticTwoDigitDiagnosticAggregate:
     中文说明:
     - 调用方 / Called by: `aggregate_two_digit_diagnostic_run_rows` and report rendering.
     - 调用对象 / Calls: none; this type stores immutable aggregate metrics.
-    - 作用 / Purpose: 汇总同一 dataset/strategy/lr/step/layer 的多 seed two-digit 结果。
+    - 作用 / Purpose: 汇总同一 dataset/strategy/replay_ratio/lr/step/layer 的多 seed two-digit 结果。
     - 变量 / Variables: `two_digit_exact_match_mean` 是 two_digit_rules EM 均值。
     - 接入 / Integration: JSON/Markdown 报告表直接来自本类型。
     - 错误处理 / Error handling: 空分组由聚合函数跳过。
@@ -365,6 +367,7 @@ class ArithmeticTwoDigitDiagnosticAggregate:
 
     dataset_name: str
     training_strategy: str
+    two_digit_replay_ratio: float
     learning_rate: float
     max_steps_per_stage: int
     num_layers: int
@@ -819,6 +822,103 @@ def resolve_torch_device(device_name: str | torch.device) -> torch.device:
     return torch.device(normalized)
 
 
+# Proven improvement schemes (experimentally validated).
+# Only R1 (embedding anchor) and CCFM (context FiLM) are retained.
+SCHEME_CONFIGS: dict[str, dict] = {
+    "R1": {},
+    "CCFM": {"use_context_film": True},
+    "MOMENTUM": {"momentum_qkv": True},
+}
+
+
+def _get_forgetting_scheme_config() -> tuple[str | None, dict]:
+    """Read DSRA_FORGETTING_SCHEME env var and return (scheme_name, config_override).
+
+    中文说明:
+    - 调用方 / Called by: ``_build_arithmetic_model_with_scheme``, ``run_one_arithmetic_emergence_curve``.
+    - 调用对象 / Calls: ``os.environ.get``, ``SCHEME_CONFIGS``.
+    - 作用 / Purpose: 统一读取遗忘方案环境变量，返回方案名和 config 覆盖字典。
+    - 变量 / Variables: ``scheme`` 是环境变量值, ``config_override`` 是对应的配置覆盖。
+    - 接入 / Integration: 修改方案配置只需更新 ``SCHEME_CONFIGS`` 字典。
+    - 错误处理 / Error handling: 未知方案名抛出 ``ValueError``。
+    - 关键词 / Keywords:
+      scheme|forgetting|config|env|DSRA_FORGETTING_SCHEME|mhdsra2|遗忘|方案|环境变量|配置覆盖
+
+    English documentation:
+    Function name:
+        _get_forgetting_scheme_config
+    Purpose:
+        Read DSRA_FORGETTING_SCHEME env var and return scheme config override dict.
+    Called by:
+        ``_build_arithmetic_model_with_scheme``, ``run_one_arithmetic_emergence_curve``.
+    Calls:
+        ``os.environ.get``, ``SCHEME_CONFIGS``.
+    Returns:
+        (scheme_name or None, config_override dict).
+    Error handling:
+        Unknown scheme name raises ValueError.
+    English keywords:
+        scheme, forgetting, config, env, DSRA_FORGETTING_SCHEME
+    """
+    scheme = os.environ.get("DSRA_FORGETTING_SCHEME", "").strip()
+    if not scheme:
+        return None, {}
+    if scheme not in SCHEME_CONFIGS:
+        raise ValueError(f"Unknown forgetting scheme: {scheme}. Choose from: {', '.join(SCHEME_CONFIGS)}")
+    return scheme, dict(SCHEME_CONFIGS[scheme])
+
+
+def _build_arithmetic_model_with_scheme(
+    *,
+    model_name: str,
+    num_layers: int,
+    vocab_size: int,
+) -> nn.Module:
+    """Build an arithmetic probe model, applying DSRA_FORGETTING_SCHEME if set.
+
+    中文说明:
+    - 调用方 / Called by: ``run_one_arithmetic_emergence_curve``.
+    - 调用对象 / Calls: ``_get_forgetting_scheme_config``, ``MultiLayerMHDSRA2Model``,
+      ``build_arithmetic_model``.
+    - 作用 / Purpose: 当 DSRA_FORGETTING_SCHEME 环境变量非空时，使用方案配置覆盖默认 MHDSRA2Config。
+    - 变量 / Variables: ``scheme`` 是方案名, ``config_override`` 是配置覆盖字典。
+    - 接入 / Integration: 替代 ``build_arithmetic_model`` 的入口。
+    - 错误处理 / Error handling: 未知方案名由下层抛出。
+    - 关键词 / Keywords:
+      model_factory|scheme|forgetting|mhdsra2|config_override|arithmetic|layers|vocab|方案|模型构建
+
+    English documentation:
+    Function name:
+        _build_arithmetic_model_with_scheme
+    Purpose:
+        Build arithmetic model with DSRA_FORGETTING_SCHEME config override.
+    Called by:
+        ``run_one_arithmetic_emergence_curve``.
+    Calls:
+        ``_get_forgetting_scheme_config``, ``MultiLayerMHDSRA2Model``.
+    Returns:
+        nn.Module instance.
+    English keywords:
+        model_factory, scheme, forgetting, mhdsra2, config_override
+    """
+    scheme, config_override = _get_forgetting_scheme_config()
+    if model_name != MHDSRA2_MODEL or not config_override:
+        return build_arithmetic_model(
+            model_name=model_name,
+            num_layers=num_layers,
+            vocab_size=vocab_size,
+        )
+    return MultiLayerMHDSRA2Model(
+        vocab_size=vocab_size,
+        dim=DEFAULT_DIM,
+        num_layers=num_layers,
+        K=DEFAULT_SLOTS,
+        kr=DEFAULT_TOPK,
+        chunk_size=DEFAULT_CHUNK_SIZE,
+        mhdsra2_config_override=config_override,
+    )
+
+
 def build_arithmetic_model(
     *,
     model_name: str,
@@ -1112,6 +1212,79 @@ def count_ever_passed_curriculum_stages(
     return len(passed_stage_names)
 
 
+def compute_forgetting_gap(*, retained: int, ever_passed: int) -> int:
+    """Compute the forgetting gap: how many curriculum stages were forgotten.
+
+    中文说明:
+    - 调用方 / Called by: forgetting curve report, tests.
+    - 调用对象 / Calls: none; pure integer arithmetic.
+    - 作用 / Purpose: 遗忘量 F = ever_passed - retained。正值表示有阶段被遗忘。
+    - 变量 / Variables: ``retained`` 是最终保留阶段数, ``ever_passed`` 是历史曾通过阶段数。
+    - 接入 / Integration: 报告中的 ``forgetting_gap`` 字段来自本函数。
+    - 错误处理 / Error handling: retained > ever_passed 时抛出 ValueError（数据不一致）。
+    - 关键词 / Keywords:
+      forgetting_gap|retained|ever_passed|curriculum|forgetting|mhdsra2|遗忘量|保留|曾通过|差异
+
+    English documentation:
+    Function name:
+        compute_forgetting_gap
+    Purpose:
+        Compute how many stages were forgotten (ever_passed - retained).
+    Called by:
+        Forgetting curve report, tests.
+    Calls:
+        None; pure integer arithmetic.
+    Parameters:
+        - retained: number of stages retained at the end.
+        - ever_passed: number of stages that passed threshold at least once.
+    Returns:
+        Forgetting gap F (>= 0).
+    Error handling:
+        Raises ValueError if retained > ever_passed.
+    English keywords:
+        forgetting_gap, retained, ever_passed, curriculum, forgetting
+    """
+    if retained > ever_passed:
+        raise ValueError(
+            f"retained ({retained}) cannot exceed ever_passed ({ever_passed})."
+        )
+    return ever_passed - retained
+
+
+def is_catastrophic_forgetting(*, retained: int) -> bool:
+    """Determine whether the forgetting is catastrophic (zero stages retained).
+
+    中文说明:
+    - 调用方 / Called by: forgetting curve report, tests.
+    - 调用对象 / Calls: none; pure boolean check.
+    - 作用 / Purpose: retained == 0 视为灾难性遗忘，表示所有课程阶段均未保留。
+    - 变量 / Variables: ``retained`` 是最终保留阶段数。
+    - 接入 / Integration: 报告中的 ``is_catastrophic`` 字段来自本函数。
+    - 错误处理 / Error handling: 纯布尔判断，不抛出异常。
+    - 关键词 / Keywords:
+      catastrophic|forgetting|retained|curriculum|disaster|mhdsra2|灾难性|遗忘|保留|阶段
+
+    English documentation:
+    Function name:
+        is_catastrophic_forgetting
+    Purpose:
+        Check whether retained == 0 (all stages forgotten).
+    Called by:
+        Forgetting curve report, tests.
+    Calls:
+        None; pure boolean check.
+    Parameters:
+        - retained: number of stages retained at the end.
+    Returns:
+        True if retained == 0.
+    Error handling:
+        Pure boolean, no exceptions.
+    English keywords:
+        catastrophic, forgetting, retained, curriculum, disaster
+    """
+    return retained == 0
+
+
 def validate_training_strategy(
     training_strategy: str,
 ) -> TrainingStrategy:
@@ -1213,6 +1386,49 @@ def resolve_example_stage_name(
     return dataset_spec.name
 
 
+_RULE_SET_NAMES_TO_INDEX: dict[str, int] = {
+    UNIT_NO_CARRY_STAGE: 0,
+    UNIT_WITH_CARRY_STAGE: 1,
+    TWO_DIGIT_RULES_STAGE: 2,
+}
+
+
+def _resolve_example_stage_index(
+    dataset_spec: ArithmeticRuleDatasetSpec,
+    example: ArithmeticExample,
+) -> int | None:
+    """Resolve the curriculum stage index for one training example, or None if not found.
+
+    中文说明:
+    - 调用方 / Called by: training loop in ``run_one_arithmetic_emergence_curve``.
+    - 调用对象 / Calls: dataset_spec.curriculum_stages iteration.
+    - 作用 / Purpose: 返回样例所属课程阶段的索引 (0/1/2)，供 stage_id 写入保护使用。
+    - 变量 / Variables: ``dataset_spec`` 是训练规约, ``example`` 是当前训练样例。
+    - 接入 / Integration: 区分 replay 样本的所属阶段，避免写入错误的槽位范围。
+    - 错误处理 / Error handling: 非课程数据集或找不到阶段时返回 None。
+    - 关键词 / Keywords:
+      example_stage|index|curriculum|stage_id|write_protection|mhdsra2|样例阶段|索引|槽位|写入保护
+
+    English documentation:
+    Function name:
+        _resolve_example_stage_index
+    Purpose:
+        Resolve the curriculum stage index for a training example.
+    Called by:
+        Training loop in ``run_one_arithmetic_emergence_curve``.
+    Calls:
+        dataset_spec.curriculum_stages iteration.
+    Returns:
+        Stage index (0/1/2) or None if unresolved.
+    English keywords:
+        example_stage, index, curriculum, stage_id, write_protection
+    """
+    if not dataset_spec.curriculum_stages:
+        return None
+    stage_name = resolve_example_stage_name(dataset_spec, example)
+    return _RULE_SET_NAMES_TO_INDEX.get(stage_name)
+
+
 def validate_stage_loss_weights(
     stage_loss_weights: Mapping[str, float] | None,
 ) -> Mapping[str, float]:
@@ -1295,6 +1511,10 @@ def select_adaptive_curriculum_training_example(
     if carry_replay_ratio < 0.0 or carry_replay_ratio > 1.0:
         raise ValueError("carry_replay_ratio must be in the [0.0, 1.0] range.")
     validate_training_strategy(training_strategy)
+    # SCHEME III: Self-correcting sampling — reduce two-digit replay dominance
+    _scheme_iii = "III" in (os.environ.get("DSRA_FORGETTING_SCHEME", "") or "")
+    if _scheme_iii and uses_two_digit_replay(training_strategy) and active_stage_index >= 2:
+        carry_replay_ratio = min(carry_replay_ratio, 0.5)
     if active_stage_index < 0 or active_stage_index >= len(dataset_spec.curriculum_stages):
         raise ValueError(f"Active curriculum stage index is out of range: {active_stage_index}")
     stage = dataset_spec.curriculum_stages[active_stage_index]
@@ -1435,13 +1655,26 @@ def run_one_arithmetic_emergence_curve(
     random.seed(seed + num_layers)
     torch.manual_seed(seed + num_layers)
     tokenizer = DecimalArithmeticTokenizer()
-    model = build_arithmetic_model(
+    model = _build_arithmetic_model_with_scheme(
         model_name=model_name,
         num_layers=num_layers,
         vocab_size=tokenizer.vocab_size,
     ).to(resolved_device)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
+    # --- Improved training features ---
+    _scheme_env = os.environ.get("DSRA_FORGETTING_SCHEME", "") or ""
+    uses_ccfm = _scheme_env == "CCFM"
+
+    # R1: Frozen per-stage embedding anchors (always active, +133% unit_with_carry improvement)
+    embedding_anchors_r1: list[torch.Tensor | None] = [None, None, None]
+
+    # CCFM: Context-Conditioned Feature Modulation (optional, set by env var)
+    if uses_ccfm:
+        for layer in model.layers:
+            if hasattr(layer, "set_context"):
+                layer.set_context(0)
+
     final_loss = 0.0
     active_stage_index = 0
     active_stage_local_step = 0
@@ -1471,7 +1704,13 @@ def run_one_arithmetic_emergence_curve(
         inputs, targets = encode_training_example(tokenizer, example, resolved_device)
         model.train()
         optimizer.zero_grad()
-        logits = model(inputs)
+        # Resolve the example's actual stage for stage-id-based schemes
+        example_stage_id = _resolve_example_stage_index(dataset_spec, example)
+        # CCFM: Use active_stage_index as context for curriculum learning
+        if uses_ccfm:
+            logits = model(inputs, context_id=active_stage_index)
+        else:
+            logits = model(inputs, stage_id=example_stage_id)
         base_loss = criterion(logits.reshape(-1, tokenizer.vocab_size), targets.reshape(-1))
         loss = base_loss * resolve_stage_loss_multiplier(
             dataset_spec=dataset_spec,
@@ -1479,6 +1718,18 @@ def run_one_arithmetic_emergence_curve(
             training_strategy=normalized_training_strategy,
             stage_loss_weights=validated_stage_loss_weights,
         )
+        # R1: Frozen multi-anchor embedding consistency (always active, 0.003 coefficient)
+        if any(a is not None for a in embedding_anchors_r1):
+            current_emb = model.embedding.weight
+            total_loss = 0.0
+            n_anchors = 0
+            for anchor in embedding_anchors_r1:
+                if anchor is not None:
+                    anchor = anchor.to(device=current_emb.device, dtype=current_emb.dtype)
+                    total_loss += F.mse_loss(current_emb, anchor)
+                    n_anchors += 1
+            if n_anchors > 0:
+                loss = loss + 0.003 * (total_loss / n_anchors)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
@@ -1521,6 +1772,16 @@ def run_one_arithmetic_emergence_curve(
                     advanced_to_stage_name = dataset_spec.curriculum_stages[
                         active_stage_index
                     ].name
+                    # R1: Capture per-stage frozen anchor on first advance (always active)
+                    if hasattr(model, "embedding"):
+                        advanced_idx = active_stage_index - 1
+                        if 0 <= advanced_idx < len(embedding_anchors_r1) and embedding_anchors_r1[advanced_idx] is None:
+                            embedding_anchors_r1[advanced_idx] = model.embedding.weight.data.clone().detach().cpu()
+                    # CCFM: Switch context on curriculum advance
+                    if uses_ccfm:
+                        for layer in model.layers:
+                            if hasattr(layer, "set_context"):
+                                layer.set_context(active_stage_index)
                 elif stage_success_streak >= stage_patience:
                     stopped_reason = "all_curriculum_stages_met_threshold"
             else:
@@ -3049,17 +3310,18 @@ def aggregate_two_digit_diagnostic_run_rows(
     - 调用方 / Called by: two-digit diagnostic payload builder and tests.
     - 调用对象 / Calls: `_mean_and_variance`, `two_digit_exact_match_from_diagnostic_row`.
     - 作用 / Purpose: 汇总每个 cell 的 two-digit EM、保留阶段数和训练指标。
-    - 变量 / Variables: `groups` 是 dataset/strategy/lr/steps/layers 分组键。
+    - 变量 / Variables: `groups` 是 dataset/strategy/replay_ratio/lr/steps/layers 分组键。
     - 接入 / Integration: Markdown 摘要只展示本函数输出的聚合行。
     - 错误处理 / Error handling: 空输入返回空列表, 非法行结构直接抛出。
     - 关键词 / Keywords:
-      aggregate|two_digit|diagnostic|learning_rate|strategy|retention|mhdsra2|grid|聚合|两位数
+      aggregate|two_digit|diagnostic|learning_rate|strategy|replay_ratio|mhdsra2|grid|聚合|两位数
     """
     groups = sorted(
         {
             (
                 str(row["dataset_name"]),
                 str(row["training_strategy"]),
+                _required_float(row, "two_digit_replay_ratio"),
                 _required_float(row, "learning_rate"),
                 _required_int(row, "max_steps_per_stage"),
                 _required_int(row, "num_layers"),
@@ -3068,12 +3330,13 @@ def aggregate_two_digit_diagnostic_run_rows(
         }
     )
     aggregates: list[ArithmeticTwoDigitDiagnosticAggregate] = []
-    for dataset_name, training_strategy, learning_rate, max_steps_per_stage, num_layers in groups:
+    for dataset_name, training_strategy, two_digit_replay_ratio, learning_rate, max_steps_per_stage, num_layers in groups:
         group_rows = [
             row
             for row in run_rows
             if str(row["dataset_name"]) == dataset_name
             and str(row["training_strategy"]) == training_strategy
+            and _required_float(row, "two_digit_replay_ratio") == two_digit_replay_ratio
             and _required_float(row, "learning_rate") == learning_rate
             and _required_int(row, "max_steps_per_stage") == max_steps_per_stage
             and _required_int(row, "num_layers") == num_layers
@@ -3107,6 +3370,7 @@ def aggregate_two_digit_diagnostic_run_rows(
             ArithmeticTwoDigitDiagnosticAggregate(
                 dataset_name=dataset_name,
                 training_strategy=training_strategy,
+                two_digit_replay_ratio=two_digit_replay_ratio,
                 learning_rate=learning_rate,
                 max_steps_per_stage=max_steps_per_stage,
                 num_layers=num_layers,
@@ -3138,7 +3402,7 @@ def build_two_digit_diagnostic_grid_payload(
     seeds: Sequence[int] = DEFAULT_SEEDS,
     replay_ratio: float = 0.75,
     stage_patience: int = 3,
-    two_digit_replay_ratio: float = DEFAULT_TWO_DIGIT_REPLAY_RATIO,
+    two_digit_replay_ratios: Sequence[float] = (DEFAULT_TWO_DIGIT_REPLAY_RATIO,),
     stage_loss_weights: Mapping[str, float] | None = None,
     target_stage_count: int = 3,
     checkpoint_path: str | None = None,
@@ -3152,7 +3416,7 @@ def build_two_digit_diagnostic_grid_payload(
     - 调用对象 / Calls: `select_two_digit_diagnostic_dataset_specs`,
       `run_one_two_digit_diagnostic_grid_point`,
       `aggregate_two_digit_diagnostic_run_rows`.
-    - 作用 / Purpose: 构建 two_digit_rules 专项诊断报告 payload, 支持按数据集过滤中等网格。
+    - 作用 / Purpose: 构建 two_digit_rules 专项诊断报告 payload, 支持按数据集和 replay 比例扫描。
     - 变量 / Variables: `run_rows` 是可选 checkpoint 行, `dataset_specs` 是过滤后的数据集规约。
     - 接入 / Integration: CLI 使用 checkpoint rows 调用本函数生成最终 JSON/Markdown。
     - 错误处理 / Error handling: 空网格、非法数据集、非法策略、非法权重、非法设备直接抛出。
@@ -3165,6 +3429,7 @@ def build_two_digit_diagnostic_grid_payload(
         or not learning_rates
         or not training_strategies
         or not seeds
+        or not two_digit_replay_ratios
     ):
         raise ValueError("two-digit diagnostic grid dimensions must not be empty.")
     normalized_strategies = tuple(
@@ -3184,23 +3449,24 @@ def build_two_digit_diagnostic_grid_payload(
                 for learning_rate in learning_rates:
                     for max_steps_per_stage in max_steps_per_stage_values:
                         for num_layers in layer_counts:
-                            for seed in seeds:
-                                diagnostic_run = run_one_two_digit_diagnostic_grid_point(
-                                    dataset_spec=dataset_spec,
-                                    training_strategy=training_strategy,
-                                    learning_rate=learning_rate,
-                                    max_steps_per_stage=max_steps_per_stage,
-                                    num_layers=num_layers,
-                                    seed=seed,
-                                    replay_ratio=replay_ratio,
-                                    stage_patience=stage_patience,
-                                    two_digit_replay_ratio=two_digit_replay_ratio,
-                                    stage_loss_weights=validated_stage_loss_weights,
-                                    device=resolved_device,
-                                )
-                                computed_rows.append(
-                                    serialize_two_digit_diagnostic_run(diagnostic_run)
-                                )
+                            for two_digit_replay_ratio in two_digit_replay_ratios:
+                                for seed in seeds:
+                                    diagnostic_run = run_one_two_digit_diagnostic_grid_point(
+                                        dataset_spec=dataset_spec,
+                                        training_strategy=training_strategy,
+                                        learning_rate=learning_rate,
+                                        max_steps_per_stage=max_steps_per_stage,
+                                        num_layers=num_layers,
+                                        seed=seed,
+                                        replay_ratio=replay_ratio,
+                                        stage_patience=stage_patience,
+                                        two_digit_replay_ratio=two_digit_replay_ratio,
+                                        stage_loss_weights=validated_stage_loss_weights,
+                                        device=resolved_device,
+                                    )
+                                    computed_rows.append(
+                                        serialize_two_digit_diagnostic_run(diagnostic_run)
+                                    )
         resolved_run_rows: list[Mapping[str, object]] = computed_rows
     else:
         resolved_run_rows = [
@@ -3229,7 +3495,7 @@ def build_two_digit_diagnostic_grid_payload(
             "seeds": list(seeds),
             "replay_ratio": replay_ratio,
             "stage_patience": stage_patience,
-            "two_digit_replay_ratio": two_digit_replay_ratio,
+            "two_digit_replay_ratios": list(two_digit_replay_ratios),
             "stage_loss_weights": dict(validated_stage_loss_weights),
             "target_stage_count": target_stage_count,
             "checkpoint_path": checkpoint_path,
@@ -3308,7 +3574,7 @@ def build_two_digit_diagnostic_grid_markdown(payload: dict[str, object]) -> list
         f"- Seeds: {', '.join(str(item) for item in config['seeds'])}",
         f"- Replay ratio: {config['replay_ratio']}",
         f"- Stage patience: {config['stage_patience']}",
-        f"- Two-digit replay ratio: {config['two_digit_replay_ratio']}",
+        f"- Two-digit replay ratios: {', '.join(str(item) for item in config['two_digit_replay_ratios'])}",
         f"- Stage loss weights: {config['stage_loss_weights']}",
         f"- Checkpoint path: {config['checkpoint_path']}",
         f"- Resume supported: {config['resume_supported']}",
@@ -3321,15 +3587,16 @@ def build_two_digit_diagnostic_grid_markdown(payload: dict[str, object]) -> list
         "",
         "## Aggregates",
         "",
-        "| Dataset | Strategy | LR | Max Steps | Layers | Runs | Two-Digit EM Mean | "
+        "| Dataset | Strategy | Two-Digit Replay Ratio | LR | Max Steps | Layers | Runs | Two-Digit EM Mean | "
         "Target Retention Rate | Retained Mean | Train EM Mean | Final Loss Mean |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in aggregates:
         if not isinstance(row, dict):
             raise TypeError("two-digit diagnostic aggregate rows must be dictionaries.")
         lines.append(
             f"| {row['dataset_name']} | {row['training_strategy']} | "
+            f"{row['two_digit_replay_ratio']:.2f} | "
             f"{row['learning_rate']:.4f} | {row['max_steps_per_stage']} | "
             f"{row['num_layers']} | {row['num_runs']} | "
             f"{row['two_digit_exact_match_mean']:.4f} | "

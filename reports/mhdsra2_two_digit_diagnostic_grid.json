@@ -1,41 +1,91 @@
 {
   "config": {
     "layer_counts": [
-      4,
-      8
+      1
     ],
     "max_steps_per_stage_values": [
-      512
+      2
     ],
     "learning_rates": [
       0.01
     ],
     "training_strategies": [
       "baseline",
-      "two_digit_replay",
-      "two_digit_weighted_loss",
-      "combined"
+      "two_digit_replay"
     ],
     "datasets": [
-      "two_digit_only"
+      "curriculum_rule_set",
+      "two_digit_only",
+      "prereq_plus_two_digit"
     ],
     "seeds": [
-      101,
-      202,
-      303
+      101
     ],
     "replay_ratio": 0.75,
-    "stage_patience": 3,
-    "two_digit_replay_ratio": 0.75,
+    "stage_patience": 1,
+    "two_digit_replay_ratios": [
+      0.5
+    ],
     "stage_loss_weights": {
       "two_digit_rules": 2.0
     },
     "target_stage_count": 3,
-    "checkpoint_path": "reports\\mhdsra2_two_digit_medium_grid.checkpoint.jsonl",
+    "checkpoint_path": "reports/test_mhdsra2_two_digit_diagnostic_grid.checkpoint.jsonl",
     "resume_supported": true,
-    "device": "cuda"
+    "device": "cpu"
   },
   "datasets": [
+    {
+      "name": "curriculum_rule_set",
+      "training_examples": [
+        "0+0=0",
+        "1+1=2",
+        "2+3=5",
+        "4+5=9",
+        "5+5=10",
+        "8+2=10",
+        "9+1=10",
+        "9+9=18",
+        "10+10=20",
+        "11+11=22",
+        "12+12=24",
+        "20+20=40",
+        "30+40=70",
+        "55+44=99"
+      ],
+      "curriculum_stages": [
+        {
+          "name": "unit_no_carry",
+          "examples": [
+            "0+0=0",
+            "1+1=2",
+            "2+3=5",
+            "4+5=9"
+          ]
+        },
+        {
+          "name": "unit_with_carry",
+          "examples": [
+            "5+5=10",
+            "8+2=10",
+            "9+1=10",
+            "9+9=18"
+          ]
+        },
+        {
+          "name": "two_digit_rules",
+          "examples": [
+            "10+10=20",
+            "11+11=22",
+            "12+12=24",
+            "20+20=40",
+            "30+40=70",
+            "55+44=99"
+          ]
+        }
+      ],
+      "diagnostic_stages": []
+    },
     {
       "name": "two_digit_only",
       "training_examples": [
@@ -54,392 +104,361 @@
           ]
         }
       ]
+    },
+    {
+      "name": "prereq_plus_two_digit",
+      "training_examples": [
+        "0+0=0",
+        "1+1=2",
+        "2+3=5",
+        "4+5=9",
+        "5+5=10",
+        "8+2=10",
+        "9+1=10",
+        "9+9=18",
+        "10+10=20",
+        "11+11=22",
+        "12+12=24",
+        "20+20=40",
+        "30+40=70",
+        "55+44=99"
+      ],
+      "curriculum_stages": [],
+      "diagnostic_stages": [
+        {
+          "name": "unit_no_carry",
+          "examples": [
+            "0+0=0",
+            "1+1=2",
+            "2+3=5",
+            "4+5=9"
+          ]
+        },
+        {
+          "name": "unit_with_carry",
+          "examples": [
+            "5+5=10",
+            "8+2=10",
+            "9+1=10",
+            "9+9=18"
+          ]
+        },
+        {
+          "name": "two_digit_rules",
+          "examples": [
+            "10+10=20",
+            "11+11=22",
+            "12+12=24",
+            "20+20=40",
+            "30+40=70",
+            "55+44=99"
+          ]
+        }
+      ]
     }
   ],
   "summary": {
     "stable_target_strategy_count": 0,
     "has_stable_target_strategy": false,
-    "two_digit_only_success_count": 8,
+    "two_digit_only_success_count": 0,
     "two_digit_success_threshold": 0.95
   },
   "aggregates": [
     {
+      "dataset_name": "curriculum_rule_set",
+      "training_strategy": "baseline",
+      "two_digit_replay_ratio": 0.5,
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 3,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "two_digit_exact_match_mean": 0.0,
+      "two_digit_exact_match_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "final_loss_mean": 2.6322171688079834,
+      "final_loss_variance": 0.0
+    },
+    {
+      "dataset_name": "curriculum_rule_set",
+      "training_strategy": "two_digit_replay",
+      "two_digit_replay_ratio": 0.5,
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 3,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "two_digit_exact_match_mean": 0.0,
+      "two_digit_exact_match_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "final_loss_mean": 2.6322171688079834,
+      "final_loss_variance": 0.0
+    },
+    {
+      "dataset_name": "prereq_plus_two_digit",
+      "training_strategy": "baseline",
+      "two_digit_replay_ratio": 0.5,
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 3,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "two_digit_exact_match_mean": 0.0,
+      "two_digit_exact_match_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "final_loss_mean": 2.6322171688079834,
+      "final_loss_variance": 0.0
+    },
+    {
+      "dataset_name": "prereq_plus_two_digit",
+      "training_strategy": "two_digit_replay",
+      "two_digit_replay_ratio": 0.5,
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
+      "target_stage_count": 3,
+      "target_retention_rate": 0.0,
+      "stable_target_retention": false,
+      "two_digit_exact_match_mean": 0.0,
+      "two_digit_exact_match_variance": 0.0,
+      "train_exact_match_mean": 0.0,
+      "train_exact_match_variance": 0.0,
+      "retained_stage_count_mean": 0.0,
+      "retained_stage_count_variance": 0.0,
+      "final_loss_mean": 2.6322171688079834,
+      "final_loss_variance": 0.0
+    },
+    {
       "dataset_name": "two_digit_only",
       "training_strategy": "baseline",
+      "two_digit_replay_ratio": 0.5,
       "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "num_runs": 3,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
       "target_stage_count": 3,
       "target_retention_rate": 0.0,
       "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
+      "two_digit_exact_match_mean": 0.0,
       "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
+      "train_exact_match_mean": 0.0,
       "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
+      "retained_stage_count_mean": 0.0,
       "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.127889946103096,
-      "final_loss_variance": 3.5525678547069596e-08
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.12762943903605142,
-      "final_loss_variance": 4.668648169293811e-08
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.2653234302997589,
-      "final_loss_variance": 9.457865760490828e-06
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.26155341664950055,
-      "final_loss_variance": 1.5600106861018366e-05
+      "final_loss_mean": 2.827162742614746,
+      "final_loss_variance": 0.0
     },
     {
       "dataset_name": "two_digit_only",
       "training_strategy": "two_digit_replay",
+      "two_digit_replay_ratio": 0.5,
       "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "num_runs": 3,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "num_runs": 1,
       "target_stage_count": 3,
       "target_retention_rate": 0.0,
       "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
+      "two_digit_exact_match_mean": 0.0,
       "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
+      "train_exact_match_mean": 0.0,
       "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
+      "retained_stage_count_mean": 0.0,
       "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.127889946103096,
-      "final_loss_variance": 3.5525678547069596e-08
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_replay",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.12762943903605142,
-      "final_loss_variance": 4.668648169293811e-08
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.2653234302997589,
-      "final_loss_variance": 9.457865760490828e-06
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "num_runs": 3,
-      "target_stage_count": 3,
-      "target_retention_rate": 0.0,
-      "stable_target_retention": false,
-      "two_digit_exact_match_mean": 1.0,
-      "two_digit_exact_match_variance": 0.0,
-      "train_exact_match_mean": 1.0,
-      "train_exact_match_variance": 0.0,
-      "retained_stage_count_mean": 1.0,
-      "retained_stage_count_variance": 0.0,
-      "final_loss_mean": 0.26155341664950055,
-      "final_loss_variance": 1.5600106861018366e-05
+      "final_loss_mean": 2.827162742614746,
+      "final_loss_variance": 0.0
     }
   ],
   "runs": [
     {
+      "dataset_name": "curriculum_rule_set",
+      "training_strategy": "baseline",
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "seed": 101,
+      "replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
+      "run": {
+        "dataset_name": "curriculum_rule_set",
+        "model_name": "mhdsra2",
+        "seed": 101,
+        "num_layers": 1,
+        "learning_rate": 0.01,
+        "training_strategy": "baseline",
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
+        "headline_exact_match": 0.0,
+        "ood_exact_match": 0.0,
+        "final_loss": 2.6322171688079834,
+        "headline_prediction": "=====",
+        "headline_stopped_on_eos": false,
+        "completed_curriculum_stages": 0,
+        "ever_passed_stage_count": 0,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
+        "stopped_reason": "stage_max_steps_exhausted:unit_no_carry",
+        "stage_exact_matches": [
+          {
+            "stage_name": "unit_no_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "unit_with_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "two_digit_rules",
+            "exact_match": 0.0
+          }
+        ],
+        "curriculum_snapshots": [
+          {
+            "dataset_name": "curriculum_rule_set",
+            "model_name": "mhdsra2",
+            "seed": 101,
+            "num_layers": 1,
+            "step": 2,
+            "active_stage_name": "unit_no_carry",
+            "advanced_to_stage_name": null,
+            "stage_exact_matches": [
+              {
+                "stage_name": "unit_no_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "unit_with_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "two_digit_rules",
+                "exact_match": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "dataset_name": "curriculum_rule_set",
+      "training_strategy": "two_digit_replay",
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "seed": 101,
+      "replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
+      "run": {
+        "dataset_name": "curriculum_rule_set",
+        "model_name": "mhdsra2",
+        "seed": 101,
+        "num_layers": 1,
+        "learning_rate": 0.01,
+        "training_strategy": "two_digit_replay",
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
+        "headline_exact_match": 0.0,
+        "ood_exact_match": 0.0,
+        "final_loss": 2.6322171688079834,
+        "headline_prediction": "=====",
+        "headline_stopped_on_eos": false,
+        "completed_curriculum_stages": 0,
+        "ever_passed_stage_count": 0,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
+        "stopped_reason": "stage_max_steps_exhausted:unit_no_carry",
+        "stage_exact_matches": [
+          {
+            "stage_name": "unit_no_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "unit_with_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "two_digit_rules",
+            "exact_match": 0.0
+          }
+        ],
+        "curriculum_snapshots": [
+          {
+            "dataset_name": "curriculum_rule_set",
+            "model_name": "mhdsra2",
+            "seed": 101,
+            "num_layers": 1,
+            "step": 2,
+            "active_stage_name": "unit_no_carry",
+            "advanced_to_stage_name": null,
+            "stage_exact_matches": [
+              {
+                "stage_name": "unit_no_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "unit_with_carry",
+                "exact_match": 0.0
+              },
+              {
+                "stage_name": "two_digit_rules",
+                "exact_match": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "dataset_name": "two_digit_only",
       "training_strategy": "baseline",
       "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
       "seed": 101,
       "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
       "run": {
         "dataset_name": "two_digit_only",
         "model_name": "mhdsra2",
         "seed": 101,
-        "num_layers": 4,
+        "num_layers": 1,
         "learning_rate": 0.01,
         "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
         "headline_exact_match": 0.0,
         "ood_exact_match": 0.0,
-        "final_loss": 0.12774790823459625,
-        "headline_prediction": "20",
+        "final_loss": 2.827162742614746,
+        "headline_prediction": "2",
         "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
+        "completed_curriculum_stages": 0,
         "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
         "stopped_reason": "max_steps_exhausted",
         "stage_exact_matches": [
           {
             "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12776562571525574,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12815630435943604,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 101,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 101,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.127439945936203,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12793178856372833,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "baseline",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "baseline",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12751658260822296,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
+            "exact_match": 0.0
           }
         ],
         "curriculum_snapshots": []
@@ -449,681 +468,127 @@
       "dataset_name": "two_digit_only",
       "training_strategy": "two_digit_replay",
       "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
       "seed": 101,
       "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
       "run": {
         "dataset_name": "two_digit_only",
         "model_name": "mhdsra2",
         "seed": 101,
-        "num_layers": 4,
+        "num_layers": 1,
         "learning_rate": 0.01,
         "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
         "headline_exact_match": 0.0,
         "ood_exact_match": 0.0,
-        "final_loss": 0.12774790823459625,
-        "headline_prediction": "20",
+        "final_loss": 2.827162742614746,
+        "headline_prediction": "2",
         "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
+        "completed_curriculum_stages": 0,
         "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
         "stopped_reason": "max_steps_exhausted",
         "stage_exact_matches": [
           {
             "stage_name": "two_digit_rules",
-            "exact_match": 1.0
+            "exact_match": 0.0
           }
         ],
         "curriculum_snapshots": []
       }
     },
     {
-      "dataset_name": "two_digit_only",
+      "dataset_name": "prereq_plus_two_digit",
+      "training_strategy": "baseline",
+      "learning_rate": 0.01,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
+      "seed": 101,
+      "replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
+      "run": {
+        "dataset_name": "prereq_plus_two_digit",
+        "model_name": "mhdsra2",
+        "seed": 101,
+        "num_layers": 1,
+        "learning_rate": 0.01,
+        "training_strategy": "baseline",
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
+        "headline_exact_match": 0.0,
+        "ood_exact_match": 0.0,
+        "final_loss": 2.6322171688079834,
+        "headline_prediction": "=====",
+        "headline_stopped_on_eos": false,
+        "completed_curriculum_stages": 0,
+        "ever_passed_stage_count": 0,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
+        "stopped_reason": "max_steps_exhausted",
+        "stage_exact_matches": [
+          {
+            "stage_name": "unit_no_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "unit_with_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "two_digit_rules",
+            "exact_match": 0.0
+          }
+        ],
+        "curriculum_snapshots": []
+      }
+    },
+    {
+      "dataset_name": "prereq_plus_two_digit",
       "training_strategy": "two_digit_replay",
       "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12776562571525574,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_replay",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12815630435943604,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_replay",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
+      "max_steps_per_stage": 2,
+      "num_layers": 1,
       "seed": 101,
       "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
+      "stage_patience": 1,
+      "two_digit_replay_ratio": 0.5,
       "run": {
-        "dataset_name": "two_digit_only",
+        "dataset_name": "prereq_plus_two_digit",
         "model_name": "mhdsra2",
         "seed": 101,
-        "num_layers": 8,
+        "num_layers": 1,
         "learning_rate": 0.01,
         "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
+        "carry_replay_ratio": 0.5,
+        "train_exact_match": 0.0,
         "headline_exact_match": 0.0,
         "ood_exact_match": 0.0,
-        "final_loss": 0.127439945936203,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
+        "final_loss": 2.6322171688079834,
+        "headline_prediction": "=====",
+        "headline_stopped_on_eos": false,
+        "completed_curriculum_stages": 0,
         "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
+        "retained_stage_count": 0,
+        "training_steps_executed": 2,
         "stopped_reason": "max_steps_exhausted",
         "stage_exact_matches": [
           {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_replay",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12793178856372833,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
+            "stage_name": "unit_no_carry",
+            "exact_match": 0.0
+          },
+          {
+            "stage_name": "unit_with_carry",
+            "exact_match": 0.0
+          },
           {
             "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_replay",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_replay",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.12751658260822296,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 101,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 101,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.26112231612205505,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2664494216442108,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.26839855313301086,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 101,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 101,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.25650501251220703,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2661477327346802,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "two_digit_weighted_loss",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "two_digit_weighted_loss",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2620075047016144,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 101,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 101,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.26112231612205505,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2664494216442108,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 4,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 4,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.26839855313301086,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 101,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 101,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.25650501251220703,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 202,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 202,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2661477327346802,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
-          }
-        ],
-        "curriculum_snapshots": []
-      }
-    },
-    {
-      "dataset_name": "two_digit_only",
-      "training_strategy": "combined",
-      "learning_rate": 0.01,
-      "max_steps_per_stage": 512,
-      "num_layers": 8,
-      "seed": 303,
-      "replay_ratio": 0.75,
-      "stage_patience": 3,
-      "two_digit_replay_ratio": 0.75,
-      "run": {
-        "dataset_name": "two_digit_only",
-        "model_name": "mhdsra2",
-        "seed": 303,
-        "num_layers": 8,
-        "learning_rate": 0.01,
-        "training_strategy": "combined",
-        "carry_replay_ratio": 0.75,
-        "train_exact_match": 1.0,
-        "headline_exact_match": 0.0,
-        "ood_exact_match": 0.0,
-        "final_loss": 0.2620075047016144,
-        "headline_prediction": "20",
-        "headline_stopped_on_eos": true,
-        "completed_curriculum_stages": 1,
-        "ever_passed_stage_count": 0,
-        "retained_stage_count": 1,
-        "training_steps_executed": 512,
-        "stopped_reason": "max_steps_exhausted",
-        "stage_exact_matches": [
-          {
-            "stage_name": "two_digit_rules",
-            "exact_match": 1.0
+            "exact_match": 0.0
           }
         ],
         "curriculum_snapshots": []

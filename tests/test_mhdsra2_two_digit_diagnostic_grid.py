@@ -238,6 +238,7 @@ class TestMHDSRA2TwoDigitDiagnosticGrid(unittest.TestCase):
             learning_rates=(0.01,),
             training_strategies=(BASELINE_TRAINING_STRATEGY,),
             seeds=(101,),
+            two_digit_replay_ratios=(0.75,),
             device="cpu",
         )
         dataset_names = {dataset["name"] for dataset in payload["datasets"]}
@@ -270,7 +271,7 @@ class TestMHDSRA2TwoDigitDiagnosticGrid(unittest.TestCase):
             seeds=(101,),
             replay_ratio=0.75,
             stage_patience=1,
-            two_digit_replay_ratio=0.5,
+            two_digit_replay_ratios=(0.5,),
             stage_loss_weights={TWO_DIGIT_RULES_STAGE: 2.0},
             checkpoint_path="reports/test_mhdsra2_two_digit_diagnostic_grid.checkpoint.jsonl",
             device="cpu",
@@ -288,9 +289,11 @@ class TestMHDSRA2TwoDigitDiagnosticGrid(unittest.TestCase):
             {"curriculum_rule_set", TWO_DIGIT_ONLY, PREREQ_PLUS_TWO_DIGIT},
         )
         self.assertIn("two_digit_exact_match_mean", aggregate_row)
+        self.assertIn("two_digit_replay_ratio", aggregate_row)
         self.assertIn("target_retention_rate", aggregate_row)
         self.assertIn("checkpoint_path", payload["config"])
         self.assertTrue(payload["config"]["resume_supported"])
+        self.assertIn("Two-Digit Replay Ratio", markdown_text)
         self.assertIn("Two-Digit EM Mean", markdown_text)
 
         project_root = Path(__file__).resolve().parents[1]
@@ -384,6 +387,8 @@ class TestMHDSRA2TwoDigitDiagnosticGrid(unittest.TestCase):
                 "baseline,two_digit_replay,two_digit_weighted_loss,combined",
                 "--datasets",
                 "two_digit_only",
+                "--two-digit-replay-ratios",
+                "0.75,0.9",
                 "--stage-loss-weights",
                 "two_digit_rules=2.0",
                 "--device",
@@ -405,6 +410,7 @@ class TestMHDSRA2TwoDigitDiagnosticGrid(unittest.TestCase):
             ),
         )
         self.assertEqual(args.datasets, (TWO_DIGIT_ONLY,))
+        self.assertEqual(args.two_digit_replay_ratios, (0.75, 0.9))
         self.assertEqual(args.stage_loss_weights, {TWO_DIGIT_RULES_STAGE: 2.0})
         self.assertEqual(args.device, "cpu")
 
