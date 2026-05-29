@@ -7,6 +7,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
+from src.dsra.swanlab_utils import init_swanlab
 
 class LocalContextTokenModel(nn.Module):
     def __init__(self, vocab_size, dim, chunk_size=256, local_context_size=4, local_context_mode='sum'):
@@ -92,7 +93,7 @@ class MHDSRA2CompatChunkLayer(nn.Module):
                 local_window=max(1, int(local_window)),
                 use_local=use_local,
                 use_retrieval=use_retrieval,
-                detach_state=True,
+                detach_state=False,
             )
         )
 
@@ -812,11 +813,13 @@ def train():
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
     model.train()
+    swanlab_run = init_swanlab(project="MHDSRA2", experiment_name="associative_recall", config={"epochs": epochs}, mode="cloud", tags=["associative_recall"])
     for epoch in range(epochs):
         X, Y = generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=20)
         X, Y = X.to(device), Y.to(device)
 
         loss_val, acc = train_step(model, X, Y, optimizer, criterion)
+        swanlab_run.log({"train/loss": loss_val, "train/accuracy": acc}, step=epoch)
 
         if epoch % 50 == 0:
             print(f"Epoch {epoch:4d} | Loss: {loss_val:.4f} | Accuracy: {acc*100:.1f}%")
@@ -824,6 +827,7 @@ def train():
             if acc == 1.0 and loss_val < 0.05:
                 print("Task solved successfully!")
                 break
+    swanlab_run.finish()
 
 if __name__ == "__main__":
     train()

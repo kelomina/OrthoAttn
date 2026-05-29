@@ -11,6 +11,7 @@ import torch.optim as optim
 from src.dsra.application import JsonRetrievalSearchService, RetrievalModelFactory
 from src.dsra.domain import RetrievalModelSpec, normalize_model_type
 from src.dsra.infrastructure import JsonRetrievalReportRepository
+from src.dsra.swanlab_utils import init_swanlab
 from scripts.toy_task_associative_recall import (
     MHDSRA2Model,
     LinearAttentionModel,
@@ -3448,6 +3449,21 @@ def run_json_retrieval_test(
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     active_model_type = normalize_model_type(model_type)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="json_retrieval",
+        config={
+            "model_type": active_model_type,
+            "epochs": epochs,
+            "dim": dim,
+            "K": K,
+            "eval_interval": eval_interval,
+            "local_context_mode": local_context_mode,
+            "local_context_size": local_context_size,
+        },
+        mode="cloud",
+        tags=["json_retrieval"],
+    )
     case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
     curriculum_plan = build_curriculum_plan(case, epochs)
 
@@ -3599,6 +3615,14 @@ def run_json_retrieval_test(
         )
         search_results.append(summarize_search_result(result))
         best_result = search_service.choose_best(best_result, result, score_search_result)
+        swanlab_run.log(
+            {
+                "search/loss": result["history"][-1]["loss"] if result.get("history") else 0.0,
+                "search/train_token_acc": result["history"][-1]["train_token_acc"] if result.get("history") else 0.0,
+                "search/sequence_accuracy": result["teacher_forced_evaluation"]["sequence_accuracy"] if result.get("teacher_forced_evaluation") else 0.0,
+            },
+            step=trial_idx - 1,
+        )
 
     search_results = search_service.sort_single_case_summaries(search_results)
 
@@ -3636,6 +3660,7 @@ def run_json_retrieval_test(
     print(f"First Mismatch Index: {best_result['evaluation']['first_mismatch_index']}")
     print(f"Predicted Answer: {best_result['evaluation']['predicted_text']}")
 
+    swanlab_run.finish()
     return {
         "config": best_result["config"],
         "history": best_result["history"],
@@ -3704,6 +3729,21 @@ def run_json_retrieval_generalization_test(
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     active_model_type = normalize_model_type(model_type)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="json_retrieval",
+        config={
+            "model_type": active_model_type,
+            "generalization_score_mode": generalization_score_mode,
+            "dim": dim,
+            "K": K,
+            "eval_interval": eval_interval,
+            "local_context_mode": local_context_mode,
+            "local_context_size": local_context_size,
+        },
+        mode="cloud",
+        tags=["json_retrieval", "generalization"],
+    )
     reference_case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
     pair_split = split_museum_artifact_pairs(
         seed=pair_split_seed,
@@ -3925,6 +3965,15 @@ def run_json_retrieval_generalization_test(
             f"| gen_seq_acc={test_eval['generation_mean_sequence_accuracy']*100:.2f}% "
             f"| tf_seq_acc={test_eval['teacher_forced_mean_sequence_accuracy']*100:.2f}%"
         )
+        swanlab_run.log(
+            {
+                "generalization/val_gen_exact_match_rate": validation_eval["generation_exact_match_rate"],
+                "generalization/val_tf_exact_match_rate": validation_eval["teacher_forced_exact_match_rate"],
+                "generalization/test_gen_exact_match_rate": test_eval["generation_exact_match_rate"],
+                "generalization/test_tf_exact_match_rate": test_eval["teacher_forced_exact_match_rate"],
+            },
+            step=trial_idx - 1,
+        )
         best_result = search_service.choose_best_generalization(
             best_result,
             result,
@@ -3985,6 +4034,7 @@ def run_json_retrieval_generalization_test(
         f"{best_result['test_pool_evaluation']['teacher_forced_exact_match_rate']*100:.2f}%"
     )
 
+    swanlab_run.finish()
     return {
         "config": best_result["config"],
         "history": best_result["history"],

@@ -46,6 +46,7 @@ from src.dsra.application.arithmetic_emergence_service import (  # noqa: E402
     validate_training_strategy,
 )
 from src.dsra.report_utils import ensure_reports_dir, save_figure, write_json, write_markdown
+from src.dsra.swanlab_utils import init_swanlab
 
 FIGS_DIRNAME = "figures"
 FORGETTING_CURVE_FILENAME = "mhdsra2_forgetting_curve"
@@ -800,6 +801,22 @@ def save_forgetting_curve_reports(
 
 def main(argv: Sequence[str] | None = None) -> dict[str, object]:
     args = build_parser().parse_args(argv)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="forgetting_curve",
+        config={
+            "datasets": list(args.datasets),
+            "training_strategies": list(args.training_strategies),
+            "seeds": list(args.seeds),
+            "num_layers": args.layers[0] if args.layers else 8,
+            "max_steps_per_stage": args.max_steps_per_stage,
+            "replay_ratio": args.replay_ratio,
+            "learning_rate": args.learning_rate,
+            "device": args.device,
+        },
+        mode="cloud",
+        tags=["forgetting_curve", "curriculum"],
+    )
     reports_dir = ensure_reports_dir(args.reports_dir)
     figures_dir = reports_dir / FIGS_DIRNAME
     figures_dir.mkdir(parents=True, exist_ok=True)
@@ -864,6 +881,14 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
                 strategy_data[strategy] = runs_for_cell
 
             summary_rows.append(_compute_summary(dataset_name, strategy, runs_for_cell))
+            swanlab_run.log(
+                {
+                    f"{dataset_name}/{strategy}/retained_stage_count_mean": runs_for_cell[-1].retained_stage_count if runs_for_cell else 0,
+                    f"{dataset_name}/{strategy}/train_exact_match": runs_for_cell[-1].train_exact_match if runs_for_cell else 0.0,
+                    f"{dataset_name}/{strategy}/final_loss": runs_for_cell[-1].final_loss if runs_for_cell else 0.0,
+                },
+                step=len(summary_rows) - 1,
+            )
 
     payload: dict[str, object] = {
         "config": {
@@ -902,6 +927,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
     print(f"MHDSRA2_FORGETTING_CURVE_MARKDOWN={markdown_path}")
     print(f"MHDSRA2_FORGETTING_CURVE_FIGURES={figures_dir}")
     print(f"MHDSRA2_FORGETTING_CURVE_RUNS={len(all_runs)}")
+    swanlab_run.finish()
     return payload
 
 

@@ -35,6 +35,8 @@ MHDSRA2Config = _mhdsra2_module.MHDSRA2Config
 MultiHeadDSRA2 = _mhdsra2_module.MultiHeadDSRA2
 PagedExactMemory = _paged_memory_module.PagedExactMemory
 
+from src.dsra.swanlab_utils import init_swanlab
+
 MODEL_ORDER = (
     "dsra",
     "mhdsra2_without_paged_recall",
@@ -251,7 +253,8 @@ def _build_mhdsra2_layer(
         use_local=False,
         use_retrieval=use_retrieval,
         retrieval_tau=retrieval_tau,
-        detach_state=True,
+        detach_state=False,
+        slot_pe="none",
     )
     layer = MultiHeadDSRA2(cfg)
     with torch.no_grad():
@@ -1041,7 +1044,33 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> dict:
     args = build_parser().parse_args(argv)
-    return {"sections": run_diagnostic_benchmarks(args)}
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="diagnostic_memory",
+        config={
+            "diagnostic_device": args.diagnostic_device,
+            "diagnostic_slots": args.diagnostic_slots,
+            "diagnostic_key_count": args.diagnostic_key_count,
+            "diagnostic_value_count": args.diagnostic_value_count,
+            "diagnostic_chunk_size": args.diagnostic_chunk_size,
+            "diagnostic_exact_seq_len": args.diagnostic_exact_seq_len,
+            "diagnostic_override_seq_len": args.diagnostic_override_seq_len,
+            "diagnostic_fixation_seq_len": args.diagnostic_fixation_seq_len,
+        },
+        mode="cloud",
+        tags=["diagnostic_memory", "benchmark"],
+    )
+    sections = run_diagnostic_benchmarks(args)
+    swanlab_step = 0
+    for section in sections:
+        for row in section.get("rows", []):
+            metric_key = f"{section['title']}/{row['metric']}"
+            mhdsra2_val = row.get("mhdsra2")
+            if mhdsra2_val is not None:
+                swanlab_run.log({metric_key: mhdsra2_val}, step=swanlab_step)
+                swanlab_step += 1
+    swanlab_run.finish()
+    return {"sections": sections}
 
 
 if __name__ == "__main__":

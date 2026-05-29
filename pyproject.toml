@@ -12,6 +12,8 @@ dependencies = [
   "torch>=2.1",
   "numpy>=1.26",
   "matplotlib>=3.8",
+  "swanlab>=0.4",
+  "datasets>=2.18",
 ]
 
 [project.optional-dependencies]

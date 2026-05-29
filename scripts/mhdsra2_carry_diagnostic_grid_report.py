@@ -32,6 +32,7 @@ from src.dsra.application.arithmetic_emergence_service import (  # noqa: E402
     validate_training_strategy,
 )
 from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown  # noqa: E402
+from src.dsra.swanlab_utils import init_swanlab  # noqa: E402
 
 
 def parse_csv_ints(value: str) -> tuple[int, ...]:
@@ -330,6 +331,21 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
       main|carry_diagnostic|full_grid|resume|checkpoint|learning_rate|strategy|mhdsra2|运行|诊断
     """
     args = build_parser().parse_args(argv)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="carry_diagnostic",
+        config={
+            "layers": list(args.layers),
+            "max_steps_per_stage_values": list(args.max_steps_per_stage_values),
+            "learning_rates": list(args.learning_rates),
+            "training_strategies": list(args.training_strategies),
+            "seeds": list(args.seeds),
+            "replay_ratio": args.replay_ratio,
+            "carry_replay_ratio": args.carry_replay_ratio,
+        },
+        mode="cloud",
+        tags=["carry_diagnostic", "grid"],
+    )
     reports_dir = ensure_reports_dir(args.reports_dir)
     checkpoint_path = (
         args.checkpoint_path
@@ -380,6 +396,14 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
                                 )
                                 rows.append(row)
                                 completed_keys.add(checkpoint_key)
+                                swanlab_run.log(
+                                    {
+                                        f"{dataset_spec.name}/{normalized_strategy}/retained_stage_count": row.get("retained_stage_count", 0),
+                                        f"{dataset_spec.name}/{normalized_strategy}/train_exact_match": row.get("train_exact_match", 0.0),
+                                        f"{dataset_spec.name}/{normalized_strategy}/final_loss": row.get("final_loss", 0.0),
+                                    },
+                                    step=len(rows) - 1,
+                                )
     payload = build_carry_diagnostic_grid_payload(
         run_rows=rows,
         layer_counts=args.layers,
@@ -401,6 +425,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
     print(f"MHDSRA2_CARRY_DIAGNOSTIC_GRID_MARKDOWN={markdown_path}")
     print(f"MHDSRA2_CARRY_DIAGNOSTIC_CHECKPOINT={checkpoint_path}")
     print(f"MHDSRA2_CARRY_DIAGNOSTIC_RUNS={len(rows)}")
+    swanlab_run.finish()
     return payload
 
 

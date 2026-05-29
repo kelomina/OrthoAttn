@@ -13,6 +13,7 @@ from scripts.json_retrieval_test import (
     run_json_retrieval_generalization_test,
 )
 from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown
+from src.dsra.swanlab_utils import init_swanlab
 
 
 ATTENTION_FAMILY_MODEL_TYPES = (
@@ -424,6 +425,18 @@ def run_attention_family_benchmark_suite(
     generalization_kwargs=None,
     task_seed_roots=None,
 ):
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="attention_family",
+        config={
+            "model_types": list(model_types or ATTENTION_FAMILY_MODEL_TYPES),
+            "complexity_seq_lengths": list(complexity_seq_lengths or [1024, 4096, 16384, 32768]),
+            "task_variants": list(task_variants or TASK_VARIANTS.keys()),
+            "task_seed_roots": list(task_seed_roots or DEFAULT_TASK_SEED_ROOTS),
+        },
+        mode="cloud",
+        tags=["attention_family", "benchmark"],
+    )
     reports_dir = ensure_reports_dir(
         Path(reports_dir) if reports_dir is not None else Path(__file__).resolve().parents[1] / "reports"
     )
@@ -445,6 +458,31 @@ def run_attention_family_benchmark_suite(
         complexity_results=complexity_results,
         task_results=task_results,
     )
+    swanlab_step = 0
+    for model_type, model_results in complexity_results.get("models", {}).items():
+        for length_result in model_results.get("length_results", []):
+            if length_result.get("status") == "ok":
+                swanlab_run.log(
+                    {
+                        f"complexity/{model_type}/mean_time_ms": length_result["mean_time_ms"],
+                        f"complexity/{model_type}/peak_mem_mb": length_result["peak_mem_mb"],
+                    },
+                    step=swanlab_step,
+                )
+                swanlab_step += 1
+    for variant_name, variant_payload in task_results.get("task_variants", {}).items():
+        for model_result in variant_payload.get("model_results", []):
+            aggregate_metrics = model_result.get("aggregate_metrics", {})
+            test_tf_seq = aggregate_metrics.get("test_teacher_forced_seq_acc")
+            if test_tf_seq is not None:
+                swanlab_run.log(
+                    {
+                        f"task/{variant_name}/{model_result['model_type']}/test_tf_seq_acc": test_tf_seq.get("mean", 0.0),
+                    },
+                    step=swanlab_step,
+                )
+                swanlab_step += 1
+    swanlab_run.finish()
     return {
         "reports_dir": str(reports_dir),
         "complexity": complexity_results,

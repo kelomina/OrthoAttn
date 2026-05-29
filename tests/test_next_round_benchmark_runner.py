@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.compare_mhdsra2_vs_dsra import (
     build_benchmark_comparison_row,
@@ -7,7 +8,7 @@ from scripts.compare_mhdsra2_vs_dsra import (
     save_benchmark_reports,
 )
 from scripts.json_retrieval_test import build_retrieval_model
-from scripts.next_round_benchmark_runner import build_parser
+from scripts.next_round_benchmark_runner import build_parser, run_niah_section
 
 
 class TestNextRoundBenchmarkRunner(unittest.TestCase):
@@ -74,7 +75,7 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
                 suite="needle_in_haystack",
                 task="seq_len=8192",
                 split="overall",
-                metric="best_accuracy",
+                metric="final_eval_mean_accuracy",
                 dsra_value=0.75,
                 mhdsra2_value=0.80,
             ),
@@ -141,6 +142,37 @@ class TestNextRoundBenchmarkRunner(unittest.TestCase):
         args = parser.parse_args(["--diagnostic-retrieval-tau", "10.0"])
 
         self.assertEqual(args.diagnostic_retrieval_tau, 10.0)
+
+    def test_niah_section_skips_archived_dsra_alias(self):
+        """Validate NIAH rows do not report archived DSRA alias as an independent model.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `build_parser`, `run_niah_section`
+        - 作用 / Purpose: 防止 NIAH next-round 把 `dsra` 归档别名与 `mhdsra2`
+          当作两个真实架构做对比，导致性能/准确率归因失真
+        - 错误处理 / Error handling: 若 DSRA 列被填值或 seed metadata 缺失则断言失败
+        - 关键词 / Keywords:
+          niah|dsra_alias|mhdsra2|seed|metadata|next_round|benchmark|test|失真|对比
+        """
+        parser = build_parser()
+        args = parser.parse_args(["--niah-seq-lengths", "64", "--niah-eval-batches-per-depth", "2"])
+
+        with patch(
+            "scripts.next_round_benchmark_runner.run_single_niah_test",
+            return_value={"final_eval_mean_accuracy": 0.75},
+        ) as mocked_run_single:
+            section = run_niah_section(args)
+
+        row = section["rows"][0]
+        self.assertIsNone(row["dsra"])
+        self.assertEqual(row["mhdsra2"], 0.75)
+        self.assertEqual(row["winner"], "missing")
+        self.assertIn("archived_alias", row["metadata"]["dsra_status"])
+        self.assertEqual(row["metadata"]["mhdsra2_seed"], args.seed + 64 * 10)
+        self.assertEqual(row["metadata"]["eval_batches_per_depth"], 2)
+        mocked_run_single.assert_called_once()
+        self.assertEqual(mocked_run_single.call_args.kwargs["model_type"], "mhdsra2")
 
 
 if __name__ == "__main__":

@@ -22,12 +22,18 @@ from scripts.diagnostic_memory_benchmark import (
     add_diagnostic_cli_arguments,
     run_diagnostic_benchmarks,
 )
-from scripts.needle_in_haystack_test import is_oom_error, run_single_niah_test
+from scripts.needle_in_haystack_test import (
+    DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
+    cleanup_after_oom,
+    is_oom_error,
+    run_single_niah_test,
+)
 from scripts.json_retrieval_test import (
     DEFAULT_LOCAL_CONTEXT_MODE,
     DEFAULT_LOCAL_CONTEXT_SIZE,
     run_json_retrieval_generalization_test,
 )
+from src.dsra.swanlab_utils import init_swanlab
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,77 +58,86 @@ def seed_everything(seed: int) -> None:
 
 
 def run_niah_section(args: argparse.Namespace) -> dict:
-    """Run Needle-In-A-Haystack accuracy rows for DSRA and MHDSRA2.
+    """Run Needle-In-A-Haystack accuracy rows without a false DSRA comparison.
 
     中文说明:
     - 调用方 / Called by: `run_next_round_benchmark`
-    - 调用对象 / Calls: `seed_everything`, `run_single_niah_test`, `build_benchmark_comparison_row`
-    - 作用 / Purpose: 接入 `needle_in_haystack_test.py` 的最佳准确率口径，输出统一对比行
+    - 调用对象 / Calls: `seed_everything`, `run_single_niah_test`, `cleanup_after_oom`,
+      `build_benchmark_comparison_row`
+    - 作用 / Purpose: 接入 `needle_in_haystack_test.py` 的 final eval mean accuracy 口径；由于
+      `dsra` 在当前领域层是归档别名并会归一化为 `mhdsra2`，本 section 只运行真实 active
+      MHDSRA2，并把 DSRA 列标为缺失，避免把同一架构不同 seed 的结果报告成架构对比
     - 变量 / Variables:
-      `args.niah_seq_lengths` 为待测上下文长度, `rows` 为标准化输出表行
-    - 接入 / Integration: 若后续加入更多 NIAH 指标，可继续向本 section 追加 row
+      `args.niah_seq_lengths` 为待测上下文长度, `rows` 为标准化输出表行, `niah_seed`
+      为单长度可追溯随机种子
+    - 接入 / Integration: 若后续恢复真实 DSRA NIAH 模型，应先接入独立构造器再恢复对比列
     - 错误处理 / Error handling: OOM 时记录缺失行并附带 `notes=OOM`
     - 关键词 / Keywords:
-      niah|needle|accuracy|best_acc|section|benchmark|dsra|mhdsra2|compare|统一口径
+      niah|needle|accuracy|final_eval|section|benchmark|dsra_alias|mhdsra2|compare|统一口径
     """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     rows = []
+    eval_batches_per_depth = getattr(
+        args,
+        "niah_eval_batches_per_depth",
+        DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
+    )
     for seq_len in args.niah_seq_lengths:
-        model_scores = {}
-        notes = ""
-        for model_idx, model_type in enumerate(("dsra", "mhdsra2")):
-            seed_everything(args.seed + seq_len * 10 + model_idx)
-            try:
-                model_scores[model_type] = run_single_niah_test(
-                    seq_len=seq_len,
-                    device=device,
-                    vocab_size=args.niah_vocab_size,
-                    dim=args.niah_dim,
-                    num_layers=args.niah_num_layers,
-                    K=args.niah_slots,
-                    kr=args.niah_read_topk,
-                    model_type=model_type,
-                )
-            except torch.cuda.OutOfMemoryError:
-                model_scores[model_type] = None
-                notes = "OOM"
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except RuntimeError as exc:
-                if not is_oom_error(exc):
-                    raise
-                model_scores[model_type] = None
-                notes = "OOM"
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except torch.AcceleratorError as exc:
-                if not is_oom_error(exc):
-                    raise
-                model_scores[model_type] = None
-                notes = "OOM"
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
+        notes = "DSRA archived alias normalizes to MHDSRA2; DSRA NIAH value skipped"
+        mhdsra2_score = None
+        niah_seed = args.seed + seq_len * 10
+        seed_everything(niah_seed)
+        try:
+            niah_metrics = run_single_niah_test(
+                seq_len=seq_len,
+                device=device,
+                vocab_size=args.niah_vocab_size,
+                dim=args.niah_dim,
+                num_layers=args.niah_num_layers,
+                K=args.niah_slots,
+                kr=args.niah_read_topk,
+                model_type="mhdsra2",
+                eval_batches_per_depth=eval_batches_per_depth,
+                return_metrics=True,
+            )
+            mhdsra2_score = niah_metrics["final_eval_mean_accuracy"]
+        except torch.cuda.OutOfMemoryError:
+            notes = f"{notes}; OOM"
+            cleanup_after_oom()
+        except RuntimeError as exc:
+            if not is_oom_error(exc):
+                raise
+            notes = f"{notes}; OOM"
+            cleanup_after_oom()
+        except torch.AcceleratorError as exc:
+            if not is_oom_error(exc):
+                raise
+            notes = f"{notes}; OOM"
+            cleanup_after_oom()
 
         rows.append(
             build_benchmark_comparison_row(
                 suite="needle_in_haystack",
                 task=f"seq_len={seq_len}",
                 split="overall",
-                metric="best_accuracy",
-                dsra_value=model_scores.get("dsra"),
-                mhdsra2_value=model_scores.get("mhdsra2"),
+                metric="final_eval_mean_accuracy",
+                dsra_value=None,
+                mhdsra2_value=mhdsra2_score,
                 higher_is_better=True,
                 notes=notes,
                 metadata={
                     "seq_len": seq_len,
                     "device": str(device),
+                    "mhdsra2_seed": niah_seed,
+                    "eval_batches_per_depth": eval_batches_per_depth,
+                    "dsra_status": "archived_alias_normalizes_to_mhdsra2_not_run",
                 },
             )
         )
 
     return {
         "title": "Needle In Haystack",
-        "description": "Uses the `run_single_niah_test()` best accuracy criterion from `needle_in_haystack_test.py`.",
+        "description": "Uses `run_single_niah_test()` final mean accuracy for the active MHDSRA2 model only; archived `dsra` is not run because it normalizes to MHDSRA2 in this codebase.",
         "rows": rows,
     }
 
@@ -255,6 +270,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--niah-num-layers", type=int, default=2)
     parser.add_argument("--niah-slots", type=int, default=64)
     parser.add_argument("--niah-read-topk", type=int, default=8)
+    parser.add_argument(
+        "--niah-eval-batches-per-depth",
+        type=int,
+        default=DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
+    )
 
     parser.add_argument("--json-epochs", type=int, default=80)
     parser.add_argument("--json-eval-interval", type=int, default=10)
@@ -289,11 +309,31 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
     - 关键词 / Keywords:
       next_round|benchmark|runner|payload|sections|needle|json|compare|report|统一流程
     """
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="next_round_benchmark",
+        config={
+            "seed": args.seed,
+            "niah_seq_lengths": list(args.niah_seq_lengths),
+            "json_epochs": args.json_epochs,
+            "diagnostic_device": args.diagnostic_device,
+        },
+        mode="cloud",
+        tags=["next_round", "benchmark"],
+    )
     sections = [
         run_niah_section(args),
         run_json_generalization_section(args),
     ]
     sections.extend(run_diagnostic_benchmarks(args))
+    swanlab_step = 0
+    for section in sections:
+        for row in section.get("rows", []):
+            metric_key = f"{section['title']}/{row['task']}/{row['metric']}"
+            value = row.get("mhdsra2")
+            if value is not None:
+                swanlab_run.log({metric_key: value}, step=swanlab_step)
+                swanlab_step += 1
     config = {
         "seed": args.seed,
         "niah_seq_lengths": list(args.niah_seq_lengths),
@@ -301,6 +341,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         "niah_num_layers": args.niah_num_layers,
         "niah_slots": args.niah_slots,
         "niah_read_topk": args.niah_read_topk,
+        "niah_eval_batches_per_depth": args.niah_eval_batches_per_depth,
         "json_epochs": args.json_epochs,
         "json_dim": args.json_dim,
         "json_slots": args.json_slots,
@@ -324,6 +365,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         "diagnostic_fixation_seq_len": args.diagnostic_fixation_seq_len,
         "diagnostic_fixation_distractor_grid": list(args.diagnostic_fixation_distractor_grid),
     }
+    swanlab_run.finish()
     return build_benchmark_payload(config=config, sections=sections)
 
 

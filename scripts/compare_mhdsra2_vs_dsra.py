@@ -16,6 +16,8 @@ from pathlib import Path
 
 import torch
 
+from src.dsra.swanlab_utils import init_swanlab
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -307,7 +309,7 @@ def run_mhdsra2_once(
         local_window=chunk_size,
         use_local=True,
         use_retrieval=use_retrieval,
-        detach_state=True,
+        detach_state=False,
     )
     layer = MultiHeadDSRA2(cfg).to(device)
     layer.eval()
@@ -393,10 +395,30 @@ def run_comparison(args: argparse.Namespace) -> dict:
       comparison|grid|shared_input|seed|payload|benchmark|dsra|mhdsra2|reports|稳定计时
     """
     device = _resolve_device(args.device)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="compare_mhdsra2_dsra",
+        config={
+            "device": str(device),
+            "seed": args.seed,
+            "batch_size": list(args.batch_size),
+            "dim": list(args.dim),
+            "warmup_runs": args.warmup_runs,
+            "repeat_runs": args.repeat_runs,
+            "use_retrieval": bool(args.use_retrieval),
+            "retrieval_tokens": args.retrieval_tokens if args.use_retrieval else 0,
+            "slots": list(args.slots),
+            "read_topk": list(args.read_topk),
+            "chunk_sizes": list(args.chunk_sizes),
+            "seq_lengths": list(args.seq_lengths),
+        },
+        mode="cloud",
+        tags=["compare", "dsra", "mhdsra2"],
+    )
     results = []
-    for batch_size, dim, seq_len, slots, read_topk, chunk_size in itertools.product(
+    for grid_step, (batch_size, dim, seq_len, slots, read_topk, chunk_size) in enumerate(itertools.product(
         args.batch_size, args.dim, args.seq_lengths, args.slots, args.read_topk, args.chunk_sizes
-    ):
+    )):
         torch.manual_seed(
             args.seed + batch_size + dim + seq_len + slots + read_topk + chunk_size
         )
@@ -444,7 +466,18 @@ def run_comparison(args: argparse.Namespace) -> dict:
                 / max(mhdsra2_metrics["max_state_bytes"], 1),
             }
         )
+        swanlab_run.log(
+            {
+                "dsra_elapsed_ms": dsra_metrics["elapsed_ms"],
+                "mhdsra2_elapsed_ms": mhdsra2_metrics["elapsed_ms"],
+                "speedup_ratio": dsra_metrics["elapsed_ms"] / max(mhdsra2_metrics["elapsed_ms"], 1e-9),
+                "dsra_state_bytes": dsra_metrics["max_state_bytes"],
+                "mhdsra2_state_bytes": mhdsra2_metrics["max_state_bytes"],
+            },
+            step=grid_step,
+        )
 
+    swanlab_run.finish()
     return {
         "config": {
             "device": str(device),

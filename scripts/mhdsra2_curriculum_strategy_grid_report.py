@@ -26,6 +26,7 @@ from src.dsra.application.arithmetic_emergence_service import (  # noqa: E402
     DEFAULT_STRATEGY_GRID_STAGE_PATIENCES,
 )
 from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown  # noqa: E402
+from src.dsra.swanlab_utils import init_swanlab  # noqa: E402
 
 
 def parse_csv_ints(value: str) -> tuple[int, ...]:
@@ -170,6 +171,22 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
       main|cli|strategy_grid|replay_ratio|stage_patience|retention|mhdsra2|report|运行|网格
     """
     args = build_parser().parse_args(argv)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="curriculum_strategy",
+        config={
+            "replay_ratios": list(args.replay_ratios),
+            "stage_patiences": list(args.stage_patiences),
+            "layers": list(args.layers),
+            "seeds": list(args.seeds),
+            "max_steps_per_stage": args.max_steps_per_stage,
+            "curriculum_eval_interval": args.curriculum_eval_interval,
+            "stage_threshold": args.stage_threshold,
+            "target_stage_count": args.target_stage_count,
+        },
+        mode="cloud",
+        tags=["curriculum_strategy", "grid"],
+    )
     payload = build_curriculum_strategy_grid_payload(
         replay_ratios=args.replay_ratios,
         stage_patiences=args.stage_patiences,
@@ -185,10 +202,21 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
         payload,
         args.reports_dir,
     )
+    for grid_idx, grid_point in enumerate(payload.get("grid_results", [])):
+        swanlab_run.log(
+            {
+                "replay_ratio": grid_point.get("replay_ratio", 0.0),
+                "stage_patience": grid_point.get("stage_patience", 0),
+                "retained_stage_count": grid_point.get("retained_stage_count", 0),
+                "has_stable_retention": float(grid_point.get("has_stable_retention", False)),
+            },
+            step=grid_idx,
+        )
     print(f"MHDSRA2_CURRICULUM_STRATEGY_GRID_JSON={json_path}")
     print(f"MHDSRA2_CURRICULUM_STRATEGY_GRID_MARKDOWN={markdown_path}")
     stable_status = "true" if payload["summary"]["has_stable_target_strategy"] else "false"
     print(f"MHDSRA2_CURRICULUM_STRATEGY_STABLE={stable_status}")
+    swanlab_run.finish()
     return payload
 
 

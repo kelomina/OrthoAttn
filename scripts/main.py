@@ -43,14 +43,8 @@ def write_run_report(reports_dir, executed_tests):
             "",
             "## Generated Files",
             "- `reports/all_output.txt`",
-            "- `reports/ablation_summary.md`",
-            "- `reports/ablation_summary.json`",
             "- `reports/needle_capacity_results.md`",
             "- `reports/needle_capacity_results.json`",
-            "- `reports/json_retrieval_report.md`",
-            "- `reports/json_retrieval_report.json`",
-            "- `reports/json_retrieval_generalization_report.md`",
-            "- `reports/json_retrieval_generalization_report.json`",
             "- `reports/mhdsra2_vs_dsra_compare.md`",
             "- `reports/mhdsra2_vs_dsra_compare.json`",
             "- `reports/mhdsra2_vs_dsra_next_round_benchmark.md`",
@@ -273,6 +267,24 @@ def run_mhdsra2_carry_diagnostic_grid():
     )
 
 
+def run_chat():
+    """Run the interactive chat with the pre-trained hybrid language model.
+
+    中文说明:
+    - 调用方 / Called by: `main` dispatch mapping.
+    - 调用对象 / Calls: `scripts.chat.main`.
+    - 作用 / Purpose: 从统一主入口启动与预训练模型的交互式对话。
+    - 关键词 / Keywords:
+      main|dispatch|chat|interactive|对话|生成|推理
+    """
+    print("\n" + "=" * 50)
+    print("Starting Interactive Chat with Hybrid LM")
+    print("=" * 50)
+    from scripts.chat import main as chat_main
+
+    return chat_main()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="DSRA (Decoupled Sparse Routing Attention) Unified Test Runner",
@@ -318,6 +330,7 @@ def main():
         'mhdsra2_curriculum_strategy_grid',
         'mhdsra2_carry_diagnostic_grid',
         'ablation',     # ablation_study.py
+        'chat',         # interactive chat with pre-trained model
         'report',
         'all'           # Run everything in sequence
     ]
@@ -378,6 +391,7 @@ def main():
                 run_mhdsra2_carry_diagnostic_grid,
             ),
             'ablation': ("ablation", run_ablation),
+            'chat': ("chat", run_chat),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }
         tests_to_run.append(mapping[args.test_name])

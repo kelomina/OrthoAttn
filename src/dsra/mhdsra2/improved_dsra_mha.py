@@ -54,6 +54,7 @@ class MHDSRA2Config:
     momentum_decay: float = 0.9999
     # RoPE position encoding for slot read
     slot_pe: str = "none"  # "none" or "rope"
+    write_protection: int = 0  # 写入保护：写入后 N 步内不允许覆盖
 
     def __post_init__(self) -> None:
         if self.dim % self.heads != 0:
@@ -76,6 +77,7 @@ class MHDSRA2State:
     position: int = 0
     stage_dominance: Optional[torch.Tensor] = None
     slot_positions: Optional[torch.Tensor] = None  # [B, H, slots] last-write positions for RoPE
+    protected_until: Optional[torch.Tensor] = None  # [B, H, slots] position until which slot is protected
 
 
 class RotaryEmbedding(nn.Module):
@@ -217,6 +219,18 @@ class MultiHeadDSRA2(nn.Module):
                 self.qkv_slow.weight.data.mul_(decay).add_(self.qkv.weight.data, alpha=1 - decay)
 
     def init_state(self, batch_size: int, device=None, dtype=None) -> MHDSRA2State:
+        """Initialize bounded MHDSRA2 state with the default empty-slot state.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `forward_step`
+        - 调用对象 / Calls: `F.normalize`, `torch.zeros`, `torch.full_like`
+        - 作用 / Purpose: 创建初始 slot 状态，保持既有 confidence=0.5 默认口径，
+          并在启用 write_protection 时初始化写入保护时间表
+        - 变量 / Variables:
+          `k/v` 是初始 slot 键值, `age/usage` 为零, `confidence=0.5` 沿用原始基线
+        - 接入 / Integration: 每次新序列处理开始时自动调用
+        - 错误处理 / Error handling: 维度/设备参数错误由 PyTorch 抛出
+        """
         cfg = self.cfg
         k = F.normalize(self.slot_k_init, dim=-1).unsqueeze(0).expand(batch_size, -1, -1, -1)
         v = self.slot_v_init.unsqueeze(0).expand(batch_size, -1, -1, -1)
@@ -224,10 +238,20 @@ class MultiHeadDSRA2(nn.Module):
         v = v.to(device=device, dtype=dtype)
         zeros = torch.zeros(batch_size, cfg.heads, cfg.slots, device=device, dtype=torch.float32)
         conf = torch.full_like(zeros, 0.5)
+        slot_positions = torch.zeros(batch_size, cfg.heads, cfg.slots, device=device, dtype=torch.long) if cfg.slot_pe == "rope" else None
+        protected_until = None
+        if cfg.write_protection > 0:
+            protected_until = torch.full(
+                (batch_size, cfg.heads, cfg.slots),
+                -cfg.write_protection,
+                dtype=torch.long,
+                device=device,
+            )
         return MHDSRA2State(
             k.contiguous(), v.contiguous(), zeros, zeros.clone(), conf,
             stage_dominance=None,
-            slot_positions=torch.zeros(batch_size, cfg.heads, cfg.slots, device=device, dtype=torch.long) if cfg.slot_pe == "rope" else None,
+            slot_positions=slot_positions,
+            protected_until=protected_until,
         )
 
     def _to_heads(self, x: torch.Tensor) -> torch.Tensor:
@@ -263,6 +287,8 @@ class MultiHeadDSRA2(nn.Module):
         d = values.shape[-1]
         idx_flat = idx.reshape(b * h, t * r)
         src = (weights.unsqueeze(-1) * values.unsqueeze(3)).reshape(b * h, t * r, d)
+        # Ensure dtype matches target tensor for scatter_add_
+        src = src.to(dtype=values.dtype)
         out = torch.zeros(b * h, slots, d, device=values.device, dtype=values.dtype)
         out.scatter_add_(1, idx_flat.unsqueeze(-1).expand(-1, -1, d), src)
 
@@ -314,6 +340,7 @@ class MultiHeadDSRA2(nn.Module):
         probs = F.softmax(top_logits, dim=-1)
         selected_v = self._gather_slots(slot_v, top_idx)
         out = (probs.unsqueeze(-1) * selected_v).sum(dim=3)
+
         read_mass = self._scatter_mass(top_idx, probs, cfg.slots)
         return out, {
             "read_idx": top_idx,
@@ -414,6 +441,7 @@ class MultiHeadDSRA2(nn.Module):
           slot_write|overwrite|correction|latest_wins|forget_gate|write_mass|read_mass|state_update|mhdsra2|覆盖写入
         """
         cfg = self.cfg
+        batch_size, heads, seq_len, d_head = k.shape
         slot_k = state.slot_k.to(dtype=k.dtype)
         slot_v = state.slot_v.to(dtype=v.dtype)
         kn = F.normalize(k, dim=-1)
@@ -439,6 +467,25 @@ class MultiHeadDSRA2(nn.Module):
         route = F.softmax(top_logits, dim=-1)
         token_gate = torch.sigmoid(self.token_write_gate(k)).squeeze(-1) * novelty
         weights = route * token_gate.unsqueeze(-1)
+
+        # Apply write protection: prevent writing to slots that are still protected
+        if cfg.write_protection > 0 and state.protected_until is not None:
+            # For each token in the chunk, calculate its position
+            batch_size, heads, seq_len, write_topk = top_idx.shape
+            token_positions = torch.arange(state.position, state.position + seq_len, 
+                                            device=k.device, dtype=torch.long)
+            # Shape: (seq_len,)
+            
+            # Expand protected_until to (batch_size, heads, seq_len, slots)
+            protected_expanded = state.protected_until.unsqueeze(2).expand(-1, -1, seq_len, -1)
+            # Expand token_positions to (batch_size, heads, seq_len, slots)
+            token_pos_expanded = token_positions.view(1, 1, seq_len, 1).expand_as(protected_expanded)
+            # Check which slots are protected for each token position
+            protected_mask = (protected_expanded > token_pos_expanded).to(dtype=k.dtype)
+            # Gather protection status for each selected slot
+            selected_protected = protected_mask.gather(3, top_idx)
+            # Zero out weights for protected slots
+            weights = weights * (1.0 - selected_protected)
 
         agg_k, mass = self._scatter_values(top_idx, weights, k, cfg.slots)
         agg_v, _ = self._scatter_values(top_idx, weights, v, cfg.slots)
@@ -485,6 +532,22 @@ class MultiHeadDSRA2(nn.Module):
             new_pos = torch.full_like(state.slot_positions, state.position + k.shape[2], dtype=torch.long)
             slot_positions_next = torch.where(wrote_mask, new_pos, state.slot_positions.to(device=k.device))
 
+        # 方案 3: 写入保护 - 更新 protected_until
+        protected_until_next = state.protected_until
+        if cfg.write_protection > 0:
+            wrote_mask = (mass.squeeze(-1) > cfg.eps).to(device=k.device)
+            if protected_until_next is None:
+                # 正确初始化 protected_until，不依赖可能为 None 的 slot_positions
+                protected_until_next = torch.full(
+                    (batch_size, cfg.heads, cfg.slots), 
+                    -cfg.write_protection, 
+                    dtype=torch.long, 
+                    device=k.device
+                )
+            # 安全地创建 new_protection
+            new_protection = torch.full_like(protected_until_next, state.position + k.shape[2] + cfg.write_protection, dtype=torch.long)
+            protected_until_next = torch.where(wrote_mask, new_protection, protected_until_next.to(device=k.device))
+
         write_mass = mass.squeeze(-1).to(dtype=torch.float32)
         self.last_write_stats = {
             "token_gate_mean": token_gate.detach().mean().to(dtype=torch.float32),
@@ -520,6 +583,7 @@ class MultiHeadDSRA2(nn.Module):
             position=state.position + k.shape[2],
             stage_dominance=None,
             slot_positions=slot_positions_next,
+            protected_until=protected_until_next,
         )
 
     def forward(
@@ -588,7 +652,6 @@ class MultiHeadDSRA2(nn.Module):
         next_state = self._slot_write(k, v, state, aux_read["read_mass"], stage_id=stage_id)
         next_state.local_k = new_local_k
         next_state.local_v = new_local_v
-        next_state.position = state.position + t
 
         if return_aux:
             aux = {

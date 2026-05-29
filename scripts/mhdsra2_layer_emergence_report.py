@@ -27,6 +27,7 @@ from src.dsra.application.arithmetic_emergence_service import (  # noqa: E402
     DEFAULT_SEEDS,
 )
 from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown  # noqa: E402
+from src.dsra.swanlab_utils import init_swanlab  # noqa: E402
 
 
 def parse_csv_ints(value: str) -> tuple[int, ...]:
@@ -157,6 +158,24 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
       main|cli|arithmetic|emergence|100+100|mhdsra2|report|json|markdown|运行
     """
     args = build_parser().parse_args(argv)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="layer_emergence",
+        config={
+            "layers": list(args.layers),
+            "seeds": list(args.seeds),
+            "max_steps_per_stage": args.max_steps_per_stage if args.training_steps is None else args.training_steps,
+            "curriculum_eval_interval": args.curriculum_eval_interval,
+            "stage_threshold": args.stage_threshold,
+            "replay_ratio": args.replay_ratio,
+            "stage_patience": args.stage_patience,
+            "learning_rate": args.learning_rate,
+            "device": args.device,
+            "include_standard_baseline": not args.skip_standard_baseline,
+        },
+        mode="cloud",
+        tags=["layer_emergence", "arithmetic"],
+    )
     max_steps_per_stage = (
         args.max_steps_per_stage if args.training_steps is None else args.training_steps
     )
@@ -172,6 +191,15 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
         device=args.device,
         include_standard_baseline=not args.skip_standard_baseline,
     )
+    for layer_idx, layer_result in enumerate(payload.get("layer_results", [])):
+        swanlab_run.log(
+            {
+                "layer_count": layer_result.get("layer_count", 0),
+                "retained_stage_count": layer_result.get("retained_stage_count", 0),
+                "train_exact_match": layer_result.get("train_exact_match", 0.0),
+            },
+            step=layer_idx,
+        )
     json_path, markdown_path = save_layer_emergence_reports(payload, args.reports_dir)
     print(f"MHDSRA2_LAYER_EMERGENCE_JSON={json_path}")
     print(f"MHDSRA2_LAYER_EMERGENCE_MARKDOWN={markdown_path}")
@@ -181,6 +209,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
         "MHDSRA2_ARITHMETIC_EMERGENT_MIN_LAYERS="
         f"{minimum_layers_text}"
     )
+    swanlab_run.finish()
     return payload
 
 

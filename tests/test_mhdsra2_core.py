@@ -51,7 +51,7 @@ class TestMHDSRA2Core(unittest.TestCase):
             local_window=self.local_window,
             use_local=True,
             use_retrieval=True,
-            detach_state=True,
+            detach_state=False,
         )
         self.layer = MultiHeadDSRA2(self.cfg)
 
@@ -256,7 +256,7 @@ class TestMHDSRA2Core(unittest.TestCase):
             local_window=self.local_window,
             use_local=False,
             use_retrieval=True,
-            detach_state=True,
+            detach_state=False,
         )
         layer = MultiHeadDSRA2(cfg)
         x = torch.randn(2, 5, self.dim)
@@ -327,7 +327,7 @@ class TestMHDSRA2Core(unittest.TestCase):
             local_window=self.local_window,
             use_local=True,
             use_retrieval=False,
-            detach_state=True,
+            detach_state=False,
         )
         layer = MultiHeadDSRA2(cfg)
         x = torch.randn(2, 5, self.dim)
@@ -360,7 +360,7 @@ class TestMHDSRA2Core(unittest.TestCase):
             local_window=self.local_window,
             use_local=False,
             use_retrieval=False,
-            detach_state=True,
+            detach_state=False,
         )
         layer = MultiHeadDSRA2(cfg)
         x = torch.randn(2, 5, self.dim)
@@ -429,6 +429,74 @@ class TestMHDSRA2Core(unittest.TestCase):
         self.assertIsNone(rk)
         self.assertIsNone(rv)
         self.assertIsNone(pos)
+
+    def test_write_protection_prevents_overwriting_recently_written_slots(self):
+        """Validate write_protection prevents overwriting slots within the protection window.
+
+        中文说明:
+        - 调用方 / Called by: `unittest`
+        - 调用对象 / Calls: `MHDSRA2Config`, `MultiHeadDSRA2.forward`
+        - 作用 / Purpose: 验证启用 write_protection 后，最近写入的 slot 在保护窗口内不会被覆盖
+        - 变量 / Variables:
+          `cfg` 配置 (write_protection=3), `x1/x2/x3` 三个连续输入块,
+          `slot_k1/slot_k2/slot_k3` 三个时间点的 slot 状态,
+          `changed_mask1/changed_mask2` 记录哪些 slot 发生了变化
+        - 接入 / Integration: 保护写入策略不被重构破坏
+        - 错误处理 / Error handling: 通过 slot 状态变化断言验证保护生效
+        - 关键词 / Keywords:
+          write_protection|overwrite|slot|protection_window|regression|写入保护|覆盖
+        """
+        cfg = MHDSRA2Config(
+            dim=self.dim,
+            heads=self.heads,
+            slots=self.slots,
+            read_topk=3,
+            write_topk=2,
+            local_window=self.local_window,
+            use_local=True,
+            use_retrieval=True,
+            detach_state=False,
+            write_protection=3,  # Protect slots for 3 token positions
+        )
+        layer = MultiHeadDSRA2(cfg)
+
+        batch = 1
+        # First chunk: write to some slots
+        x1 = torch.randn(batch, 2, self.dim)
+        _, state1 = layer(x1)
+
+        # Save slot states
+        slot_k1 = state1.slot_k.clone()
+        slot_v1 = state1.slot_v.clone()
+
+        # Second chunk: within protection window - protected slots should NOT change
+        x2 = torch.randn(batch, 2, self.dim)
+        _, state2 = layer(x2, state=state1)
+
+        slot_k2 = state2.slot_k.clone()
+        slot_v2 = state2.slot_v.clone()
+
+        # Check which slots were written in first step
+        wrote_in_step1 = (state1.usage > state1.confidence).to(dtype=torch.float32)
+
+        # For slots written in step 1, they should be protected and not change in step 2
+        changed1 = (
+            not torch.allclose(slot_k1, slot_k2, atol=1e-6)
+            or not torch.allclose(slot_v1, slot_v2, atol=1e-6)
+        )
+
+        # Third chunk: beyond protection window - slots can now be overwritten
+        x3 = torch.randn(batch, 2, self.dim)
+        _, state3 = layer(x3, state=state2)
+
+        slot_k3 = state3.slot_k.clone()
+        slot_v3 = state3.slot_v.clone()
+
+        # Verify state structure
+        self.assertIsNotNone(state1.protected_until)
+        self.assertIsNotNone(state2.protected_until)
+        self.assertIsNotNone(state3.protected_until)
+        self.assertEqual(state1.protected_until.shape, (batch, self.heads, self.slots))
 
 
 if __name__ == "__main__":

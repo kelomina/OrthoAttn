@@ -59,6 +59,10 @@ class MultiLayerMHDSRA2Model(nn.Module):
         - 错误处理 / Error handling: 非法架构名、维度或 MHDSRA2 配置会抛出 `ValueError`
         - 关键词 / Keywords:
           mhdsra2|multilayer|model|token|chunked|streaming|slots|retrieval|logits|模型
+        - Note:
+           detach_state=True is the memory-safe default (gradient is truncated
+           across chunk boundaries). Set to False via mhdsra2_config_override
+           for shorter sequences where full BPTT gradient flow is affordable.
         """
         super().__init__()
         active_model_type = normalize_model_type(model_type)
@@ -93,29 +97,164 @@ class MultiLayerMHDSRA2Model(nn.Module):
         self.final_norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
 
+    def _normalize_selected_positions(
+        self,
+        positions: int | torch.Tensor,
+        batch_size: int,
+        seq_len: int,
+    ) -> torch.Tensor:
+        """Normalize per-batch token positions for memory-bounded logit selection.
+
+        中文说明:
+        - 调用方 / Called by: `forward_selected_logits`
+        - 调用对象 / Calls: `torch.as_tensor`, `torch.full`, tensor shape/range checks
+        - 作用 / Purpose: 将单个位置或逐 batch 位置标准化为 CPU long tensor，支持负索引
+        - 参数 / Parameters:
+          `positions` 是单个全局 token 位置或 `[B]` 逐样本位置；`batch_size/seq_len`
+          来自输入 token 序列，必须为正整数
+        - 返回 / Returns: `[B]` CPU long tensor；非法位置抛出 `ValueError`
+        - 接入 / Integration: 仅由模型层内部调用，不涉及事务、文件、网络或外部服务
+        - 错误处理 / Error handling: batch 数不匹配或位置越界时直接抛出 `ValueError`
+        - 副作用 / Side effects: 无；只创建小型 CPU tensor
+        - 并发与幂等 / Concurrency and idempotency: 纯函数式转换，可重复调用
+        - 关键词 / Keywords:
+          position|selected_logits|niah|memory|streaming|batch|negative_index|mhdsra2|token|位置
+
+        English documentation:
+        Function name:
+            _normalize_selected_positions
+        Purpose:
+            Normalize scalar or per-batch selected token positions for streaming logits.
+        Called by:
+            `forward_selected_logits`.
+        Calls:
+            `torch.as_tensor`, `torch.full`, and tensor validation operations.
+        Parameters:
+            - positions: int or tensor, selected global token positions.
+            - batch_size: int, number of input samples.
+            - seq_len: int, input sequence length.
+        Returns:
+            CPU long tensor with one valid position per batch item.
+        Error handling:
+            Raises `ValueError` for unsupported shapes or out-of-range positions.
+        Side effects:
+            None.
+        Transaction boundary:
+            Not applicable.
+        Concurrency and idempotency:
+            Reentrant and idempotent for the same input.
+        English keywords:
+            position, selected_logits, niah, memory, streaming, batch, negative_index, mhdsra2, token, validation
+        """
+        if isinstance(positions, int):
+            normalized = torch.full((batch_size,), positions, dtype=torch.long)
+        else:
+            normalized = torch.as_tensor(positions, dtype=torch.long).detach().cpu().flatten()
+            if normalized.numel() == 1:
+                normalized = normalized.expand(batch_size).clone()
+
+        if normalized.numel() != batch_size:
+            raise ValueError(
+                f"expected one selected position per batch item, got {normalized.numel()} "
+                f"positions for batch_size={batch_size}"
+            )
+
+        normalized = torch.where(normalized < 0, normalized + seq_len, normalized)
+        if bool(((normalized < 0) | (normalized >= seq_len)).any().item()):
+            raise ValueError(f"selected positions must be within [0, {seq_len})")
+        return normalized
+
+    def forward_selected_logits(
+        self,
+        x: torch.Tensor,
+        positions: int | torch.Tensor,
+        stage_id: int | None = None,
+        context_id: int | None = None,
+        *,
+        return_hidden: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        """Run MHDSRA2 over a long sequence and return logits only at selected positions.
+
+        When return_hidden=True, also returns the pre-out_proj normalized hidden
+        states of shape [B, dim] for diagnostic callers that need selected-token
+        representations without materializing full-sequence logits.
+        """
+        if x.dim() != 2:
+            raise ValueError(f"expected token ids with shape [B, SeqLen], got {tuple(x.shape)}")
+
+        batch_size, seq_len = x.shape
+        selected_positions = self._normalize_selected_positions(positions, batch_size, seq_len)
+        model_device = self.embedding.weight.device
+        state_list = [None] * self.num_layers
+        logits_by_batch: list[torch.Tensor | None] = [None] * batch_size
+        hidden_by_batch: list[torch.Tensor | None] = [None] * batch_size if return_hidden else None
+
+        for start in range(0, seq_len, self.chunk_size):
+            end = min(start + self.chunk_size, seq_len)
+            token_chunk = x[:, start:end].to(device=model_device, non_blocking=True)
+            chunk = self.embedding(token_chunk)
+
+            for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
+                residual = chunk
+                chunk_normed = norm(chunk)
+                out_chunk, next_state = layer(
+                    chunk_normed,
+                    state=state_list[layer_idx],
+                    stage_id=stage_id,
+                    context_id=context_id,
+                )
+                state_list[layer_idx] = next_state
+                chunk = residual + out_chunk
+
+            selected_mask = (selected_positions >= start) & (selected_positions < end)
+            if bool(selected_mask.any().item()):
+                batch_idx_cpu = selected_mask.nonzero(as_tuple=True)[0]
+                local_idx_cpu = selected_positions[batch_idx_cpu] - start
+                batch_idx = batch_idx_cpu.to(device=model_device)
+                local_idx = local_idx_cpu.to(device=model_device)
+                selected_hidden = chunk[batch_idx, local_idx, :]
+                hidden_normed = self.final_norm(selected_hidden)
+                selected_logits = self.out_proj(hidden_normed)
+                for row_idx, batch_id in enumerate(batch_idx_cpu.tolist()):
+                    logits_by_batch[batch_id] = selected_logits[row_idx : row_idx + 1]
+                    if return_hidden:
+                        hidden_by_batch[batch_id] = hidden_normed[row_idx : row_idx + 1]
+
+        if any(item is None for item in logits_by_batch):
+            raise RuntimeError("failed to collect logits for all selected positions")
+        logits = torch.cat([item for item in logits_by_batch if item is not None], dim=0)
+        if return_hidden:
+            hidden = torch.cat([item for item in hidden_by_batch if item is not None], dim=0)
+            return logits, hidden
+        return logits
+
     def forward(self, x: torch.Tensor, stage_id: int | None = None,
                 context_id: int | None = None) -> torch.Tensor:
         """Run a stacked MHDSRA2 token model over chunked long sequences.
 
         中文说明:
-        - 调用方 / Called by: Needle-In-A-Haystack training/evaluation scripts and tests
+        - 调用方 / Called by: full-sequence compatibility tests and legacy evaluation scripts
         - 调用对象 / Calls: `nn.Embedding`, `nn.LayerNorm`, `MultiHeadDSRA2.forward`, `nn.Linear`
-        - 作用 / Purpose: 对 token id 序列执行多层流式 MHDSRA2 前向并返回词表 logits
+        - 作用 / Purpose: 对 token id 序列执行多层流式 MHDSRA2 前向并返回全序列词表 logits
         - 变量 / Variables:
-          `x` 是 `[B,SeqLen]` token ids, `hidden` 是嵌入序列, `chunk` 是当前分块,
+          `x` 是 `[B,SeqLen]` token ids, `token_chunk` 是当前分块 token ids,
           `state_list` 保存每层流式状态, `out_list` 收集每个分块输出
-        - 接入 / Integration: 输入 token ids，输出 `[B,SeqLen,vocab_size]` logits
+        - 接入 / Integration: 输入 token ids，输出 `[B,SeqLen,vocab_size]` logits；只监督少量位置时优先用
+          `forward_selected_logits` 降低显存
         - 错误处理 / Error handling: 张量维度和底层配置错误由 PyTorch/MHDSRA2 向上抛出
         - 关键词 / Keywords:
-          forward|mhdsra2|multilayer|chunked|streaming|state|token|logits|needle|前向
+          forward|mhdsra2|multilayer|chunked|streaming|state|token|logits|compat|前向
         """
         _, seq_len = x.shape
-        hidden = self.embedding(x)
+        model_device = self.embedding.weight.device
         state_list = [None] * self.num_layers
         out_list = []
 
         for start in range(0, seq_len, self.chunk_size):
-            chunk = hidden[:, start : start + self.chunk_size, :]
+            token_chunk = x[:, start : start + self.chunk_size].to(
+                device=model_device, non_blocking=True
+            )
+            chunk = self.embedding(token_chunk)
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)

@@ -65,7 +65,7 @@ class MHDSRA2WithFFN(nn.Module):
             local_window=chunk_size * 4,  # allow longer local context
             use_local=True,
             use_retrieval=False,
-            detach_state=True,
+            detach_state=False,
             slot_pe="none",
         )
         if mhdsra2_config_override:

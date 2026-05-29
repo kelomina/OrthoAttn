@@ -15,6 +15,7 @@ from src.dsra.mhdsra2.improved_dsra_mha import (
     estimate_attention_memory_bytes,
     format_bytes,
 )
+from src.dsra.swanlab_utils import init_swanlab
 
 
 def smoke_test():
@@ -28,7 +29,7 @@ def smoke_test():
         local_window=32,
         use_local=True,
         use_retrieval=True,
-        detach_state=True,
+        detach_state=False,
     )
     layer = MultiHeadDSRA2(cfg)
     x1 = torch.randn(2, 16, cfg.dim)
@@ -49,6 +50,7 @@ def smoke_test():
     print("[OK] smoke test passed")
     print("gates_mean_after_retrieval [slot, local, retrieval] per head:")
     print(aux2["gates_mean"])
+    return aux2["gates_mean"]
 
 
 def scaling_report(args):
@@ -77,6 +79,7 @@ def scaling_report(args):
         "Note: external exact token memory is assumed to live on CPU/NVMe; "
         "only retrieved tokens and landmarks are counted on GPU."
     )
+    return mem
 
 
 def micro_benchmark(args):
@@ -91,7 +94,7 @@ def micro_benchmark(args):
         local_window=args.local_window,
         use_local=True,
         use_retrieval=True,
-        detach_state=True,
+        detach_state=False,
     )
     layer = MultiHeadDSRA2(cfg)
     x = torch.randn(args.batch, args.chunk, args.dim)
@@ -104,8 +107,10 @@ def micro_benchmark(args):
             _, state = layer(x, state=state, retrieved_k=rk, retrieved_v=rv)
     dt = time.perf_counter() - t0
     toks = args.steps * args.batch * args.chunk
-    print(f"\nCPU micro-benchmark: {toks:,} tokens in {dt:.3f}s -> {toks / max(dt, 1e-9):.1f} tok/s")
+    tok_per_s = toks / max(dt, 1e-9)
+    print(f"\nCPU micro-benchmark: {toks:,} tokens in {dt:.3f}s -> {tok_per_s:.1f} tok/s")
     print("This is only a shape/scaling test; GPU kernels and external retrieval are not benchmarked here.")
+    return tok_per_s
 
 
 def build_parser():
@@ -130,9 +135,34 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    smoke_test()
-    scaling_report(args)
-    micro_benchmark(args)
+    swanlab_run = init_swanlab(
+        project="MHDSRA2",
+        experiment_name="verify_mhdsra2",
+        mode="cloud",
+        tags=["verify"],
+    )
+
+    gates_mean = smoke_test()
+    mem = scaling_report(args)
+    tok_per_s = micro_benchmark(args)
+
+    log_data: dict = {}
+    if gates_mean is not None:
+        for head_idx, head_gates in enumerate(gates_mean):
+            for gate_idx, gate_name in enumerate(["slot", "local", "retrieval"]):
+                log_data[f"gates_mean/head{head_idx}/{gate_name}"] = float(head_gates[gate_idx])
+    if mem is not None:
+        total_mem = sum(mem.values())
+        log_data["memory_total_bytes"] = total_mem
+        for k, v in mem.items():
+            log_data[f"memory/{k}"] = v
+    if tok_per_s is not None:
+        log_data["tok_per_s"] = tok_per_s
+
+    if log_data:
+        swanlab_run.log(log_data)
+
+    swanlab_run.finish()
 
 
 if __name__ == "__main__":

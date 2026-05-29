@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from src.dsra.report_utils import build_ablation_markdown, ensure_reports_dir, write_json, write_markdown
+from src.dsra.swanlab_utils import init_swanlab
 from scripts.toy_task_associative_recall import (
     MHDSRA2Model,
     build_fixed_associative_mapping,
@@ -130,6 +131,7 @@ def train_with_curriculum(
     warmup_steps=40,
     data_mode="fixed_mapping",
     print_prefix="",
+    swanlab_run=None,
 ):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.LambdaLR(
@@ -187,6 +189,8 @@ def train_with_curriculum(
                     f"{print_prefix}Step {global_step:4d} | "
                     f"train_loss={loss.item():.4f} | eval_loss={eval_loss:.4f} | eval_acc={eval_acc*100:6.2f}%"
                 )
+                if swanlab_run is not None:
+                    swanlab_run.log({"train/loss": loss.item(), "train/accuracy": eval_acc}, step=global_step)
 
     final_eval_loss, final_eval_acc = evaluate_model(model, eval_batches, criterion, device)
     return {
@@ -244,6 +248,7 @@ def run_ablation(
     for lr in LR_GRID:
         set_seed(DEFAULT_SEED)
         model = build_model(config, vocab_size, dim, K, kr, chunk_size, device)
+        swanlab_run = init_swanlab(project="MHDSRA2", experiment_name=f"ablation_{name}", config={"variant": name, "lr": lr}, mode="cloud", tags=["ablation"])
         run_result = train_with_curriculum(
             model=model,
             device=device,
@@ -255,8 +260,10 @@ def run_ablation(
             warmup_steps=40,
             data_mode=data_mode,
             print_prefix=f"[{name} | lr={lr:.0e}] ",
+            swanlab_run=swanlab_run,
         )
         run_result["lr"] = lr
+        swanlab_run.finish()
 
         if best_run is None or run_result["final_eval_acc"] > best_run["final_eval_acc"]:
             best_run = run_result
