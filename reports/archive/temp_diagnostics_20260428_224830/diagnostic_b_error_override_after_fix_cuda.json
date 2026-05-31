@@ -1,0 +1,463 @@
+{
+  "config": {
+    "benchmark": "diagnostic_b_error_override_after_fix_cuda",
+    "diagnostic_device": "cuda",
+    "diagnostic_slots": 16,
+    "diagnostic_key_count": 64,
+    "diagnostic_value_count": 64,
+    "diagnostic_chunk_size": 256,
+    "diagnostic_page_size": 128,
+    "diagnostic_retrieved_top_pages": 4,
+    "diagnostic_retrieved_max_tokens": 64,
+    "diagnostic_override_seq_len": 16384,
+    "diagnostic_override_gap_grid": [
+      128,
+      1024,
+      4096
+    ]
+  },
+  "sections": [
+    {
+      "title": "Diagnostic B - Error Override",
+      "description": "Writes an old fact, then a correction for the same key, and measures whether the latest fact overrides stale memory.",
+      "rows": [
+        {
+          "suite": "diagnostic_b_error_override",
+          "task": "aggregate",
+          "split": "overall",
+          "metric": "latest_fact_accuracy.mhdsra2_without_paged_recall",
+          "higher_is_better": true,
+          "dsra": 0.6666666666666666,
+          "mhdsra2": 1.0,
+          "delta": 0.33333333333333337,
+          "ratio": 1.5,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "compared_variant": "mhdsra2_without_paged_recall",
+            "cases": [
+              "error_override.gap_128",
+              "error_override.gap_1024",
+              "error_override.gap_4096"
+            ]
+          }
+        },
+        {
+          "suite": "diagnostic_b_error_override",
+          "task": "aggregate",
+          "split": "overall",
+          "metric": "latest_fact_accuracy.mhdsra2_with_paged_recall",
+          "higher_is_better": true,
+          "dsra": 0.6666666666666666,
+          "mhdsra2": 1.0,
+          "delta": 0.33333333333333337,
+          "ratio": 1.5,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "compared_variant": "mhdsra2_with_paged_recall",
+            "cases": [
+              "error_override.gap_128",
+              "error_override.gap_1024",
+              "error_override.gap_4096"
+            ]
+          }
+        }
+      ],
+      "model_tables": [
+        {
+          "title": "Mean metrics by model",
+          "columns": [
+            "Model",
+            "successful_cases",
+            "oom_cases",
+            "confidence_margin",
+            "latest_fact_accuracy",
+            "stale_fact_rate",
+            "forget_gate_mean"
+          ],
+          "rows": [
+            [
+              "Original DSRA",
+              "3.0000",
+              "0.0000",
+              "0.0000",
+              "0.6667",
+              "0.3333",
+              "-"
+            ],
+            [
+              "MH-DSRA-v2 (no paged recall)",
+              "3.0000",
+              "0.0000",
+              "0.1842",
+              "1.0000",
+              "0.0000",
+              "0.0166"
+            ],
+            [
+              "MH-DSRA-v2 (paged recall)",
+              "3.0000",
+              "0.0000",
+              "0.0851",
+              "1.0000",
+              "0.0000",
+              "0.0166"
+            ],
+            [
+              "Sliding window attention",
+              "3.0000",
+              "0.0000",
+              "0.0000",
+              "0.0000",
+              "1.0000",
+              "-"
+            ],
+            [
+              "Linear attention",
+              "3.0000",
+              "0.0000",
+              "0.0000",
+              "0.0000",
+              "1.0000",
+              "-"
+            ]
+          ]
+        },
+        {
+          "title": "Per-case exact success",
+          "columns": [
+            "Case",
+            "Original DSRA",
+            "MH-DSRA-v2 (no paged recall)",
+            "MH-DSRA-v2 (paged recall)",
+            "Sliding window attention",
+            "Linear attention"
+          ],
+          "rows": [
+            [
+              "error_override.gap_128",
+              "1",
+              "1",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "error_override.gap_1024",
+              "1",
+              "1",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "error_override.gap_4096",
+              "0",
+              "1",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ],
+      "diagnostic_cases": [
+        {
+          "case_id": "error_override.gap_128",
+          "metadata": {
+            "gap": 128,
+            "old_value_id": 0,
+            "new_value_id": 1
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.1920928955078125e-07,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.19469010829925537,
+              "aux": {
+                "slot_usage_mean": 889.7686157226562,
+                "slot_confidence_mean": 0.42299044132232666,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.0899209976196289,
+              "aux": {
+                "slot_usage_mean": 889.7686157226562,
+                "slot_confidence_mean": 0.42299044132232666,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 2.6702880859375e-05,
+              "aux": {}
+            }
+          }
+        },
+        {
+          "case_id": "error_override.gap_1024",
+          "metadata": {
+            "gap": 1024,
+            "old_value_id": 0,
+            "new_value_id": 1
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 8.940696716308594e-08,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.18823477625846863,
+              "aux": {
+                "slot_usage_mean": 889.7686767578125,
+                "slot_confidence_mean": 0.42274898290634155,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.08693957328796387,
+              "aux": {
+                "slot_usage_mean": 889.7686767578125,
+                "slot_confidence_mean": 0.42274898290634155,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 2.6702880859375e-05,
+              "aux": {}
+            }
+          }
+        },
+        {
+          "case_id": "error_override.gap_4096",
+          "metadata": {
+            "gap": 4096,
+            "old_value_id": 0,
+            "new_value_id": 1
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 2.9802322387695312e-08,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.16952869296073914,
+              "aux": {
+                "slot_usage_mean": 889.7684936523438,
+                "slot_confidence_mean": 0.4220452904701233,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.078299880027771,
+              "aux": {
+                "slot_usage_mean": 889.7684936523438,
+                "slot_confidence_mean": 0.4220452904701233,
+                "forget_gate_mean": 0.016589326784014702,
+                "conflict_mean": 0.9375483393669128,
+                "write_gate_mean": 0.013834334909915924,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 2.6226043701171875e-05,
+              "aux": {}
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "suite": "diagnostic_b_error_override",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "latest_fact_accuracy.mhdsra2_without_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.6666666666666666,
+      "mhdsra2": 1.0,
+      "delta": 0.33333333333333337,
+      "ratio": 1.5,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_without_paged_recall",
+        "cases": [
+          "error_override.gap_128",
+          "error_override.gap_1024",
+          "error_override.gap_4096"
+        ]
+      }
+    },
+    {
+      "suite": "diagnostic_b_error_override",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "latest_fact_accuracy.mhdsra2_with_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.6666666666666666,
+      "mhdsra2": 1.0,
+      "delta": 0.33333333333333337,
+      "ratio": 1.5,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_with_paged_recall",
+        "cases": [
+          "error_override.gap_128",
+          "error_override.gap_1024",
+          "error_override.gap_4096"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_rows": 2,
+      "valid_rows": 2,
+      "mhdsra2_wins": 2,
+      "dsra_wins": 0,
+      "ties": 0,
+      "avg_delta": 0.33333333333333337,
+      "avg_ratio": 1.5
+    },
+    "suite_breakdown": [
+      {
+        "suite": "diagnostic_b_error_override",
+        "rows": 2,
+        "mhdsra2_wins": 2,
+        "dsra_wins": 0,
+        "ties": 0,
+        "avg_delta": 0.33333333333333337,
+        "avg_ratio": 1.5
+      }
+    ],
+    "best_mhdsra2_row": {
+      "suite": "diagnostic_b_error_override",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "latest_fact_accuracy.mhdsra2_without_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.6666666666666666,
+      "mhdsra2": 1.0,
+      "delta": 0.33333333333333337,
+      "ratio": 1.5,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_without_paged_recall",
+        "cases": [
+          "error_override.gap_128",
+          "error_override.gap_1024",
+          "error_override.gap_4096"
+        ]
+      }
+    },
+    "worst_mhdsra2_row": {
+      "suite": "diagnostic_b_error_override",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "latest_fact_accuracy.mhdsra2_with_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.6666666666666666,
+      "mhdsra2": 1.0,
+      "delta": 0.33333333333333337,
+      "ratio": 1.5,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_with_paged_recall",
+        "cases": [
+          "error_override.gap_128",
+          "error_override.gap_1024",
+          "error_override.gap_4096"
+        ]
+      }
+    }
+  }
+}

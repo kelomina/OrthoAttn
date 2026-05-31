@@ -1,0 +1,454 @@
+{
+  "config": {
+    "benchmark": "diagnostic_c_anti_fixation_after_fix_cuda",
+    "diagnostic_device": "cuda",
+    "diagnostic_slots": 16,
+    "diagnostic_key_count": 64,
+    "diagnostic_value_count": 64,
+    "diagnostic_chunk_size": 256,
+    "diagnostic_page_size": 128,
+    "diagnostic_retrieved_top_pages": 4,
+    "diagnostic_retrieved_max_tokens": 64,
+    "diagnostic_fixation_seq_len": 65536,
+    "diagnostic_fixation_distractor_grid": [
+      16,
+      64,
+      256
+    ]
+  },
+  "sections": [
+    {
+      "title": "Diagnostic C - Anti-fixation",
+      "description": "Builds a dominant wrong pattern plus one rare counterexample, then checks whether the model resists majority fixation.",
+      "rows": [
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "task": "aggregate",
+          "split": "overall",
+          "metric": "counterexample_accuracy.mhdsra2_without_paged_recall",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 0.3333333333333333,
+          "delta": 0.3333333333333333,
+          "ratio": null,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "compared_variant": "mhdsra2_without_paged_recall",
+            "cases": [
+              "anti_fixation.distractors_16",
+              "anti_fixation.distractors_64",
+              "anti_fixation.distractors_256"
+            ]
+          }
+        },
+        {
+          "suite": "diagnostic_c_anti_fixation",
+          "task": "aggregate",
+          "split": "overall",
+          "metric": "counterexample_accuracy.mhdsra2_with_paged_recall",
+          "higher_is_better": true,
+          "dsra": 0.0,
+          "mhdsra2": 1.0,
+          "delta": 1.0,
+          "ratio": null,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {
+            "compared_variant": "mhdsra2_with_paged_recall",
+            "cases": [
+              "anti_fixation.distractors_16",
+              "anti_fixation.distractors_64",
+              "anti_fixation.distractors_256"
+            ]
+          }
+        }
+      ],
+      "model_tables": [
+        {
+          "title": "Mean metrics by model",
+          "columns": [
+            "Model",
+            "successful_cases",
+            "oom_cases",
+            "confidence_margin",
+            "counterexample_accuracy",
+            "majority_trap_rate"
+          ],
+          "rows": [
+            [
+              "Original DSRA",
+              "3.0000",
+              "0.0000",
+              "0.0498",
+              "0.0000",
+              "1.0000"
+            ],
+            [
+              "MH-DSRA-v2 (no paged recall)",
+              "3.0000",
+              "0.0000",
+              "0.6697",
+              "0.3333",
+              "0.6667"
+            ],
+            [
+              "MH-DSRA-v2 (paged recall)",
+              "3.0000",
+              "0.0000",
+              "0.8144",
+              "1.0000",
+              "0.0000"
+            ],
+            [
+              "Sliding window attention",
+              "3.0000",
+              "0.0000",
+              "0.0000",
+              "0.0000",
+              "1.0000"
+            ],
+            [
+              "Linear attention",
+              "3.0000",
+              "0.0000",
+              "1.0223",
+              "0.0000",
+              "1.0000"
+            ]
+          ]
+        },
+        {
+          "title": "Per-case exact success",
+          "columns": [
+            "Case",
+            "Original DSRA",
+            "MH-DSRA-v2 (no paged recall)",
+            "MH-DSRA-v2 (paged recall)",
+            "Sliding window attention",
+            "Linear attention"
+          ],
+          "rows": [
+            [
+              "anti_fixation.distractors_16",
+              "0",
+              "1",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "anti_fixation.distractors_64",
+              "0",
+              "0",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "anti_fixation.distractors_256",
+              "0",
+              "0",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ],
+      "diagnostic_cases": [
+        {
+          "case_id": "anti_fixation.distractors_16",
+          "metadata": {
+            "distractor_count": 16,
+            "majority_value_id": 0
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.11500817537307739,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.18296870589256287,
+              "aux": {
+                "slot_usage_mean": 2317.5498046875,
+                "slot_confidence_mean": 0.2649199962615967,
+                "forget_gate_mean": 0.016896454617381096,
+                "conflict_mean": 0.9378809928894043,
+                "write_gate_mean": 0.013898886740207672,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 1.5542938709259033,
+              "aux": {
+                "slot_usage_mean": 2317.5498046875,
+                "slot_confidence_mean": 0.2649199962615967,
+                "forget_gate_mean": 0.016896454617381096,
+                "conflict_mean": 0.9378809928894043,
+                "write_gate_mean": 0.013898886740207672,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.2700662612915039,
+              "aux": {}
+            }
+          }
+        },
+        {
+          "case_id": "anti_fixation.distractors_64",
+          "metadata": {
+            "distractor_count": 64,
+            "majority_value_id": 0
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.007475078105926514,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.5044960379600525,
+              "aux": {
+                "slot_usage_mean": 2317.720703125,
+                "slot_confidence_mean": 0.45450592041015625,
+                "forget_gate_mean": 0.016791440546512604,
+                "conflict_mean": 0.9376775622367859,
+                "write_gate_mean": 0.013859421014785767,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.7909172773361206,
+              "aux": {
+                "slot_usage_mean": 2317.720703125,
+                "slot_confidence_mean": 0.45450592041015625,
+                "forget_gate_mean": 0.016791440546512604,
+                "conflict_mean": 0.9376775622367859,
+                "write_gate_mean": 0.013859421014785767,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.8944950103759766,
+              "aux": {}
+            }
+          }
+        },
+        {
+          "case_id": "anti_fixation.distractors_256",
+          "metadata": {
+            "distractor_count": 256,
+            "majority_value_id": 0
+          },
+          "models": {
+            "dsra": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.026855677366256714,
+              "aux": {}
+            },
+            "mhdsra2_without_paged_recall": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 1.32149338722229,
+              "aux": {
+                "slot_usage_mean": 2318.3603515625,
+                "slot_confidence_mean": 0.7298119068145752,
+                "forget_gate_mean": 0.016618702560663223,
+                "conflict_mean": 0.9376726150512695,
+                "write_gate_mean": 0.013858456164598465,
+                "slot_gate_mean": 1.0,
+                "retrieval_gate_mean": 0.0
+              }
+            },
+            "mhdsra2_with_paged_recall": {
+              "predicted_value_id": 1,
+              "target_value_id": 1,
+              "is_correct": 1.0,
+              "confidence_margin": 0.09797537326812744,
+              "aux": {
+                "slot_usage_mean": 2318.3603515625,
+                "slot_confidence_mean": 0.7298119068145752,
+                "forget_gate_mean": 0.016618702560663223,
+                "conflict_mean": 0.9376726150512695,
+                "write_gate_mean": 0.013858456164598465,
+                "retrieved_token_count": 64,
+                "slot_gate_mean": 0.46186771988868713,
+                "retrieval_gate_mean": 0.5381323099136353
+              }
+            },
+            "sliding_window_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 0.0,
+              "aux": {}
+            },
+            "linear_attention": {
+              "predicted_value_id": 0,
+              "target_value_id": 1,
+              "is_correct": 0.0,
+              "confidence_margin": 1.9024044275283813,
+              "aux": {}
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "suite": "diagnostic_c_anti_fixation",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "counterexample_accuracy.mhdsra2_without_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.3333333333333333,
+      "delta": 0.3333333333333333,
+      "ratio": null,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_without_paged_recall",
+        "cases": [
+          "anti_fixation.distractors_16",
+          "anti_fixation.distractors_64",
+          "anti_fixation.distractors_256"
+        ]
+      }
+    },
+    {
+      "suite": "diagnostic_c_anti_fixation",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "counterexample_accuracy.mhdsra2_with_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 1.0,
+      "delta": 1.0,
+      "ratio": null,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_with_paged_recall",
+        "cases": [
+          "anti_fixation.distractors_16",
+          "anti_fixation.distractors_64",
+          "anti_fixation.distractors_256"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_rows": 2,
+      "valid_rows": 2,
+      "mhdsra2_wins": 2,
+      "dsra_wins": 0,
+      "ties": 0,
+      "avg_delta": 0.6666666666666666,
+      "avg_ratio": 0.0
+    },
+    "suite_breakdown": [
+      {
+        "suite": "diagnostic_c_anti_fixation",
+        "rows": 2,
+        "mhdsra2_wins": 2,
+        "dsra_wins": 0,
+        "ties": 0,
+        "avg_delta": 0.6666666666666666,
+        "avg_ratio": 0.0
+      }
+    ],
+    "best_mhdsra2_row": {
+      "suite": "diagnostic_c_anti_fixation",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "counterexample_accuracy.mhdsra2_with_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 1.0,
+      "delta": 1.0,
+      "ratio": null,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_with_paged_recall",
+        "cases": [
+          "anti_fixation.distractors_16",
+          "anti_fixation.distractors_64",
+          "anti_fixation.distractors_256"
+        ]
+      }
+    },
+    "worst_mhdsra2_row": {
+      "suite": "diagnostic_c_anti_fixation",
+      "task": "aggregate",
+      "split": "overall",
+      "metric": "counterexample_accuracy.mhdsra2_without_paged_recall",
+      "higher_is_better": true,
+      "dsra": 0.0,
+      "mhdsra2": 0.3333333333333333,
+      "delta": 0.3333333333333333,
+      "ratio": null,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {
+        "compared_variant": "mhdsra2_without_paged_recall",
+        "cases": [
+          "anti_fixation.distractors_16",
+          "anti_fixation.distractors_64",
+          "anti_fixation.distractors_256"
+        ]
+      }
+    }
+  }
+}

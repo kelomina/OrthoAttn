@@ -1,0 +1,16 @@
+{
+  "label": "E",
+  "name": "MHDSRA2 (small chunk)",
+  "status": "completed",
+  "params": 19397764,
+  "batch_size": 8,
+  "dim": 512,
+  "num_layers": 6,
+  "slots": 64,
+  "chunk_size": 64,
+  "test_ppl": 11.2784,
+  "best_valid_ppl": 11.2019,
+  "total_steps": 50000,
+  "total_time_s": 20865.7,
+  "avg_step_ms": 417.31
+}

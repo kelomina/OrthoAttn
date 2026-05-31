@@ -1,0 +1,21 @@
+﻿Experiment: gate_fix_r2_195002
+======================================================================
+混合架构语言模型预训练
+======================================================================
+python.exe : 'nvidia-smi' is not recognized as an internal or external command,
+所在位置 C:\Users\Saika\AppData\Local\Temp\trae\run-command\scripts\ps-script-8465e4a6-cf0b-4c43-ba17-6b3d1f8a055d.ps1:19 字
+符: 5
++     & "e:\Project\python\DSRA\.env\scripts\python.exe" "e:\Project\py ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ('nvidia-smi' is...ternal command,:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+operable program or batch file.
+swanlab: Tracking run with swanlab version 0.7.19
+swanlab: Run data will be saved locally in 
+E:\Project\python\DSRA\swanlog\run-20260523_195009-ux922e0958yq8x2xwmto5
+swanlab: 👋 Hi Saika,welcome to swanlab!
+swanlab: Syncing run gate_fix_r2_195002 to the cloud
+swanlab: 🏠 View project at https://swanlab.cn/@Saika/DSRA
+swanlab: 🚀 View run at 
+https://swanlab.cn/@Saika/DSRA/runs/ux922e0958yq8x2xwmto5

@@ -1,0 +1,119 @@
+{
+  "status": "completed",
+  "seq_len": 65536,
+  "device": "cuda:0",
+  "torch_version": "2.11.0+cu130",
+  "torch_cuda_version": "13.0",
+  "cuda_device_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "parameter_count": 62576,
+  "config": {
+    "vocab_size": 100,
+    "dim": 64,
+    "num_layers": 2,
+    "slots": 64,
+    "read_topk": 8,
+    "chunk_size": 1024,
+    "batch_size": 1,
+    "epochs": 5,
+    "learning_rate": 0.001,
+    "seed": 20260506,
+    "target_accuracy": 1.0,
+    "stop_loss": 0.1,
+    "eval_interval": 20,
+    "eval_batches_per_depth": 4,
+    "eval_depths": [
+      0.1,
+      0.5,
+      0.9
+    ],
+    "cudnn_benchmark": false
+  },
+  "best_accuracy": 0.08333333333333333,
+  "best_min_depth_accuracy": 0.0,
+  "best_accuracy_epoch": 0,
+  "best_accuracy_loss": 4.984651168187459,
+  "final_accuracy": 0.0,
+  "final_min_depth_accuracy": 0.0,
+  "final_eval_loss": 4.7908220291137695,
+  "best_step_train_accuracy": 0.0,
+  "final_step_train_accuracy": 0.0,
+  "final_train_loss": 3.8603932857513428,
+  "final_loss": 4.7908220291137695,
+  "success_epoch": null,
+  "epochs_observed": [
+    {
+      "epoch": 0,
+      "depth": 0.1,
+      "loss": 4.6776909828186035,
+      "accuracy": 0.0,
+      "train_depth": 0.1,
+      "train_loss": 4.6776909828186035,
+      "train_accuracy": 0.0,
+      "step_train_accuracy": 0.0,
+      "eval_mean_accuracy": 0.08333333333333333,
+      "eval_min_depth_accuracy": 0.0,
+      "eval_mean_loss": 4.984651168187459,
+      "eval_depths": [
+        {
+          "depth": 0.1,
+          "accuracy": 0.0,
+          "loss": 4.634500563144684,
+          "samples": 4
+        },
+        {
+          "depth": 0.5,
+          "accuracy": 0.25,
+          "loss": 4.958265244960785,
+          "samples": 4
+        },
+        {
+          "depth": 0.9,
+          "accuracy": 0.0,
+          "loss": 5.361187696456909,
+          "samples": 4
+        }
+      ]
+    },
+    {
+      "epoch": 4,
+      "depth": 0.5,
+      "loss": 3.8603932857513428,
+      "accuracy": 0.0,
+      "train_depth": 0.5,
+      "train_loss": 3.8603932857513428,
+      "train_accuracy": 0.0,
+      "step_train_accuracy": 0.0,
+      "eval_mean_accuracy": 0.08333333333333333,
+      "eval_min_depth_accuracy": 0.0,
+      "eval_mean_loss": 4.599929650624593,
+      "eval_depths": [
+        {
+          "depth": 0.1,
+          "accuracy": 0.0,
+          "loss": 4.776398539543152,
+          "samples": 4
+        },
+        {
+          "depth": 0.5,
+          "accuracy": 0.0,
+          "loss": 4.60340428352356,
+          "samples": 4
+        },
+        {
+          "depth": 0.9,
+          "accuracy": 0.25,
+          "loss": 4.419986128807068,
+          "samples": 4
+        }
+      ]
+    }
+  ],
+  "elapsed_sec": 41.34185259998776,
+  "train_step_sec": 6.0034032999537885,
+  "peak_memory_allocated_mb": 123.16552734375,
+  "peak_memory_reserved_mb": 152.0,
+  "passed_accuracy": false,
+  "passed_success_criteria": false,
+  "re_eval_mean_accuracy": 0.0,
+  "re_eval_min_depth_accuracy": 0.0
+}

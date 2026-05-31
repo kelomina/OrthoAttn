@@ -1,0 +1,149 @@
+{
+  "config": {
+    "seed": 7
+  },
+  "sections": [
+    {
+      "title": "Synthetic",
+      "description": "",
+      "rows": [
+        {
+          "suite": "needle_in_haystack",
+          "task": "seq_len=8192",
+          "split": "overall",
+          "metric": "final_eval_mean_accuracy",
+          "higher_is_better": true,
+          "dsra": 0.75,
+          "mhdsra2": 0.8,
+          "delta": 0.050000000000000044,
+          "ratio": 1.0666666666666667,
+          "winner": "mhdsra2",
+          "notes": "",
+          "metadata": {}
+        },
+        {
+          "suite": "json_retrieval_generalization",
+          "task": "museum_artifact_generalization",
+          "split": "test",
+          "metric": "generation_exact_match_rate",
+          "higher_is_better": true,
+          "dsra": 0.25,
+          "mhdsra2": 0.2,
+          "delta": -0.04999999999999999,
+          "ratio": 0.8,
+          "winner": "dsra",
+          "notes": "",
+          "metadata": {}
+        }
+      ],
+      "model_tables": [
+        {
+          "title": "Five-model diagnostic summary",
+          "columns": [
+            "Model",
+            "exact_match_rate"
+          ],
+          "rows": [
+            [
+              "Archived DSRA alias / MHDSRA2",
+              "0.2500"
+            ],
+            [
+              "MH-DSRA-v2 (paged recall)",
+              "1.0000"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "suite": "needle_in_haystack",
+      "task": "seq_len=8192",
+      "split": "overall",
+      "metric": "final_eval_mean_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.75,
+      "mhdsra2": 0.8,
+      "delta": 0.050000000000000044,
+      "ratio": 1.0666666666666667,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {}
+    },
+    {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "generation_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.25,
+      "mhdsra2": 0.2,
+      "delta": -0.04999999999999999,
+      "ratio": 0.8,
+      "winner": "dsra",
+      "notes": "",
+      "metadata": {}
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_rows": 2,
+      "valid_rows": 2,
+      "mhdsra2_wins": 1,
+      "dsra_wins": 1,
+      "ties": 0,
+      "avg_delta": 2.7755575615628914e-17,
+      "avg_ratio": 0.9333333333333333
+    },
+    "suite_breakdown": [
+      {
+        "suite": "json_retrieval_generalization",
+        "rows": 1,
+        "mhdsra2_wins": 0,
+        "dsra_wins": 1,
+        "ties": 0,
+        "avg_delta": -0.04999999999999999,
+        "avg_ratio": 0.8
+      },
+      {
+        "suite": "needle_in_haystack",
+        "rows": 1,
+        "mhdsra2_wins": 1,
+        "dsra_wins": 0,
+        "ties": 0,
+        "avg_delta": 0.050000000000000044,
+        "avg_ratio": 1.0666666666666667
+      }
+    ],
+    "best_mhdsra2_row": {
+      "suite": "needle_in_haystack",
+      "task": "seq_len=8192",
+      "split": "overall",
+      "metric": "final_eval_mean_accuracy",
+      "higher_is_better": true,
+      "dsra": 0.75,
+      "mhdsra2": 0.8,
+      "delta": 0.050000000000000044,
+      "ratio": 1.0666666666666667,
+      "winner": "mhdsra2",
+      "notes": "",
+      "metadata": {}
+    },
+    "worst_mhdsra2_row": {
+      "suite": "json_retrieval_generalization",
+      "task": "museum_artifact_generalization",
+      "split": "test",
+      "metric": "generation_exact_match_rate",
+      "higher_is_better": true,
+      "dsra": 0.25,
+      "mhdsra2": 0.2,
+      "delta": -0.04999999999999999,
+      "ratio": 0.8,
+      "winner": "dsra",
+      "notes": "",
+      "metadata": {}
+    }
+  }
+}

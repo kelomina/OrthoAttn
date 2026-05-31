@@ -1,0 +1,71 @@
+[
+  {
+    "label": "D",
+    "name": "MHDSRA2 (deep, 12 layers)",
+    "status": "completed",
+    "params": 39482536,
+    "batch_size": 4,
+    "dim": 512,
+    "num_layers": 12,
+    "slots": 128,
+    "chunk_size": 128,
+    "test_ppl": 11.279,
+    "best_valid_ppl": 11.1983,
+    "best_valid_step": 50000,
+    "total_steps": 50000,
+    "total_time_s": 21612.1,
+    "avg_step_ms": 432.24,
+    "valid_curve": [
+      {
+        "step": 5000,
+        "train_ppl": 10.8452,
+        "valid_ppl": 11.48
+      },
+      {
+        "step": 10000,
+        "train_ppl": 11.5691,
+        "valid_ppl": 11.4184
+      },
+      {
+        "step": 15000,
+        "train_ppl": 11.2352,
+        "valid_ppl": 11.4018
+      },
+      {
+        "step": 20000,
+        "train_ppl": 11.2489,
+        "valid_ppl": 11.4157
+      },
+      {
+        "step": 25000,
+        "train_ppl": 11.1469,
+        "valid_ppl": 11.3289
+      },
+      {
+        "step": 30000,
+        "train_ppl": 10.7959,
+        "valid_ppl": 11.3358
+      },
+      {
+        "step": 35000,
+        "train_ppl": 11.274,
+        "valid_ppl": 11.2603
+      },
+      {
+        "step": 40000,
+        "train_ppl": 11.2279,
+        "valid_ppl": 11.2307
+      },
+      {
+        "step": 45000,
+        "train_ppl": 11.7975,
+        "valid_ppl": 11.2072
+      },
+      {
+        "step": 50000,
+        "train_ppl": 12.2066,
+        "valid_ppl": 11.1983
+      }
+    ]
+  }
+]

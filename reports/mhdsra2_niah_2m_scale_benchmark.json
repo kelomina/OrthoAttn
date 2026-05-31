@@ -1,0 +1,49 @@
+{
+  "status": "completed",
+  "seq_len": 2097152,
+  "device": "cuda:0",
+  "torch_version": "2.11.0+cu130",
+  "torch_cuda_version": "13.0",
+  "cuda_device_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "parameter_count": 420476,
+  "config": {
+    "vocab_size": 100,
+    "dim": 128,
+    "num_layers": 4,
+    "slots": 128,
+    "read_topk": 16,
+    "chunk_size": 1024,
+    "batch_size": 1,
+    "epochs": 3,
+    "learning_rate": 0.001,
+    "seed": 20260506,
+    "target_accuracy": 1.0,
+    "stop_loss": 0.0
+  },
+  "best_accuracy": 1.0,
+  "final_loss": 2.5403575897216797,
+  "epochs_observed": [
+    {
+      "epoch": 0,
+      "depth": 0.1,
+      "loss": 4.126402378082275,
+      "accuracy": 0.0
+    },
+    {
+      "epoch": 1,
+      "depth": 0.1,
+      "loss": 3.28757905960083,
+      "accuracy": 1.0
+    },
+    {
+      "epoch": 2,
+      "depth": 0.9,
+      "loss": 2.5403575897216797,
+      "accuracy": 1.0
+    }
+  ],
+  "elapsed_sec": 113.0633704662323,
+  "peak_memory_allocated_mb": 188.81884765625,
+  "peak_memory_reserved_mb": 218.0,
+  "passed_accuracy": true
+}

@@ -1,0 +1,59 @@
+======================================================================
+快速训练测试 R2 - 验证门控平衡修复
+======================================================================
+修复项 (累计):
+  1. token_write_gate bias: 1.0 -> 3.0 (提高初始写入)
+  2. write_gate_min: 0.05 -> 0.2 (提高写入下限)
+  3. gate_reg_weight: 1.0 -> 0.3 (适度正则化)
+  4. fuse_gate_frozen_steps: 500 -> 100
+  5. mh_scales init: 2.0 -> 1.0 (中性起点)
+  6. mh_scales clamp: [0.5, 3.0] (双向约束)
+  7. ST 分支添加 LayerNorm (消除幅度差异)
+  8. Gate logits 截断 [-3, 3] (防止极端 softmax)
+======================================================================
+======================================================================
+混合架构语言模型预训练
+======================================================================
+swanlab: Tracking run with swanlab version 0.7.19
+swanlab: Run data will be saved locally in 
+E:\Project\python\DSRA\swanlog\run-20260523_193405-g2af69u4bikkxq1l03atu
+swanlab: 👋 Hi Saika,welcome to swanlab!
+swanlab: Syncing run gate_fix_r2_193359 to the cloud
+swanlab: 🏠 View project at https://swanlab.cn/@Saika/DSRA
+swanlab: 🚀 View run at 
+https://swanlab.cn/@Saika/DSRA/runs/g2af69u4bikkxq1l03atu
+加载已有分词器: models/bpe_tokenizer.json
+
+加载数据...
+  训练集: 540,095,682 字符
+  验证集: 1,145,909 字符
+  测试集: 1,289,979 字符
+编码文本: 540,095,682 字符
+总tokens: 116,311,185
+样本数: 227,170
+压缩率: 4.64x
+编码文本: 1,145,909 字符
+总tokens: 243,453
+样本数: 475
+压缩率: 4.71x
+编码文本: 1,289,979 字符
+总tokens: 277,162
+样本数: 541
+压缩率: 4.65x
+
+创建模型...
+模型参数量: 13.07M
+梯度检查点: ✓
+混合精度训练: ✓
+  数据类型: bf16
+
+开始训练...
+  Warmup步数: 100
+  最大训练步数: 2,000
+  最大epoch数: 3
+  基础学习率: 0.001
+  梯度累积: 4 步
+  起始epoch: 1
+  Step 200: Loss=26.807, logPPL=26.807, LR=0.000993, Gate_ST_avg=0.665, Slot_token_gate=0.3923, Slot_usage=686.5515
+  Step 400: Loss=17.405, PPL=36201862.4, LR=0.000940, Gate_ST_avg=0.726, Slot_token_gate=0.3604, Slot_usage=937.4510
+  Step 600: Loss=11.639, PPL=113453.4, LR=0.000840, Gate_ST_avg=0.737, Slot_token_gate=0.3486, Slot_usage=1027.3732
