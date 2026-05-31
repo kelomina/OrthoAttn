@@ -28,7 +28,7 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-per-file-ignores = { "scripts/main.py" = ["E402"], "scripts/verify_mhdsra2.py" = ["E402"], "scripts/mhdsra2_forgetting_curve_report.py" = ["E402"] }
+per-file-ignores = { "scripts/main.py" = ["E402"], "scripts/verify_mhdsra2.py" = ["E402"], "scripts/mhdsra2_forgetting_curve_report.py" = ["E402"], "scripts/diagnostic_memory_benchmark.py" = ["E402"], "scripts/tiny_llama_baseline.py" = ["E402"], "scripts/tiny_llama_compare.py" = ["E402"], "scripts/tiny_llama_mhdsra2.py" = ["E402"] }
 
 [tool.pytest.ini_options]
 addopts = "-p no:cacheprovider"

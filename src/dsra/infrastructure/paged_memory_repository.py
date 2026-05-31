@@ -74,7 +74,10 @@ class PagedMemoryRepository:
         self.memory.append(key, value)
 
     def retrieve(
-        self, query: torch.Tensor, device: torch.device
+        self,
+        query: torch.Tensor,
+        device: torch.device,
+        max_position: Optional[int] = None,
     ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Retrieve exact K/V candidates for the current query.
 
@@ -98,6 +101,7 @@ class PagedMemoryRepository:
             top_pages=self.top_pages,
             max_tokens=self.max_tokens,
             device=device,
+            max_position=max_position,
         )
         return retrieved_k, retrieved_v
 
@@ -114,4 +118,4 @@ class PagedMemoryRepository:
         - 关键词 / Keywords:
           reset|clear|memory|repository|paged|stream|request|lifecycle|cleanup|清理
         """
-        self.memory = PagedExactMemory(page_size=self.memory.page_size, dtype=self.memory.dtype)
+        self.memory.reset()

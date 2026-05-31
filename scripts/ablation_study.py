@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from src.dsra.report_utils import build_ablation_markdown, ensure_reports_dir, write_json, write_markdown
+from src.dsra.seed_utils import seed_everything
 from src.dsra.swanlab_utils import init_swanlab
 from scripts.toy_task_associative_recall import (
     MHDSRA2Model,
@@ -15,6 +16,7 @@ from scripts.toy_task_associative_recall import (
 
 
 DEFAULT_SEED = 42
+SEED_GRID = [101, 202, 303]
 CURRICULUM_STAGES = [
     {"name": "warmup-128", "seq_len": 128, "num_pairs": 2, "steps": 120},
     {"name": "warmup-256", "seq_len": 256, "num_pairs": 4, "steps": 160},
@@ -27,10 +29,34 @@ FIXED_MAPPING_NOISE_POOL = 24
 
 
 def set_seed(seed):
-    random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    """Apply the project-wide deterministic seed policy for ablation runs.
+
+    中文说明:
+    - 调用方 / Called by: `build_eval_set`, `run_ablation`, `main`.
+    - 调用对象 / Calls: `seed_everything`.
+    - 作用 / Purpose: 统一 Python/NumPy/Torch/CUDA/cuDNN 随机性设置，保证消融组公平复现。
+    - 参数 / Parameters: `seed` 是当前实验或验证集种子。
+    - 返回 / Returns: 规范化后的整数 seed。
+    - 错误处理 / Error handling: 底层 deterministic 设置以 warn_only 处理不可确定算子。
+    - 副作用 / Side effects: 修改全局随机状态。
+
+    English documentation:
+    Function name:
+        set_seed
+    Purpose:
+        Apply shared deterministic seeding to ablation experiments.
+    Called by:
+        `build_eval_set`, `run_ablation`, `main`.
+    Calls:
+        `seed_everything`.
+    Parameters:
+        - seed: current experiment seed.
+    Returns:
+        The normalized integer seed.
+    Side effects:
+        Mutates global RNG states.
+    """
+    return seed_everything(seed)
 
 
 def move_batch_to_device(batch, device):
@@ -202,6 +228,82 @@ def train_with_curriculum(
     }
 
 
+def _mean(values):
+    return float(sum(values) / max(len(values), 1)) if values else None
+
+
+def _std(values):
+    if not values:
+        return None
+    mean_value = _mean(values)
+    return float((sum((value - mean_value) ** 2 for value in values) / len(values)) ** 0.5)
+
+
+def summarize_ablation_runs(runs):
+    """Aggregate all `(lr, seed)` runs without hiding the raw rows.
+
+    中文说明:
+    - 调用方 / Called by: `run_ablation`.
+    - 调用对象 / Calls: `_mean`, `_std`.
+    - 作用 / Purpose: 按 learning rate 汇总多 seed 结果，同时保留每个原始 run，避免 cherry-pick。
+    - 参数 / Parameters: `runs` 是同一模型变体的完整运行列表。
+    - 返回 / Returns: 包含 `runs/by_lr/best_lr_summary/best_single_run` 的报告结构。
+    - 错误处理 / Error handling: 空输入抛出 `ValueError`，防止写出无意义报告。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        summarize_ablation_runs
+    Purpose:
+        Aggregate all learning-rate and seed rows for one ablation variant.
+    Called by:
+        `run_ablation`.
+    Calls:
+        `_mean`, `_std`.
+    Parameters:
+        - runs: raw run rows for one variant.
+    Returns:
+        Report-ready dict with raw rows and per-LR aggregates.
+    Error handling:
+        Raises `ValueError` for an empty run list.
+    Side effects:
+        None.
+    """
+    if not runs:
+        raise ValueError("Cannot summarize ablation without any runs.")
+    lr_values = sorted({run["lr"] for run in runs})
+    by_lr = []
+    for lr in lr_values:
+        lr_runs = [run for run in runs if run["lr"] == lr]
+        final_acc_values = [run["final_eval_acc"] for run in lr_runs]
+        best_acc_values = [run["best_eval_acc"] for run in lr_runs]
+        final_loss_values = [run["final_eval_loss"] for run in lr_runs]
+        best_loss_values = [run["best_eval_loss"] for run in lr_runs]
+        by_lr.append(
+            {
+                "lr": lr,
+                "seeds": [run["seed"] for run in lr_runs],
+                "num_runs": len(lr_runs),
+                "final_eval_acc_mean": _mean(final_acc_values),
+                "final_eval_acc_std": _std(final_acc_values),
+                "best_eval_acc_mean": _mean(best_acc_values),
+                "best_eval_acc_std": _std(best_acc_values),
+                "final_eval_loss_mean": _mean(final_loss_values),
+                "final_eval_loss_std": _std(final_loss_values),
+                "best_eval_loss_mean": _mean(best_loss_values),
+                "best_eval_loss_std": _std(best_loss_values),
+            }
+        )
+    best_lr_summary = max(by_lr, key=lambda row: row["final_eval_acc_mean"])
+    best_single_run = max(runs, key=lambda row: row["final_eval_acc"])
+    return {
+        "runs": runs,
+        "by_lr": by_lr,
+        "best_lr_summary": best_lr_summary,
+        "best_single_run": best_single_run,
+    }
+
+
 def build_model(config, vocab_size, dim, K, kr, chunk_size, device):
     """Build an MHDSRA2 model for one ablation configuration.
 
@@ -240,41 +342,59 @@ def run_ablation(
     chunk_size=128,
     train_batch_size=32,
     data_mode="fixed_mapping",
+    lr_grid=None,
+    seeds=None,
 ):
     print(f"\n--- Starting Ablation Study: {name} ---")
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    best_run = None
+    all_runs = []
+    lr_grid = list(LR_GRID if lr_grid is None else lr_grid)
+    seeds = list(SEED_GRID if seeds is None else seeds)
 
-    for lr in LR_GRID:
-        set_seed(DEFAULT_SEED)
-        model = build_model(config, vocab_size, dim, K, kr, chunk_size, device)
-        swanlab_run = init_swanlab(project="MHDSRA2", experiment_name=f"ablation_{name}", config={"variant": name, "lr": lr}, mode="cloud", tags=["ablation"])
-        run_result = train_with_curriculum(
-            model=model,
-            device=device,
-            lr=lr,
-            criterion=criterion,
-            train_batch_size=train_batch_size,
-            vocab_size=vocab_size,
-            eval_batches=eval_batches,
-            warmup_steps=40,
-            data_mode=data_mode,
-            print_prefix=f"[{name} | lr={lr:.0e}] ",
-            swanlab_run=swanlab_run,
-        )
-        run_result["lr"] = lr
-        swanlab_run.finish()
+    for lr in lr_grid:
+        for seed in seeds:
+            set_seed(seed)
+            model = build_model(config, vocab_size, dim, K, kr, chunk_size, device)
+            swanlab_run = init_swanlab(
+                project="MHDSRA2",
+                experiment_name=f"ablation_{name}_lr{lr:.0e}_seed{seed}",
+                config={"variant": name, "lr": lr, "seed": seed},
+                mode="cloud",
+                tags=["ablation"],
+            )
+            run_result = train_with_curriculum(
+                model=model,
+                device=device,
+                lr=lr,
+                criterion=criterion,
+                train_batch_size=train_batch_size,
+                vocab_size=vocab_size,
+                eval_batches=eval_batches,
+                warmup_steps=40,
+                data_mode=data_mode,
+                print_prefix=f"[{name} | lr={lr:.0e} | seed={seed}] ",
+                swanlab_run=swanlab_run,
+            )
+            run_result["variant"] = name
+            run_result["lr"] = lr
+            run_result["seed"] = seed
+            all_runs.append(run_result)
+            swanlab_run.finish()
 
-        if best_run is None or run_result["final_eval_acc"] > best_run["final_eval_acc"]:
-            best_run = run_result
-
+    summary = summarize_ablation_runs(all_runs)
+    best_lr = summary["best_lr_summary"]
+    best_single = summary["best_single_run"]
     print(
-        f"[{name}] Best Run | lr={best_run['lr']:.0e} | "
-        f"final_eval_acc={best_run['final_eval_acc']*100:.2f}% | "
-        f"best_eval_acc={best_run['best_eval_acc']*100:.2f}% | "
-        f"final_eval_loss={best_run['final_eval_loss']:.4f}"
+        f"[{name}] Best LR Aggregate | lr={best_lr['lr']:.0e} | "
+        f"final_eval_acc_mean={best_lr['final_eval_acc_mean']*100:.2f}% | "
+        f"std={best_lr['final_eval_acc_std']*100:.2f}% | seeds={best_lr['seeds']}"
     )
-    return best_run
+    print(
+        f"[{name}] Best Single Run (reported as tuning appendix only) | "
+        f"lr={best_single['lr']:.0e} | seed={best_single['seed']} | "
+        f"final_eval_acc={best_single['final_eval_acc']*100:.2f}%"
+    )
+    return summary
 
 
 def save_ablation_reports(results, reports_dir):
@@ -341,7 +461,7 @@ def main(reports_dir=None):
     results = {"Full MHDSRA2 (local+slot)": baseline_result}
     baseline_threshold = 0.9
 
-    if baseline_result["final_eval_acc"] < baseline_threshold:
+    if baseline_result["best_lr_summary"]["final_eval_acc_mean"] < baseline_threshold:
         print(
             "\nBaseline has not learned the task reliably yet; running the minimal MHDSRA2 "
             "local/window ablations and skipping wider variants."
@@ -375,11 +495,12 @@ def main(reports_dir=None):
 
     print("\n=== Ablation Study Results (Fixed Validation Set) ===")
     for name, result in results.items():
+        best_lr = result["best_lr_summary"]
         print(
-            f"{name} | lr={result['lr']:.0e} | "
-            f"final_eval_acc={result['final_eval_acc']*100:.2f}% | "
-            f"best_eval_acc={result['best_eval_acc']*100:.2f}% | "
-            f"final_eval_loss={result['final_eval_loss']:.4f}"
+            f"{name} | best_lr={best_lr['lr']:.0e} | "
+            f"final_eval_acc_mean={best_lr['final_eval_acc_mean']*100:.2f}% | "
+            f"std={best_lr['final_eval_acc_std']*100:.2f}% | "
+            f"final_eval_loss_mean={best_lr['final_eval_loss_mean']:.4f}"
         )
 
     if reports_dir is not None:

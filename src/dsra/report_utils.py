@@ -82,12 +82,45 @@ def build_ablation_markdown(results):
     lines = [
         "# Ablation Summary",
         "",
-        "| Variant | Best LR | Final Eval Acc | Best Eval Acc | Final Eval Loss |",
-        "|---|---:|---:|---:|---:|",
+        "Main table reports per-learning-rate aggregates across the same seed set for every variant. Best single runs are listed separately as tuning diagnostics only.",
+        "",
+        "| Variant | LR | Seeds | Final Eval Acc Mean | Final Eval Acc Std | Best Eval Acc Mean | Final Eval Loss Mean |",
+        "|---|---:|---|---:|---:|---:|---:|",
     ]
     for name, result in results.items():
-        lines.append(
-            f"| {name} | {result['lr']:.0e} | {result['final_eval_acc']*100:.2f}% | "
-            f"{result['best_eval_acc']*100:.2f}% | {result['final_eval_loss']:.4f} |"
+        if "by_lr" not in result:
+            lines.append(
+                f"| {name} | {result['lr']:.0e} | - | {result['final_eval_acc']*100:.2f}% | "
+                f"- | {result['best_eval_acc']*100:.2f}% | {result['final_eval_loss']:.4f} |"
+            )
+            continue
+        for row in result["by_lr"]:
+            seed_text = ",".join(str(seed) for seed in row["seeds"])
+            lines.append(
+                f"| {name} | {row['lr']:.0e} | {seed_text} | "
+                f"{row['final_eval_acc_mean']*100:.2f}% | "
+                f"{row['final_eval_acc_std']*100:.2f}% | "
+                f"{row['best_eval_acc_mean']*100:.2f}% | "
+                f"{row['final_eval_loss_mean']:.4f} |"
+            )
+    if any("best_single_run" in result for result in results.values()):
+        lines.extend(
+            [
+                "",
+                "## Best Single Runs (Tuning Appendix)",
+                "",
+                "| Variant | LR | Seed | Final Eval Acc | Best Eval Acc | Final Eval Loss |",
+                "|---|---:|---:|---:|---:|---:|",
+            ]
         )
+        for name, result in results.items():
+            best_run = result.get("best_single_run")
+            if best_run is None:
+                continue
+            lines.append(
+                f"| {name} | {best_run['lr']:.0e} | {best_run['seed']} | "
+                f"{best_run['final_eval_acc']*100:.2f}% | "
+                f"{best_run['best_eval_acc']*100:.2f}% | "
+                f"{best_run['final_eval_loss']:.4f} |"
+            )
     return lines

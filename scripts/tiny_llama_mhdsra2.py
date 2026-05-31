@@ -14,13 +14,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.dsra.dsra_model import MultiLayerMHDSRA2Model
 from scripts.tiny_llama_shared import (
     LMConfig,
     CharTokenizer,
-    download_wikitext2,
+    PAD_ID,
     load_text,
     create_dataloader,
+    create_eval_loader,
+    load_wikitext2_splits,
+    split_train_validation_text,
     resolve_device,
 )
 
@@ -55,7 +57,6 @@ class MHDSRA2WithFFN(nn.Module):
         self.out_proj = nn.Linear(dim, vocab_size)
 
         # Build MHDSRA2 config
-        d_head = dim // heads
         cfg = MHDSRA2Config(
             dim=dim,
             heads=heads,
@@ -141,15 +142,14 @@ def train_mhdsra2_lm(
     train_loader: torch.utils.data.DataLoader,
     config: dict,
     device: torch.device,
-) -> float:
-    """Train MHDSRA2 LM and return final validation perplexity."""
+) -> nn.Module:
+    """Train MHDSRA2 LM and return the trained model."""
     optimizer = optim.AdamW(model.parameters(), lr=config["lr"], betas=(0.9, 0.95))
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["max_steps"])
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
     model.train()
 
     total_steps = 0
-    best_ppl = float("inf")
     step_time = 0.0
 
     while total_steps < config["max_steps"]:
@@ -170,19 +170,17 @@ def train_mhdsra2_lm(
 
             if total_steps % config["eval_interval"] == 0:
                 ppl = math.exp(loss.item())
-                best_ppl = min(best_ppl, ppl)
                 print(
                     f"[MHDSRA2] Step {total_steps:5d} | Loss: {loss.item():.4f} | "
-                    f"PPL: {ppl:.2f} | LR: {scheduler.get_last_lr()[0]:.2e} | "
+                    f"Train Batch PPL: {ppl:.2f} | LR: {scheduler.get_last_lr()[0]:.2e} | "
                     f"Step: {step_time*1000:.0f}ms"
                 )
 
             if total_steps >= config["max_steps"]:
                 break
 
-    final_ppl = best_ppl
-    print(f"\n[MHDSRA2] Training complete. Best PPL: {final_ppl:.2f}")
-    return final_ppl
+    print("\n[MHDSRA2] Training complete.")
+    return model
 
 
 def evaluate_ppl(
@@ -192,7 +190,7 @@ def evaluate_ppl(
 ) -> float:
     """Evaluate perplexity on a dataset."""
     model.eval()
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID, reduction="sum")
     total_loss = 0.0
     total_tokens = 0
 
@@ -201,9 +199,12 @@ def evaluate_ppl(
             batch_x, batch_y = batch_x.to(device), batch_y.to(device)
             logits = model(batch_x)
             loss = criterion(logits.reshape(-1, logits.size(-1)), batch_y.reshape(-1))
-            total_loss += loss.item() * batch_x.size(0) * batch_x.size(1)
-            total_tokens += batch_x.size(0) * batch_x.size(1)
+            valid_tokens = (batch_y != PAD_ID).sum().item()
+            total_loss += loss.item()
+            total_tokens += valid_tokens
 
+    if total_tokens == 0:
+        raise ValueError("Cannot evaluate PPL because the evaluation loader has no non-PAD tokens.")
     return math.exp(total_loss / total_tokens)
 
 
@@ -218,10 +219,18 @@ def main_mhdsra2(config: dict | None = None) -> float:
     print(f"[MHDSRA2] Device: {device}, Vocab: {tokenizer.vocab_size}")
 
     # Data
-    data_path = download_wikitext2(cfg["data_dir"])
-    text = load_text(data_path, max_chars=2_000_000)
+    data_paths = load_wikitext2_splits(cfg["data_dir"])
+    text = load_text(data_paths["train"], max_chars=2_200_000)
+    if data_paths["valid"] is None:
+        text, valid_text = split_train_validation_text(text, validation_chars=200_000)
+    else:
+        text = text[:2_000_000]
+        valid_text = load_text(data_paths["valid"], max_chars=200_000)
     train_loader = create_dataloader(
         text, tokenizer, cfg["seq_len"], cfg["batch_size"], shuffle=True,
+    )
+    valid_loader = create_eval_loader(
+        valid_text, tokenizer, cfg["seq_len"], cfg["batch_size"],
     )
     print(f"[MHDSRA2] Data: {len(train_loader.dataset)} sequences, seq_len={cfg['seq_len']}")
 
@@ -236,8 +245,10 @@ def main_mhdsra2(config: dict | None = None) -> float:
     print(f"[MHDSRA2] Model: {total_params:,} parameters")
 
     # Train
-    final_ppl = train_mhdsra2_lm(model, train_loader, cfg, device)
-    return final_ppl
+    train_mhdsra2_lm(model, train_loader, cfg, device)
+    validation_ppl = evaluate_ppl(model, valid_loader, device)
+    print(f"[MHDSRA2] Validation PPL: {validation_ppl:.2f}")
+    return validation_ppl
 
 
 if __name__ == "__main__":

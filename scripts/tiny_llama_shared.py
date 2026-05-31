@@ -83,6 +83,96 @@ def download_wikitext2(data_dir: str) -> Path:
     return data_path / "wikitext-2" / "wiki.train.tokens"
 
 
+def load_wikitext2_splits(data_dir: str) -> dict[str, Path | None]:
+    """Return WikiText-2 split paths, downloading the archive if needed.
+
+    中文说明:
+    - 调用方 / Called by: `scripts.tiny_llama_baseline`, `scripts.tiny_llama_mhdsra2`.
+    - 调用对象 / Calls: `download_wikitext2`, `Path.exists`.
+    - 作用 / Purpose: 为 tiny LLaMA 对比提供明确 train/validation split；若旧缓存缺少官方
+      valid/test 文件，则由调用方对训练文本做固定尾部分割，避免把训练 batch loss 当成验证 PPL。
+    - 参数 / Parameters: `data_dir` 是 WikiText-2 数据缓存目录。
+    - 返回 / Returns: `{"train": Path, "valid": Path|None, "test": Path|None}`。
+    - 错误处理 / Error handling: 若 train 文件不存在，抛出 `RuntimeError`。
+    - 副作用 / Side effects: 首次运行可能下载并解压 WikiText-2。
+
+    English documentation:
+    Function name:
+        load_wikitext2_splits
+    Purpose:
+        Resolve explicit train/validation/test files for WikiText-2.
+    Called by:
+        tiny LLaMA training entry points.
+    Calls:
+        `download_wikitext2`, `Path.exists`.
+    Parameters:
+        - data_dir: WikiText-2 cache directory.
+    Returns:
+        Dict with train path and optional valid/test paths.
+    Error handling:
+        Raises `RuntimeError` when the train split is missing.
+    Side effects:
+        May download and extract WikiText-2.
+    English keywords:
+        wikitext2, split, train, validation, perplexity
+    """
+    train_path = download_wikitext2(data_dir)
+    split_dir = train_path.parent
+    valid_path = split_dir / "wiki.valid.tokens"
+    test_path = split_dir / "wiki.test.tokens"
+    if not train_path.exists():
+        raise RuntimeError(f"WikiText-2 train file missing after download: {train_path}")
+    return {
+        "train": split_dir / "wiki.train.tokens",
+        "valid": valid_path if valid_path.exists() else None,
+        "test": test_path if test_path.exists() else None,
+    }
+
+
+def split_train_validation_text(
+    text: str,
+    *,
+    validation_chars: int = 200_000,
+) -> tuple[str, str]:
+    """Split one train-only text file into train and validation tails.
+
+    中文说明:
+    - 调用方 / Called by: tiny LLaMA scripts when WikiText-2 valid split is absent.
+    - 调用对象 / Calls: string slicing.
+    - 作用 / Purpose: 兼容旧 `data/wikitext-2/wiki.train.tokens` 缓存，同时保证 PPL 来自未训练尾部文本。
+    - 参数 / Parameters: `text` 是完整训练文本；`validation_chars` 是尾部验证字符预算。
+    - 返回 / Returns: `(train_text, validation_text)`。
+    - 错误处理 / Error handling: 文本过短时仍至少保留一半用于训练、一半用于验证。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        split_train_validation_text
+    Purpose:
+        Build a deterministic validation tail when only a train file exists.
+    Called by:
+        tiny LLaMA scripts.
+    Calls:
+        String slicing.
+    Parameters:
+        - text: full training text.
+        - validation_chars: validation tail budget.
+    Returns:
+        `(train_text, validation_text)`.
+    Error handling:
+        Short text is split in half to keep both sides non-empty.
+    Side effects:
+        None.
+    English keywords:
+        validation split, fallback, train tail, perplexity
+    """
+    if len(text) < 2:
+        raise ValueError("Cannot split train/validation text with fewer than two characters.")
+    split_size = min(max(1, int(validation_chars)), max(1, len(text) // 5))
+    split_at = max(1, len(text) - split_size)
+    return text[:split_at], text[split_at:]
+
+
 def download_wikitext103(data_dir: str) -> dict[str, Path]:
     """Download WikiText-103 via HuggingFace datasets, cache as .tokens files.
 

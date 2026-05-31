@@ -272,6 +272,40 @@ class DSRA_Chunk_Layer(nn.Module):
         self.memory_repository = PagedMemoryRepository(enabled=True, dtype=torch.float32)
         self.last_V_orth = torch.empty(0)
 
+    def reset_external_memory(self) -> None:
+        """Clear the external paged retrieval memory for a new independent stream.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `forward_step`, tests and long-lived model owners.
+        - 调用对象 / Calls: `PagedMemoryRepository.reset`.
+        - 作用 / Purpose: 在新序列开始时清空 retrieval 分支外部 K/V，避免训练或评估样本互相串记忆。
+        - 参数 / Parameters: 无。
+        - 返回 / Returns: None。
+        - 错误处理 / Error handling: 仓储 reset 异常直接向上抛出，不静默失败。
+        - 副作用 / Side effects: 清空 CPU 侧 paged exact memory。
+
+        English documentation:
+        Function name:
+            reset_external_memory
+        Purpose:
+            Clear the paged retrieval memory before an independent sequence.
+        Called by:
+            `forward`, `forward_step`, tests and long-lived model owners.
+        Calls:
+            `PagedMemoryRepository.reset`.
+        Parameters:
+            None.
+        Returns:
+            None.
+        Error handling:
+            Repository reset errors propagate to the caller.
+        Side effects:
+            Clears CPU-side paged exact memory.
+        English keywords:
+            reset, external memory, retrieval, paged memory, stream boundary
+        """
+        self.memory_repository.reset()
+
     def sparse_topk_distribution(self, logits: torch.Tensor) -> torch.Tensor:
         """Return the legacy sparse top-k distribution helper.
 
@@ -491,6 +525,8 @@ class DSRA_Chunk_Layer(nn.Module):
         batch_size, chunk_tokens, dim = x.shape
         if dim != self.dim:
             raise ValueError(f"expected dim={self.dim}, got {dim}")
+        if S_prev is None and bypass_kv is None and S_time_prev is None and chunk_idx == 0:
+            self.reset_external_memory()
         state = self._coerce_state(S_prev, batch_size, x.device, x.dtype)
         head_cache = self._cache_to_heads(bypass_kv)
         if head_cache is not None:
@@ -508,7 +544,11 @@ class DSRA_Chunk_Layer(nn.Module):
             time_state=S_time_prev,
             memory_repository=self.memory_repository,
         ) as unit_of_work:
-            retrieved_k, retrieved_v = unit_of_work.retrieve(query_heads, x.device)
+            retrieved_k, retrieved_v = unit_of_work.retrieve(
+                query_heads,
+                x.device,
+                max_position=state.position,
+            )
             out, next_state = self.core(
                 x,
                 state=unit_of_work.state,
@@ -548,12 +588,18 @@ class DSRA_Chunk_Layer(nn.Module):
         """
         if x_t.dim() != 3:
             raise ValueError(f"expected x_t rank=3, got shape={tuple(x_t.shape)}")
+        if S_prev is None and kv_cache is None:
+            self.reset_external_memory()
         state = self._coerce_state(S_prev, x_t.shape[0], x_t.device, x_t.dtype)
         head_cache = self._cache_to_heads(kv_cache)
         if head_cache is not None:
             state.local_k, state.local_v = head_cache
         query = self.core._to_heads(self.core.qkv(x_t).chunk(3, dim=-1)[0])
-        retrieved_k, retrieved_v = self.memory_repository.retrieve(query, x_t.device)
+        retrieved_k, retrieved_v = self.memory_repository.retrieve(
+            query,
+            x_t.device,
+            max_position=state.position,
+        )
         out_t, next_state, _ = self.core.forward_step(
             x_t,
             S_prev=state,

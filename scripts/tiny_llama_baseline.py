@@ -17,11 +17,15 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.tiny_llama_shared import (
     LMConfig,
     CharTokenizer,
-    download_wikitext2,
+    PAD_ID,
     load_text,
     create_dataloader,
+    create_eval_loader,
+    load_wikitext2_splits,
+    split_train_validation_text,
     resolve_device,
 )
+from scripts.tiny_llama_mhdsra2 import evaluate_ppl
 
 
 class RoPE(nn.Module):
@@ -119,15 +123,14 @@ def train_standard_lm(
     train_loader: torch.utils.data.DataLoader,
     config: dict,
     device: torch.device,
-) -> float:
-    """Train Standard Attention LM and return final perplexity."""
+) -> nn.Module:
+    """Train Standard Attention LM and return the trained model."""
     optimizer = optim.AdamW(model.parameters(), lr=config["lr"], betas=(0.9, 0.95))
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["max_steps"])
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
     model.train()
 
     total_steps = 0
-    best_ppl = float("inf")
     step_time = 0.0
 
     while total_steps < config["max_steps"]:
@@ -148,18 +151,17 @@ def train_standard_lm(
 
             if total_steps % config["eval_interval"] == 0:
                 ppl = math.exp(loss.item())
-                best_ppl = min(best_ppl, ppl)
                 print(
                     f"[Standard] Step {total_steps:5d} | Loss: {loss.item():.4f} | "
-                    f"PPL: {ppl:.2f} | LR: {scheduler.get_last_lr()[0]:.2e} | "
+                    f"Train Batch PPL: {ppl:.2f} | LR: {scheduler.get_last_lr()[0]:.2e} | "
                     f"Step: {step_time*1000:.0f}ms"
                 )
 
             if total_steps >= config["max_steps"]:
                 break
 
-    print(f"\n[Standard] Training complete. Best PPL: {best_ppl:.2f}")
-    return best_ppl
+    print("\n[Standard] Training complete.")
+    return model
 
 
 def main_standard(config: dict | None = None) -> float:
@@ -172,10 +174,18 @@ def main_standard(config: dict | None = None) -> float:
     tokenizer = CharTokenizer()
     print(f"[Standard] Device: {device}, Vocab: {tokenizer.vocab_size}")
 
-    data_path = download_wikitext2(cfg["data_dir"])
-    text = load_text(data_path, max_chars=2_000_000)
+    data_paths = load_wikitext2_splits(cfg["data_dir"])
+    text = load_text(data_paths["train"], max_chars=2_200_000)
+    if data_paths["valid"] is None:
+        text, valid_text = split_train_validation_text(text, validation_chars=200_000)
+    else:
+        text = text[:2_000_000]
+        valid_text = load_text(data_paths["valid"], max_chars=200_000)
     train_loader = create_dataloader(
         text, tokenizer, cfg["seq_len"], cfg["batch_size"], shuffle=True,
+    )
+    valid_loader = create_eval_loader(
+        valid_text, tokenizer, cfg["seq_len"], cfg["batch_size"],
     )
     print(f"[Standard] Data: {len(train_loader.dataset)} sequences")
 
@@ -188,8 +198,10 @@ def main_standard(config: dict | None = None) -> float:
     total_params = sum(p.numel() for p in model.parameters())
     print(f"[Standard] Model: {total_params:,} parameters")
 
-    final_ppl = train_standard_lm(model, train_loader, cfg, device)
-    return final_ppl
+    train_standard_lm(model, train_loader, cfg, device)
+    validation_ppl = evaluate_ppl(model, valid_loader, device)
+    print(f"[Standard] Validation PPL: {validation_ppl:.2f}")
+    return validation_ppl
 
 
 if __name__ == "__main__":

@@ -89,7 +89,10 @@ class StreamingAttentionUnitOfWork:
         return False
 
     def retrieve(
-        self, query: torch.Tensor, device: torch.device
+        self,
+        query: torch.Tensor,
+        device: torch.device,
+        max_position: Optional[int] = None,
     ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Retrieve external memory candidates through the repository.
 
@@ -104,7 +107,7 @@ class StreamingAttentionUnitOfWork:
         - 关键词 / Keywords:
           retrieve|unit_of_work|repository|query|device|external_memory|kv|application|recall|检索
         """
-        return self.memory_repository.retrieve(query, device)
+        return self.memory_repository.retrieve(query, device, max_position=max_position)
 
     def commit_forward(
         self,

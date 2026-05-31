@@ -40,14 +40,16 @@ from src.dsra.swanlab_utils import init_swanlab
 MODEL_ORDER = (
     "dsra",
     "mhdsra2_without_paged_recall",
-    "mhdsra2_with_paged_recall",
+    "mhdsra2_with_paged_recall_forced_gate",
     "sliding_window_attention",
+    "mhdsra2_with_paged_recall_learned_gate",
     "linear_attention",
 )
 MODEL_LABELS = {
     "dsra": "Archived DSRA alias / MHDSRA2",
     "mhdsra2_without_paged_recall": "MH-DSRA-v2 (no paged recall)",
-    "mhdsra2_with_paged_recall": "MH-DSRA-v2 (paged recall)",
+    "mhdsra2_with_paged_recall_forced_gate": "MH-DSRA-v2 (paged recall, forced gate)",
+    "mhdsra2_with_paged_recall_learned_gate": "MH-DSRA-v2 (paged recall, learned gate)",
     "sliding_window_attention": "Sliding window attention",
     "linear_attention": "Linear attention",
 }
@@ -226,6 +228,7 @@ def _build_mhdsra2_layer(
     key_count: int | None = None,
     address_only_qk: bool = True,
     retrieval_tau: float = 8.0,
+    force_retrieval_gate: bool = False,
 ) -> MultiHeadDSRA2:
     """Build a deterministic MHDSRA2 layer for synthetic diagnostics.
 
@@ -236,8 +239,8 @@ def _build_mhdsra2_layer(
       V 保留完整 token，从而验证 correction overwrite 时不被 value filler 干扰
     - 变量 / Variables:
       `dim` 为完整 probing 维度, `slots` 为路由槽位数, `key_count` 为 key 段长度,
-      `address_only_qk` 控制 Q/K 是否只编码地址段, `use_retrieval` 控制 retrieval 分支门控,
-      `retrieval_tau` 控制 paged recall softmax 锐度
+      `address_only_qk` 控制 Q/K 是否只编码地址段, `use_retrieval` 控制 retrieval 分支可用性,
+      `retrieval_tau` 控制 paged recall softmax 锐度, `force_retrieval_gate` 控制是否人为偏置门控
     - 接入 / Integration: 新增 synthetic probe 时复用该 helper，并在 route/key/value 空间一致时传入 `key_count`
     - 错误处理 / Error handling: 依赖底层配置检查；`key_count=None` 时自动退回完整 identity Q/K
     - 关键词 / Keywords:
@@ -276,11 +279,12 @@ def _build_mhdsra2_layer(
             layer.slot_k_init[0, slot_id, slot_id] = 6.0
         layer.token_write_gate.weight.zero_()
         layer.token_write_gate.bias.fill_(6.0)
-        layer.fuse_gate.weight.zero_()
-        layer.fuse_gate.bias[:] = torch.tensor(
-            [1.5, -6.0, 3.0 if use_retrieval else -6.0],
-            dtype=layer.fuse_gate.bias.dtype,
-        )
+        if force_retrieval_gate:
+            layer.fuse_gate.weight.zero_()
+            layer.fuse_gate.bias[:] = torch.tensor(
+                [1.5, -6.0, 3.0 if use_retrieval else -6.0],
+                dtype=layer.fuse_gate.bias.dtype,
+            )
     layer.eval()
     return layer
 
@@ -369,17 +373,25 @@ def run_case_for_model(
                 key_count,
                 value_count,
             )
-        elif model_name in {"mhdsra2_without_paged_recall", "mhdsra2_with_paged_recall"}:
-            use_retrieval = model_name == "mhdsra2_with_paged_recall"
+        elif model_name in {
+            "mhdsra2_without_paged_recall",
+            "mhdsra2_with_paged_recall_forced_gate",
+            "mhdsra2_with_paged_recall_learned_gate",
+        }:
+            use_retrieval = model_name != "mhdsra2_without_paged_recall"
+            force_retrieval_gate = model_name == "mhdsra2_with_paged_recall_forced_gate"
             layer = _build_mhdsra2_layer(
                 case.dim,
                 slots,
                 use_retrieval=use_retrieval,
                 key_count=key_count,
                 retrieval_tau=retrieval_tau,
+                force_retrieval_gate=force_retrieval_gate,
             ).to(device)
             state = None
             memory = PagedExactMemory(page_size=page_size, dtype=torch.float32) if use_retrieval else None
+            aux_summary["gate_policy"] = "forced_gate" if force_retrieval_gate else "learned_gate"
+            aux_summary["forced_retrieval_gate"] = bool(force_retrieval_gate)
             for start in range(0, case.query_position, chunk_size):
                 end = min(case.query_position, start + chunk_size)
                 chunk = _generate_chunk(case, start, end, filler_vector, device)
@@ -410,6 +422,7 @@ def run_case_for_model(
                     top_pages=retrieved_top_pages,
                     max_tokens=retrieved_max_tokens,
                     device=device,
+                    max_position=case.query_position,
                 )
                 aux_summary["retrieved_token_count"] = int(0 if retrieved_positions is None else retrieved_positions.numel())
             output, _, aux = layer(
@@ -939,7 +952,11 @@ def run_diagnostic_suite(args: argparse.Namespace, suite_name: str, cases: list[
         model_name: sum(1 for case in case_results if case["models"][model_name].get("error") == "oom")
         for model_name in MODEL_ORDER
     }
-    for mh_variant in ("mhdsra2_without_paged_recall", "mhdsra2_with_paged_recall"):
+    for mh_variant in (
+        "mhdsra2_without_paged_recall",
+        "mhdsra2_with_paged_recall_forced_gate",
+        "mhdsra2_with_paged_recall_learned_gate",
+    ):
         rows.append(
             build_benchmark_comparison_row(
                 suite=suite_name,

@@ -29,9 +29,9 @@ def run_comparison(config: dict | None = None) -> dict[str, float]:
     t0 = time.time()
     ppl_standard = main_standard(cfg)
     std_time = time.time() - t0
-    results["standard_ppl"] = ppl_standard
+    results["standard_validation_ppl"] = ppl_standard
     results["standard_time_s"] = std_time
-    print(f"[Done] Standard PPL: {ppl_standard:.2f}, Time: {std_time:.0f}s\n")
+    print(f"[Done] Standard Validation PPL: {ppl_standard:.2f}, Time: {std_time:.0f}s\n")
 
     print("=" * 60)
     print("Training MHDSRA2 LM")
@@ -39,17 +39,17 @@ def run_comparison(config: dict | None = None) -> dict[str, float]:
     t0 = time.time()
     ppl_mhdsra2 = main_mhdsra2(cfg)
     mh_time = time.time() - t0
-    results["mhdsra2_ppl"] = ppl_mhdsra2
+    results["mhdsra2_validation_ppl"] = ppl_mhdsra2
     results["mhdsra2_time_s"] = mh_time
-    print(f"[Done] MHDSRA2 PPL: {ppl_mhdsra2:.2f}, Time: {mh_time:.0f}s\n")
+    print(f"[Done] MHDSRA2 Validation PPL: {ppl_mhdsra2:.2f}, Time: {mh_time:.0f}s\n")
 
     # Summary
     ratio = ppl_mhdsra2 / ppl_standard if ppl_standard > 0 else float("inf")
     print("=" * 60)
     print("COMPARISON RESULT")
     print("=" * 60)
-    print(f"  Standard Attention PPL: {ppl_standard:.2f}")
-    print(f"  MHDSRA2 PPL:            {ppl_mhdsra2:.2f}")
+    print(f"  Standard Attention Validation PPL: {ppl_standard:.2f}")
+    print(f"  MHDSRA2 Validation PPL:            {ppl_mhdsra2:.2f}")
     print(f"  Ratio:                  {ratio:.3f}x")
     print(f"  Training Time Std:      {std_time:.0f}s")
     print(f"  Training Time MHDSRA2:  {mh_time:.0f}s")

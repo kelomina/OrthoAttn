@@ -86,7 +86,7 @@ def run_saturation():
     print("\n" + "="*50)
     print("Running State Saturation & Decay Test")
     print("="*50)
-    from tests.test_state_saturation import run_saturation_test as sat
+    from tests.test_all import run_saturation_test as sat
     sat()
 
 def run_associative_recall():
@@ -316,7 +316,7 @@ def main():
     test_choices = [
         'unit',         # test_dsra_math.py, test_llm_compatibility.py
         'benchmark',    # benchmark_complexity.py
-        'saturation',   # tests/test_state_saturation.py
+        'saturation',   # tests/test_all.py::run_saturation_test
         'recall',       # toy_task_associative_recall.py
         'needle',       # needle_in_haystack_test.py
         'needle_capacity',

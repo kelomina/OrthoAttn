@@ -41,6 +41,45 @@ class PagedExactMemory:
     def __len__(self) -> int:
         return len(self.pages)
 
+    def reset(self) -> None:
+        """Clear all stored pages and restart global token positions.
+
+        中文说明:
+        - 调用方 / Called by: `PagedMemoryRepository.reset`, tests, long-lived stream owners.
+        - 调用对象 / Calls: list clear operation only.
+        - 作用 / Purpose: 在独立序列或评估样本之间清空 CPU 分页 K/V，防止跨样本记忆泄漏。
+        - 参数 / Parameters: 无。
+        - 返回 / Returns: None。
+        - 错误处理 / Error handling: 无外部资源；原地清空不吞异常。
+        - 副作用 / Side effects: 删除所有 page records，并将 `next_position` 重置为 0。
+
+        English documentation:
+        Function name:
+            reset
+        Purpose:
+            Clear external paged K/V memory between independent streams.
+        Called by:
+            `PagedMemoryRepository.reset`, tests, and long-lived model owners.
+        Calls:
+            Built-in list clearing only.
+        Parameters:
+            None.
+        Returns:
+            None.
+        Error handling:
+            No external resources are involved; errors propagate normally.
+        Side effects:
+            Clears stored pages and resets `next_position`.
+        English keywords:
+            reset, clear, paged memory, external memory, stream boundary
+        """
+        self.pages.clear()
+        self.next_position = 0
+
+    def clear(self) -> None:
+        """Alias for `reset` for callers that use collection-style naming."""
+        self.reset()
+
     def append(self, key: torch.Tensor, value: torch.Tensor) -> None:
         """Append chunk K/V.
 
@@ -96,6 +135,7 @@ class PagedExactMemory:
         top_pages: int = 4,
         max_tokens: int = 128,
         device: Optional[torch.device] = None,
+        max_position: Optional[int] = None,
     ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
         """Return retrieved_k, retrieved_v, positions with latest-wins tie breaks.
 
@@ -130,9 +170,20 @@ class PagedExactMemory:
         device = device or query.device
         q_summary = F.normalize(query_h.float().mean(dim=1), dim=-1).cpu()
         valid_pages = [p for p in self.pages if p.valid]
+        if max_position is not None:
+            max_position = int(max_position)
+            valid_pages = [p for p in valid_pages if p.start < max_position]
         if not valid_pages:
             return None, None, None
-        summaries = torch.stack([p.summary.float() for p in valid_pages], dim=1)
+        if max_position is None:
+            summaries = torch.stack([p.summary.float() for p in valid_pages], dim=1)
+        else:
+            safe_summaries = []
+            for page in valid_pages:
+                safe_end = max(0, min(max_position, page.end) - page.start)
+                safe_key = page.key[:, :safe_end, :].float()
+                safe_summaries.append(F.normalize(safe_key.mean(dim=1), dim=-1))
+            summaries = torch.stack(safe_summaries, dim=1)
         page_scores = torch.einsum("hd,hpd->hp", q_summary, summaries).mean(dim=0)
         n_pages = min(top_pages, page_scores.numel())
         page_positions = torch.tensor([p.end for p in valid_pages], dtype=torch.long)
@@ -142,6 +193,13 @@ class PagedExactMemory:
         k_cat = torch.cat([p.key.float() for p in chosen], dim=1)
         v_cat = torch.cat([p.value.float() for p in chosen], dim=1)
         pos = torch.cat([torch.arange(p.start, p.end) for p in chosen], dim=0)
+        if max_position is not None:
+            allowed = pos < max_position
+            if not bool(allowed.any().item()):
+                return None, None, None
+            k_cat = k_cat[:, allowed, :]
+            v_cat = v_cat[:, allowed, :]
+            pos = pos[allowed]
         token_scores = torch.einsum("hd,hrd->hr", q_summary, F.normalize(k_cat, dim=-1)).mean(dim=0)
         r = min(max_tokens, token_scores.numel())
         tok_idx = self._rank_by_score_then_position(token_scores, pos)[:r]
