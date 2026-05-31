@@ -10,8 +10,6 @@ examples include:
 
 - `mhdsra2_vs_dsra_compare.{json,md}`: lightweight MHDSRA2 vs DSRA comparison.
 - `mhdsra2_vs_dsra_next_round_benchmark.{json,md}`: unified next-round benchmark.
-- `mhdsra2_vs_dsra_paper_style_summary.md`: paper-style summary.
-- `retrieval_tau_ablation.{json,md}`: retrieval tau ablation report.
 - `run_summary.md` and `all_output.txt`: top-level run summaries.
 
 When adding a new official report, commit the `.md` summary and the matching
@@ -23,6 +21,7 @@ The following directories are local-only and ignored by Git:
 
 - `reports/archive/`
 - `reports/paper_seed_*/`
+- `reports/screening/`
 
 Use `reports/archive/` for temporary diagnostic snapshots that may help local
 inspection but should not become canonical project artifacts. Use
