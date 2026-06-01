@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from .domain import normalize_model_type
+from .infrastructure import PagedMemoryRepository
 from .mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
 
 
@@ -97,6 +98,99 @@ class MultiLayerMHDSRA2Model(nn.Module):
         self.final_norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
 
+    def _new_retrieval_repositories(self) -> list[PagedMemoryRepository]:
+        """Create per-layer paged retrieval memories for one independent forward pass.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `forward_selected_logits`
+        - 调用对象 / Calls: `PagedMemoryRepository`
+        - 作用 / Purpose: 为每层创建独立 CPU 分页 K/V 记忆，使 `use_retrieval=True`
+          的多层 token 模型在 chunk 之间真正使用 retrieval 分支。
+        - 返回 / Returns: 与 `self.layers` 一一对应的仓储列表；禁用 retrieval 的层返回禁用仓储。
+        - 错误处理 / Error handling: 仓储初始化错误直接向上抛出。
+        - 副作用 / Side effects: 只创建本次 forward 内部使用的新仓储，避免独立样本串记忆。
+
+        English documentation:
+        Function name:
+            _new_retrieval_repositories
+        Purpose:
+            Build one paged K/V memory repository per MHDSRA2 layer for a single
+            independent forward call.
+        Called by:
+            `forward` and `forward_selected_logits`.
+        Calls:
+            `PagedMemoryRepository`.
+        Returns:
+            A repository list aligned with `self.layers`.
+        Side effects:
+            Allocates fresh CPU-side retrieval memories for the current call only.
+        English keywords:
+            retrieval, paged memory, multilayer, mhdsra2, forward, chunk
+        """
+        return [
+            PagedMemoryRepository(enabled=bool(layer.cfg.use_retrieval), dtype=torch.float32)
+            for layer in self.layers
+        ]
+
+    def _prepare_layer_retrieval(
+        self,
+        layer: MultiHeadDSRA2,
+        repository: PagedMemoryRepository,
+        chunk_normed: torch.Tensor,
+        state,
+    ) -> tuple[
+        torch.Tensor | None,
+        torch.Tensor | None,
+        torch.Tensor | None,
+        torch.Tensor | None,
+    ]:
+        """Retrieve old K/V and prepare current K/V for later append.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `forward_selected_logits`
+        - 调用对象 / Calls: `MultiHeadDSRA2.qkv`, `_to_heads`,
+          `PagedMemoryRepository.retrieve`
+        - 作用 / Purpose: 在当前 chunk 前向前，先用 query 从历史分页记忆中召回 K/V；
+          同时计算当前 chunk 的 key/value heads，等待前向成功后写入仓储。
+        - 参数 / Parameters: `layer` 是当前 MHDSRA2 层，`repository` 是对应层的分页记忆，
+          `chunk_normed` 是 LayerNorm 后输入，`state` 提供当前流式位置。
+        - 返回 / Returns: `(retrieved_k, retrieved_v, key_heads, value_heads)`。
+        - 错误处理 / Error handling: 禁用 retrieval 时返回四个 `None`；仓储错误直接抛出。
+        - 副作用 / Side effects: 本函数只读取仓储，不写入；写入由调用方在前向成功后执行。
+
+        English documentation:
+        Function name:
+            _prepare_layer_retrieval
+        Purpose:
+            Fetch previous paged K/V for the current chunk and precompute current
+            K/V heads for append after a successful forward pass.
+        Called by:
+            `forward` and `forward_selected_logits`.
+        Calls:
+            `layer.qkv`, `layer._to_heads`, and `PagedMemoryRepository.retrieve`.
+        Returns:
+            `(retrieved_k, retrieved_v, key_heads, value_heads)`.
+        Side effects:
+            None; appending is intentionally delayed until the caller finishes
+            the current layer forward.
+        English keywords:
+            retrieval, key, value, chunk, no self recall, paged memory
+        """
+        if not layer.cfg.use_retrieval:
+            return None, None, None, None
+
+        query, key, value = layer.qkv(chunk_normed).chunk(3, dim=-1)
+        query_heads = layer._to_heads(query)
+        key_heads = layer._to_heads(key)
+        value_heads = layer._to_heads(value)
+        max_position = 0 if state is None else state.position
+        retrieved_k, retrieved_v = repository.retrieve(
+            query_heads.detach(),
+            chunk_normed.device,
+            max_position=max_position,
+        )
+        return retrieved_k, retrieved_v, key_heads, value_heads
+
     def _normalize_selected_positions(
         self,
         positions: int | torch.Tensor,
@@ -186,6 +280,7 @@ class MultiLayerMHDSRA2Model(nn.Module):
         selected_positions = self._normalize_selected_positions(positions, batch_size, seq_len)
         model_device = self.embedding.weight.device
         state_list = [None] * self.num_layers
+        retrieval_repositories = self._new_retrieval_repositories()
         logits_by_batch: list[torch.Tensor | None] = [None] * batch_size
         hidden_by_batch: list[torch.Tensor | None] = [None] * batch_size if return_hidden else None
 
@@ -197,13 +292,23 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)
+                retrieved_k, retrieved_v, key_heads, value_heads = self._prepare_layer_retrieval(
+                    layer,
+                    retrieval_repositories[layer_idx],
+                    chunk_normed,
+                    state_list[layer_idx],
+                )
                 out_chunk, next_state = layer(
                     chunk_normed,
                     state=state_list[layer_idx],
+                    retrieved_k=retrieved_k,
+                    retrieved_v=retrieved_v,
                     stage_id=stage_id,
                     context_id=context_id,
                 )
                 state_list[layer_idx] = next_state
+                if key_heads is not None and value_heads is not None:
+                    retrieval_repositories[layer_idx].append(key_heads, value_heads)
                 chunk = residual + out_chunk
 
             selected_mask = (selected_positions >= start) & (selected_positions < end)
@@ -248,6 +353,7 @@ class MultiLayerMHDSRA2Model(nn.Module):
         _, seq_len = x.shape
         model_device = self.embedding.weight.device
         state_list = [None] * self.num_layers
+        retrieval_repositories = self._new_retrieval_repositories()
         out_list = []
 
         for start in range(0, seq_len, self.chunk_size):
@@ -258,11 +364,23 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)
+                retrieved_k, retrieved_v, key_heads, value_heads = self._prepare_layer_retrieval(
+                    layer,
+                    retrieval_repositories[layer_idx],
+                    chunk_normed,
+                    state_list[layer_idx],
+                )
                 out_chunk, next_state = layer(
-                    chunk_normed, state=state_list[layer_idx], stage_id=stage_id,
+                    chunk_normed,
+                    state=state_list[layer_idx],
+                    retrieved_k=retrieved_k,
+                    retrieved_v=retrieved_v,
+                    stage_id=stage_id,
                     context_id=context_id,
                 )
                 state_list[layer_idx] = next_state
+                if key_heads is not None and value_heads is not None:
+                    retrieval_repositories[layer_idx].append(key_heads, value_heads)
                 chunk = residual + out_chunk
             out_list.append(chunk)
 

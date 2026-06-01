@@ -1,0 +1,157 @@
+"""Regression tests for MultiLayerMHDSRA2 retrieval wiring."""
+
+from __future__ import annotations
+
+import torch
+
+from src.dsra.dsra_model import MultiLayerMHDSRA2Model
+
+
+def _build_model(*, use_retrieval: bool = True, batch_safe: bool = True) -> MultiLayerMHDSRA2Model:
+    """Create a tiny deterministic model for retrieval wiring tests.
+
+    中文说明:
+    - 调用方 / Called by: 本文件内 pytest 测试。
+    - 调用对象 / Calls: `MultiLayerMHDSRA2Model`。
+    - 作用 / Purpose: 构造小规模多层模型，快速验证 chunk 间 retrieval 是否接通。
+    - 参数 / Parameters: `use_retrieval` 控制外部分页召回分支；`batch_safe` 保留测试可读性。
+    - 返回 / Returns: 可在 CPU 上快速运行的多层 MHDSRA2 token 模型。
+    - 错误处理 / Error handling: 底层模型配置错误直接抛出。
+    """
+    batch_safe = bool(batch_safe)
+    del batch_safe
+    return MultiLayerMHDSRA2Model(
+        vocab_size=32,
+        dim=16,
+        num_layers=2,
+        K=8,
+        kr=2,
+        chunk_size=4,
+        use_retrieval=use_retrieval,
+    )
+
+
+def _record_retrieval_calls(model: MultiLayerMHDSRA2Model) -> list[dict[str, object]]:
+    """Wrap each layer retrieval branch and return captured call metadata.
+
+    中文说明:
+    - 调用方 / Called by: 本文件内 pytest 测试。
+    - 调用对象 / Calls: 每层 `MultiHeadDSRA2._retrieval_attention`。
+    - 作用 / Purpose: 不改模型输出，只记录 `retrieved_k/retrieved_v` 是否真实传入。
+    - 返回 / Returns: 每次 retrieval 分支调用的轻量元数据列表。
+    - 副作用 / Side effects: 在测试模型实例上替换方法；仅限本测试局部对象。
+    """
+    records: list[dict[str, object]] = []
+    for layer_idx, layer in enumerate(model.layers):
+        original = layer._retrieval_attention
+
+        def wrapped(q, retrieved_k, retrieved_v, *, _idx=layer_idx, _original=original):
+            records.append(
+                {
+                    "layer_idx": _idx,
+                    "retrieved_k_is_none": retrieved_k is None,
+                    "retrieved_v_is_none": retrieved_v is None,
+                    "retrieved_k_shape": None
+                    if retrieved_k is None
+                    else tuple(retrieved_k.shape),
+                }
+            )
+            return _original(q, retrieved_k, retrieved_v)
+
+        layer._retrieval_attention = wrapped
+    return records
+
+
+def test_multilayer_forward_retrieves_from_prior_chunks_when_enabled() -> None:
+    """`forward` should feed paged K/V retrieval after the first chunk.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `MultiLayerMHDSRA2Model.forward`。
+    - 作用 / Purpose: 防止 `use_retrieval=True` 只改配置、不传入真实 retrieval K/V。
+    - 错误处理 / Error handling: 第二个 chunk 仍无召回时断言失败。
+    """
+    torch.manual_seed(20260602)
+    model = _build_model(use_retrieval=True)
+    records = _record_retrieval_calls(model)
+    tokens = torch.arange(12, dtype=torch.long).view(1, 12) % 32
+
+    with torch.no_grad():
+        logits = model(tokens)
+
+    assert logits.shape == (1, 12, 32)
+    assert len(records) == 6
+    assert records[0]["retrieved_k_is_none"] is True
+    assert records[1]["retrieved_k_is_none"] is True
+    assert any(row["retrieved_k_is_none"] is False for row in records[2:])
+    assert all(row["retrieved_v_is_none"] is False for row in records[2:])
+
+
+def test_multilayer_selected_logits_retrieves_and_matches_full_forward() -> None:
+    """Selected logits should keep full-forward semantics with retrieval enabled.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `forward`, `forward_selected_logits`。
+    - 作用 / Purpose: 接通 retrieval 后，仍保证 NIAH 省显存 selected-logit 路径与全量前向一致。
+    - 错误处理 / Error handling: 数值不一致或未发生召回时断言失败。
+    """
+    torch.manual_seed(20260602)
+    model = _build_model(use_retrieval=True)
+    records = _record_retrieval_calls(model)
+    tokens = torch.arange(12, dtype=torch.long).view(1, 12) % 32
+    positions = torch.tensor([10], dtype=torch.long)
+
+    with torch.no_grad():
+        full_logits = model(tokens)
+        selected_logits = model.forward_selected_logits(tokens, positions)
+
+    expected = full_logits[torch.arange(tokens.shape[0]), positions]
+    torch.testing.assert_close(selected_logits, expected)
+    assert any(row["retrieved_k_is_none"] is False for row in records)
+
+
+def test_multilayer_retrieval_disabled_passes_no_external_kv() -> None:
+    """Disabled retrieval should preserve the previous no-external-memory behavior.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `MultiLayerMHDSRA2Model.forward`。
+    - 作用 / Purpose: 确认最小修复不改变 `use_retrieval=False` 的旧行为。
+    - 错误处理 / Error handling: 禁用状态下传入外部 K/V 时断言失败。
+    """
+    torch.manual_seed(20260602)
+    model = _build_model(use_retrieval=False)
+    records = _record_retrieval_calls(model)
+    tokens = torch.arange(12, dtype=torch.long).view(1, 12) % 32
+
+    with torch.no_grad():
+        logits = model(tokens)
+
+    assert logits.shape == (1, 12, 32)
+    assert records
+    assert all(row["retrieved_k_is_none"] is True for row in records)
+    assert all(row["retrieved_v_is_none"] is True for row in records)
+
+
+def test_multilayer_retrieval_skips_reference_memory_for_batch_gt_one() -> None:
+    """The reference paged memory should skip unsupported batch-size > 1 safely.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `MultiLayerMHDSRA2Model.forward`。
+    - 作用 / Purpose: 覆盖 CPU 分页记忆参考实现只支持 batch=1 的边界行为。
+    - 错误处理 / Error handling: batch>1 抛错或错误传入 retrieval K/V 时断言失败。
+    """
+    torch.manual_seed(20260602)
+    model = _build_model(use_retrieval=True)
+    records = _record_retrieval_calls(model)
+    tokens = torch.arange(24, dtype=torch.long).view(2, 12) % 32
+
+    with torch.no_grad():
+        logits = model(tokens)
+
+    assert logits.shape == (2, 12, 32)
+    assert records
+    assert all(row["retrieved_k_is_none"] is True for row in records)
+    assert all(row["retrieved_v_is_none"] is True for row in records)
