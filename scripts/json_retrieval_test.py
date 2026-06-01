@@ -53,7 +53,7 @@ DEFAULT_GENERATION_POLISH_BATCH_SIZE = 1
 DEFAULT_GENERATION_POLISH_MONITOR_CASE_COUNT = 4
 DEFAULT_TAIL_ERROR_TOKEN_COUNT = 32
 DEFAULT_TAIL_ERROR_TOP_K = 3
-DEFAULT_GENERALIZATION_SCORE_MODE = "teacher_forced"
+DEFAULT_GENERALIZATION_SCORE_MODE = "generation"
 DEFAULT_MODEL_TYPE = "mhdsra2"
 DEFAULT_LOCAL_CONTEXT_SIZE = 4
 DEFAULT_LOCAL_CONTEXT_MODE = "concat"
@@ -2166,7 +2166,6 @@ def score_search_result(result):
 
 def summarize_generalization_search_result(result):
     validation = result["validation_pool_evaluation"]
-    test = result["test_pool_evaluation"]
     return {
         "epochs": result["config"]["epochs"],
         "kr": result["config"]["kr"],
@@ -2180,53 +2179,86 @@ def summarize_generalization_search_result(result):
         "validation_teacher_forced_exact_match_rate": validation["teacher_forced_exact_match_rate"],
         "validation_teacher_forced_mean_sequence_accuracy": validation["teacher_forced_mean_sequence_accuracy"],
         "validation_teacher_forced_mean_prefix_match_length": validation["teacher_forced_mean_prefix_match_length"],
-        "test_generation_exact_match_rate": test["generation_exact_match_rate"],
-        "test_generation_mean_sequence_accuracy": test["generation_mean_sequence_accuracy"],
-        "test_generation_mean_prefix_match_length": test["generation_mean_prefix_match_length"],
-        "test_teacher_forced_exact_match_rate": test["teacher_forced_exact_match_rate"],
-        "test_teacher_forced_mean_sequence_accuracy": test["teacher_forced_mean_sequence_accuracy"],
-        "test_teacher_forced_mean_prefix_match_length": test["teacher_forced_mean_prefix_match_length"],
     }
+
+
+def validate_formal_generalization_config(
+    target_case_sampling_ratio=DEFAULT_TARGET_CASE_SAMPLING_RATIO,
+    final_polish_epochs=DEFAULT_FINAL_POLISH_EPOCHS,
+    final_generation_polish_epochs=DEFAULT_FINAL_GENERATION_POLISH_EPOCHS,
+    entity_hint_use_gold_labels_during_training=DEFAULT_ENTITY_HINT_USE_GOLD_LABELS_DURING_TRAINING,
+):
+    """Reject diagnostic-only shortcuts in formal JSON generalization benchmarks.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_retrieval_generalization_test`, tests.
+    - 调用对象 / Calls: none.
+    - 作用 / Purpose: 防止 target-case 采样、最终打磨或 gold-label hint 进入正式泛化主榜。
+    - 参数 / Parameters: formal benchmark 中必须关闭的诊断/泄漏类开关。
+    - 返回 / Returns: None。
+    - 错误处理 / Error handling: 任一开关启用时抛出 `ValueError`。
+    - 关键词 / Keywords:
+      formal|benchmark|json_retrieval|leakage|gold_label|polish|target_case|guard|泛化|防泄漏
+
+    English documentation:
+    Function name:
+        validate_formal_generalization_config
+    Purpose:
+        Reject diagnostic-only shortcuts before formal JSON generalization runs.
+    Called by:
+        `run_json_retrieval_generalization_test` and regression tests.
+    Calls:
+        None.
+    Parameters:
+        Diagnostic switches that must stay disabled in formal benchmarks.
+    Returns:
+        None.
+    Error handling:
+        Raises `ValueError` when a shortcut would contaminate model selection.
+    English keywords:
+        formal, benchmark, json_retrieval, leakage, gold_label, polish, target_case, guard
+    """
+    violations = []
+    if float(target_case_sampling_ratio) != 0.0:
+        violations.append("target_case_sampling_ratio must be 0.0")
+    if float(final_polish_epochs) != 0.0:
+        violations.append("final_polish_epochs must be 0")
+    if float(final_generation_polish_epochs) != 0.0:
+        violations.append("final_generation_polish_epochs must be 0")
+    if bool(entity_hint_use_gold_labels_during_training):
+        violations.append("entity_hint_use_gold_labels_during_training must be False")
+    if violations:
+        raise ValueError(
+            "Formal JSON generalization benchmark forbids diagnostic-only shortcuts: "
+            + "; ".join(violations)
+        )
 
 
 def score_generalization_result(result, score_mode=DEFAULT_GENERALIZATION_SCORE_MODE):
     if score_mode not in {"generation", "teacher_forced", "balanced"}:
         raise ValueError(f"Unsupported score_mode: {score_mode}")
     validation = result["validation_pool_evaluation"]
-    test = result["test_pool_evaluation"]
     if score_mode == "teacher_forced":
         return (
             validation["teacher_forced_exact_match_rate"],
             validation["teacher_forced_mean_sequence_accuracy"],
             validation["teacher_forced_mean_prefix_match_length"],
-            test["teacher_forced_exact_match_rate"],
-            test["teacher_forced_mean_sequence_accuracy"],
-            test["teacher_forced_mean_prefix_match_length"],
             validation["generation_exact_match_rate"],
             validation["generation_mean_sequence_accuracy"],
-            test["generation_exact_match_rate"],
-            test["generation_mean_sequence_accuracy"],
         )
     if score_mode == "balanced":
         return (
             validation["teacher_forced_exact_match_rate"] + validation["generation_exact_match_rate"],
             validation["teacher_forced_mean_sequence_accuracy"] + validation["generation_mean_sequence_accuracy"],
             validation["teacher_forced_mean_prefix_match_length"] + validation["generation_mean_prefix_match_length"],
-            test["teacher_forced_exact_match_rate"] + test["generation_exact_match_rate"],
-            test["teacher_forced_mean_sequence_accuracy"] + test["generation_mean_sequence_accuracy"],
-            test["teacher_forced_mean_prefix_match_length"] + test["generation_mean_prefix_match_length"],
         )
     return (
         validation["generation_exact_match_rate"],
-        validation["teacher_forced_exact_match_rate"],
         validation["generation_mean_sequence_accuracy"],
-        validation["teacher_forced_mean_sequence_accuracy"],
         validation["generation_mean_prefix_match_length"],
+        validation["teacher_forced_exact_match_rate"],
+        validation["teacher_forced_mean_sequence_accuracy"],
         validation["teacher_forced_mean_prefix_match_length"],
-        test["generation_exact_match_rate"],
-        test["teacher_forced_exact_match_rate"],
-        test["generation_mean_sequence_accuracy"],
-        test["teacher_forced_mean_sequence_accuracy"],
     )
 
 
@@ -2238,34 +2270,22 @@ def score_generalization_summary(summary, score_mode=DEFAULT_GENERALIZATION_SCOR
             summary["validation_teacher_forced_exact_match_rate"],
             summary["validation_teacher_forced_mean_sequence_accuracy"],
             summary["validation_teacher_forced_mean_prefix_match_length"],
-            summary["test_teacher_forced_exact_match_rate"],
-            summary["test_teacher_forced_mean_sequence_accuracy"],
-            summary["test_teacher_forced_mean_prefix_match_length"],
             summary["validation_generation_exact_match_rate"],
             summary["validation_generation_mean_sequence_accuracy"],
-            summary["test_generation_exact_match_rate"],
-            summary["test_generation_mean_sequence_accuracy"],
         )
     if score_mode == "balanced":
         return (
             summary["validation_teacher_forced_exact_match_rate"] + summary["validation_generation_exact_match_rate"],
             summary["validation_teacher_forced_mean_sequence_accuracy"] + summary["validation_generation_mean_sequence_accuracy"],
             summary["validation_teacher_forced_mean_prefix_match_length"] + summary["validation_generation_mean_prefix_match_length"],
-            summary["test_teacher_forced_exact_match_rate"] + summary["test_generation_exact_match_rate"],
-            summary["test_teacher_forced_mean_sequence_accuracy"] + summary["test_generation_mean_sequence_accuracy"],
-            summary["test_teacher_forced_mean_prefix_match_length"] + summary["test_generation_mean_prefix_match_length"],
         )
     return (
         summary["validation_generation_exact_match_rate"],
-        summary["validation_teacher_forced_exact_match_rate"],
         summary["validation_generation_mean_sequence_accuracy"],
-        summary["validation_teacher_forced_mean_sequence_accuracy"],
         summary["validation_generation_mean_prefix_match_length"],
+        summary["validation_teacher_forced_exact_match_rate"],
+        summary["validation_teacher_forced_mean_sequence_accuracy"],
         summary["validation_teacher_forced_mean_prefix_match_length"],
-        summary["test_generation_exact_match_rate"],
-        summary["test_teacher_forced_exact_match_rate"],
-        summary["test_generation_mean_sequence_accuracy"],
-        summary["test_teacher_forced_mean_sequence_accuracy"],
     )
 
 
@@ -2947,11 +2967,7 @@ def save_json_retrieval_generalization_reports(
                 f"val_gen_exact={result['validation_generation_exact_match_rate']*100:.2f}%, "
                 f"val_gen_seq={result['validation_generation_mean_sequence_accuracy']*100:.2f}%, "
                 f"val_tf_exact={result['validation_teacher_forced_exact_match_rate']*100:.2f}%, "
-                f"val_tf_seq={result['validation_teacher_forced_mean_sequence_accuracy']*100:.2f}%, "
-                f"test_gen_exact={result['test_generation_exact_match_rate']*100:.2f}%, "
-                f"test_gen_seq={result['test_generation_mean_sequence_accuracy']*100:.2f}%, "
-                f"test_tf_exact={result['test_teacher_forced_exact_match_rate']*100:.2f}%, "
-                f"test_tf_seq={result['test_teacher_forced_mean_sequence_accuracy']*100:.2f}%"
+                f"val_tf_seq={result['validation_teacher_forced_mean_sequence_accuracy']*100:.2f}%"
             )
         lines.extend(["", "## Validation Close Misses"])
         for mode_label, mode_key in (("Teacher-Forced", "teacher_forced"), ("Generation", "generation")):
@@ -3729,6 +3745,12 @@ def run_json_retrieval_generalization_test(
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     active_model_type = normalize_model_type(model_type)
+    validate_formal_generalization_config(
+        target_case_sampling_ratio=target_case_sampling_ratio,
+        final_polish_epochs=final_polish_epochs,
+        final_generation_polish_epochs=final_generation_polish_epochs,
+        entity_hint_use_gold_labels_during_training=entity_hint_use_gold_labels_during_training,
+    )
     swanlab_run = init_swanlab(
         project="MHDSRA2",
         experiment_name="json_retrieval",
@@ -3864,6 +3886,7 @@ def run_json_retrieval_generalization_test(
     )
 
     best_result = None
+    best_model = None
     search_results = []
     for trial_idx, (
         epoch_value,
@@ -3932,7 +3955,6 @@ def run_json_retrieval_generalization_test(
         )
         trained_model = train_result.pop("model")
         validation_eval = evaluate_case_pool(trained_model, validation_cases, device)
-        test_eval = evaluate_case_pool(trained_model, test_cases, device)
         config = {
             **train_result["config"],
             "validation_dataset_size": len(validation_cases),
@@ -3950,7 +3972,6 @@ def run_json_retrieval_generalization_test(
             "config": config,
             "history": train_result["history"],
             "validation_pool_evaluation": validation_eval,
-            "test_pool_evaluation": test_eval,
         }
         search_results.append(summarize_generalization_search_result(result))
         print(
@@ -3959,22 +3980,14 @@ def run_json_retrieval_generalization_test(
             f"| gen_seq_acc={validation_eval['generation_mean_sequence_accuracy']*100:.2f}% "
             f"| tf_seq_acc={validation_eval['teacher_forced_mean_sequence_accuracy']*100:.2f}%"
         )
-        print(
-            f"Test       | gen_exact={test_eval['generation_exact_match_rate']*100:.2f}% "
-            f"| tf_exact={test_eval['teacher_forced_exact_match_rate']*100:.2f}% "
-            f"| gen_seq_acc={test_eval['generation_mean_sequence_accuracy']*100:.2f}% "
-            f"| tf_seq_acc={test_eval['teacher_forced_mean_sequence_accuracy']*100:.2f}%"
-        )
         swanlab_run.log(
             {
                 "generalization/val_gen_exact_match_rate": validation_eval["generation_exact_match_rate"],
                 "generalization/val_tf_exact_match_rate": validation_eval["teacher_forced_exact_match_rate"],
-                "generalization/test_gen_exact_match_rate": test_eval["generation_exact_match_rate"],
-                "generalization/test_tf_exact_match_rate": test_eval["teacher_forced_exact_match_rate"],
             },
             step=trial_idx - 1,
         )
-        best_result = search_service.choose_best_generalization(
+        selected_result = search_service.choose_best_generalization(
             best_result,
             result,
             lambda item: score_generalization_result(
@@ -3982,10 +3995,17 @@ def run_json_retrieval_generalization_test(
                 score_mode=generalization_score_mode,
             ),
         )
-
-        del trained_model
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        if selected_result is result:
+            if best_model is not None:
+                del best_model
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            best_result = result
+            best_model = trained_model
+        else:
+            del trained_model
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     search_results = search_service.sort_generalization_summaries(
         search_results,
@@ -3995,8 +4015,21 @@ def run_json_retrieval_generalization_test(
         ),
     )
 
+    test_eval = evaluate_case_pool(best_model, test_cases, device)
+    best_result["test_pool_evaluation"] = test_eval
     validation_tail_error_analysis = build_tail_error_analysis(best_result["validation_pool_evaluation"])
     test_tail_error_analysis = build_tail_error_analysis(best_result["test_pool_evaluation"])
+    swanlab_run.log(
+        {
+            "generalization/best_test_gen_exact_match_rate": test_eval["generation_exact_match_rate"],
+            "generalization/best_test_tf_exact_match_rate": test_eval["teacher_forced_exact_match_rate"],
+        },
+        step=len(search_space),
+    )
+
+    del best_model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     if reports_dir is not None:
         save_json_retrieval_generalization_reports(

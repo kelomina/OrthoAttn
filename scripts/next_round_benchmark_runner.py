@@ -36,6 +36,7 @@ from scripts.json_retrieval_test import (
 from src.dsra.swanlab_utils import init_swanlab
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_TASK_SEED_ROOTS = (7, 11, 19)
 
 
 def seed_everything(seed: int) -> None:
@@ -55,6 +56,89 @@ def seed_everything(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def build_task_seed_bundle(seed_root: int) -> dict:
+    """Build shared dataset/model seeds for one next-round JSON benchmark repeat.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_generalization_section`, tests.
+    - 调用对象 / Calls: `int`.
+    - 作用 / Purpose: 确保 DSRA 与 MHDSRA2 在同一 seed root 下使用同一数据切分 seed。
+    - 参数 / Parameters: `seed_root` 是本轮重复实验的根 seed。
+    - 返回 / Returns: 包含 train/validation/test/pair/model seed 的字典。
+    - 错误处理 / Error handling: 非整数由 `int` 转换抛错。
+    - 关键词 / Keywords:
+      seed|bundle|json|generalization|fairness|benchmark|split|next_round|repeat|种子
+    """
+    seed_root = int(seed_root)
+    return {
+        "seed_root": seed_root,
+        "train_dataset_seed": seed_root,
+        "validation_dataset_seed": seed_root + 101,
+        "test_dataset_seed": seed_root + 202,
+        "pair_split_seed": seed_root + 303,
+        "model_seed": seed_root + 404,
+    }
+
+
+def _mean_std(values: list[float]) -> tuple[float | None, float | None]:
+    """Return mean/std for benchmark repeat values."""
+    filtered = [float(value) for value in values if value is not None]
+    if not filtered:
+        return None, None
+    mean_value = sum(filtered) / len(filtered)
+    if len(filtered) == 1:
+        return mean_value, 0.0
+    variance = sum((value - mean_value) ** 2 for value in filtered) / (len(filtered) - 1)
+    return mean_value, variance ** 0.5
+
+
+def aggregate_model_seed_runs(seed_runs: list[dict]) -> dict:
+    """Aggregate per-seed JSON metrics while retaining raw seed rows."""
+    metric_names = sorted(
+        {
+            metric_name
+            for seed_run in seed_runs
+            for metric_name in seed_run.get("metrics", {})
+        }
+    )
+    aggregate = {}
+    for metric_name in metric_names:
+        mean_value, std_value = _mean_std(
+            [seed_run["metrics"].get(metric_name) for seed_run in seed_runs]
+        )
+        aggregate[metric_name] = {
+            "mean": mean_value,
+            "std": std_value,
+            "n": sum(
+                seed_run["metrics"].get(metric_name) is not None
+                for seed_run in seed_runs
+            ),
+        }
+    return aggregate
+
+
+def summarize_json_seed_result(result: dict) -> dict:
+    """Extract pooled JSON metrics used by next-round benchmark rows."""
+    validation = result["validation_pool_evaluation"]
+    test = result["test_pool_evaluation"]
+    return {
+        "validation_teacher_forced_exact_match_rate": validation["teacher_forced_exact_match_rate"],
+        "validation_teacher_forced_mean_sequence_accuracy": validation["teacher_forced_mean_sequence_accuracy"],
+        "validation_generation_exact_match_rate": validation["generation_exact_match_rate"],
+        "validation_generation_mean_sequence_accuracy": validation["generation_mean_sequence_accuracy"],
+        "test_teacher_forced_exact_match_rate": test["teacher_forced_exact_match_rate"],
+        "test_teacher_forced_mean_sequence_accuracy": test["teacher_forced_mean_sequence_accuracy"],
+        "test_generation_exact_match_rate": test["generation_exact_match_rate"],
+        "test_generation_mean_sequence_accuracy": test["generation_mean_sequence_accuracy"],
+    }
+
+
+def _format_optional_metric(value) -> str:
+    if value is None:
+        return "NA"
+    return f"{float(value):.6f}"
 
 
 def run_niah_section(args: argparse.Namespace) -> dict:
@@ -159,27 +243,44 @@ def _json_accuracy_rows(dsra_result: dict, mhdsra2_result: dict) -> list[dict]:
     """
     rows = []
     split_eval_pairs = (
-        ("validation", dsra_result["validation_pool_evaluation"], mhdsra2_result["validation_pool_evaluation"]),
-        ("test", dsra_result["test_pool_evaluation"], mhdsra2_result["test_pool_evaluation"]),
+        ("validation", mhdsra2_result["aggregate_metrics"]),
+        ("test", mhdsra2_result["aggregate_metrics"]),
     )
     metric_specs = (
-        ("teacher_forced_exact_match_rate", "teacher_forced_exact_match_rate"),
-        ("teacher_forced_mean_sequence_accuracy", "teacher_forced_mean_sequence_accuracy"),
         ("generation_exact_match_rate", "generation_exact_match_rate"),
         ("generation_mean_sequence_accuracy", "generation_mean_sequence_accuracy"),
+        ("teacher_forced_exact_match_rate", "teacher_forced_exact_match_rate"),
+        ("teacher_forced_mean_sequence_accuracy", "teacher_forced_mean_sequence_accuracy"),
     )
-    for split, dsra_eval, mh_eval in split_eval_pairs:
+    dsra_status = dsra_result.get(
+        "status",
+        "archived_alias_normalizes_to_mhdsra2_not_run",
+    )
+    for split, mh_eval in split_eval_pairs:
         for metric_key, metric_name in metric_specs:
+            aggregate_key = f"{split}_{metric_key}"
+            mh_metric = mh_eval.get(aggregate_key, {})
             rows.append(
                 build_benchmark_comparison_row(
                     suite="json_retrieval_generalization",
                     task="museum_artifact_generalization",
                     split=split,
                     metric=metric_name,
-                    dsra_value=dsra_eval.get(metric_key),
-                    mhdsra2_value=mh_eval.get(metric_key),
+                    dsra_value=None,
+                    mhdsra2_value=mh_metric.get("mean"),
                     higher_is_better=True,
-                    metadata={"metric_key": metric_key},
+                    notes=(
+                        "DSRA archived alias normalizes to MHDSRA2; DSRA JSON value skipped; "
+                        "MHDSRA2 mean over seed roots; "
+                        f"mhdsra2_std={_format_optional_metric(mh_metric.get('std'))}; "
+                        f"seed_count={mh_metric.get('n', 0)}"
+                    ),
+                    metadata={
+                        "metric_key": aggregate_key,
+                        "dsra_status": dsra_status,
+                        "mhdsra2_std": mh_metric.get("std"),
+                        "seed_count": mh_metric.get("n"),
+                    },
                 )
             )
     return rows
@@ -200,7 +301,7 @@ def run_json_generalization_section(args: argparse.Namespace) -> dict:
     - 关键词 / Keywords:
       json|generalization|teacher_forced|generation|benchmark|runner|dsra|mhdsra2|accuracy|汇总
     """
-    json_kwargs = {
+    json_base_kwargs = {
         "reports_dir": None,
         "epochs": args.json_epochs,
         "epochs_grid": [args.json_epochs],
@@ -215,35 +316,58 @@ def run_json_generalization_section(args: argparse.Namespace) -> dict:
         "train_dataset_size": args.json_train_dataset_size,
         "validation_dataset_size": args.json_validation_dataset_size,
         "test_dataset_size": args.json_test_dataset_size,
-        "train_dataset_seed": args.seed,
-        "validation_dataset_seed": args.seed + 101,
-        "test_dataset_seed": args.seed + 202,
-        "pair_split_seed": args.seed + 303,
         "generalization_score_mode": args.json_generalization_score_mode,
         "local_context_size": args.json_local_context_size,
         "local_context_mode": args.json_local_context_mode,
         "final_polish_epochs": args.json_final_polish_epochs,
         "final_generation_polish_epochs": args.json_final_generation_polish_epochs,
     }
-    results_by_model = {}
-    for model_idx, model_type in enumerate(("dsra", "mhdsra2")):
-        seed_everything(args.seed + 10000 + model_idx)
-        results_by_model[model_type] = run_json_retrieval_generalization_test(
-            model_type=model_type,
-            **json_kwargs,
+    mhdsra2_seed_runs = []
+    task_seed_roots = tuple(int(seed_root) for seed_root in args.task_seed_roots)
+    for seed_root in task_seed_roots:
+        seed_bundle = build_task_seed_bundle(seed_root)
+        seed_everything(seed_bundle["model_seed"])
+        result = run_json_retrieval_generalization_test(
+            model_type="mhdsra2",
+            train_dataset_seed=seed_bundle["train_dataset_seed"],
+            validation_dataset_seed=seed_bundle["validation_dataset_seed"],
+            test_dataset_seed=seed_bundle["test_dataset_seed"],
+            pair_split_seed=seed_bundle["pair_split_seed"],
+            **json_base_kwargs,
         )
+        mhdsra2_seed_runs.append(
+            {
+                "seed_root": seed_root,
+                "seed_bundle": seed_bundle,
+                "metrics": summarize_json_seed_result(result),
+            }
+        )
+    results_by_model = {
+        "dsra": {
+            "status": "archived_alias_normalizes_to_mhdsra2_not_run",
+            "seed_runs": [],
+            "aggregate_metrics": {},
+        },
+        "mhdsra2": {
+            "seed_runs": mhdsra2_seed_runs,
+            "aggregate_metrics": aggregate_model_seed_runs(mhdsra2_seed_runs),
+        },
+    }
 
     return {
         "title": "JSON Retrieval Generalization",
         "description": (
-            "Uses pooled validation/test accuracy metrics from "
-            "`run_json_retrieval_generalization_test()` covering teacher-forced "
-            "and generation evaluation."
+            "Uses multi-seed pooled validation/test accuracy metrics from "
+            "`run_json_retrieval_generalization_test()`. Generation metrics are the main "
+            "benchmark signal; teacher-forced metrics are diagnostic. Archived `dsra` "
+            "normalizes to MHDSRA2 in this codebase, so the DSRA column is intentionally "
+            "left missing instead of reporting a false architecture comparison."
         ),
         "rows": _json_accuracy_rows(
             dsra_result=results_by_model["dsra"],
             mhdsra2_result=results_by_model["mhdsra2"],
         ),
+        "seed_runs": results_by_model,
     }
 
 
@@ -263,6 +387,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--task-seed-roots", nargs="+", type=int, default=list(DEFAULT_TASK_SEED_ROOTS))
 
     parser.add_argument("--niah-seq-lengths", nargs="+", type=int, default=[8192, 16384])
     parser.add_argument("--niah-vocab-size", type=int, default=100)
@@ -288,7 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json-train-dataset-size", type=int, default=12)
     parser.add_argument("--json-validation-dataset-size", type=int, default=4)
     parser.add_argument("--json-test-dataset-size", type=int, default=4)
-    parser.add_argument("--json-generalization-score-mode", type=str, default="teacher_forced")
+    parser.add_argument("--json-generalization-score-mode", type=str, default="generation")
     parser.add_argument("--json-local-context-size", type=int, default=DEFAULT_LOCAL_CONTEXT_SIZE)
     parser.add_argument("--json-local-context-mode", type=str, default=DEFAULT_LOCAL_CONTEXT_MODE)
     parser.add_argument("--json-final-polish-epochs", type=int, default=0)
@@ -314,6 +439,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
         experiment_name="next_round_benchmark",
         config={
             "seed": args.seed,
+            "task_seed_roots": list(args.task_seed_roots),
             "niah_seq_lengths": list(args.niah_seq_lengths),
             "json_epochs": args.json_epochs,
             "diagnostic_device": args.diagnostic_device,
@@ -336,6 +462,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
                 swanlab_step += 1
     config = {
         "seed": args.seed,
+        "task_seed_roots": list(args.task_seed_roots),
         "niah_seq_lengths": list(args.niah_seq_lengths),
         "niah_dim": args.niah_dim,
         "niah_num_layers": args.niah_num_layers,

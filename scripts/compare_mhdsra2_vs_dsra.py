@@ -1012,6 +1012,8 @@ def build_benchmark_payload(config: dict, sections: list[dict]) -> dict:
             normalized_section["model_tables"] = list(section.get("model_tables", []))
         if "diagnostic_cases" in section:
             normalized_section["diagnostic_cases"] = list(section.get("diagnostic_cases", []))
+        if "seed_runs" in section:
+            normalized_section["seed_runs"] = section.get("seed_runs", {})
         normalized_sections.append(normalized_section)
     return {
         "config": config,
@@ -1124,6 +1126,23 @@ def save_benchmark_reports(
             lines.append("|" + "|".join(["---"] * len(table["columns"])) + "|")
             for row in table.get("rows", []):
                 lines.append("| " + " | ".join(str(item) for item in row) + " |")
+        if section.get("seed_runs"):
+            lines.extend(["", "### Seed Runs", ""])
+            lines.append("| Model | Seed Root | Test Gen Seq | Test TF Seq |")
+            lines.append("|---|---:|---:|---:|")
+            for model_name, model_payload in section["seed_runs"].items():
+                for seed_run in model_payload.get("seed_runs", []):
+                    metrics = seed_run.get("metrics", {})
+                    test_gen = metrics.get("test_generation_mean_sequence_accuracy")
+                    test_tf = metrics.get("test_teacher_forced_mean_sequence_accuracy")
+                    lines.append(
+                        "| {model} | {seed} | {test_gen} | {test_tf} |".format(
+                            model=model_name,
+                            seed=seed_run.get("seed_root"),
+                            test_gen="NA" if test_gen is None else f"{test_gen:.6f}",
+                            test_tf="NA" if test_tf is None else f"{test_tf:.6f}",
+                        )
+                    )
 
     write_markdown(md_path, lines)
     return json_path, md_path

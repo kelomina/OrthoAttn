@@ -56,7 +56,7 @@ DEFAULT_GENERALIZATION_BENCHMARK_KWARGS = {
     "train_dataset_size": 12,
     "validation_dataset_size": 4,
     "test_dataset_size": 4,
-    "generalization_score_mode": "teacher_forced",
+    "generalization_score_mode": "generation",
     "local_context_mode": DEFAULT_LOCAL_CONTEXT_MODE,
     "local_context_size": DEFAULT_LOCAL_CONTEXT_SIZE,
     "final_polish_epochs": 0,
@@ -347,6 +347,8 @@ def save_attention_family_benchmark_reports(reports_dir, complexity_results, tas
         "## Test Design",
         "- Complexity benchmark: random token forward pass with shared `dim`, `chunk_size`, and local-context setup.",
         "- Task benchmark: held-out `museum/artifact` JSON retrieval generalization under identical training settings.",
+        "- JSON task defaults are smoke-sized; use the multi-seed mean/std and larger pools for formal claims.",
+        "- Generation metrics are the primary task signal; teacher-forced metrics are diagnostic.",
         f"- Task seed roots: `{task_results['task_seed_roots']}`",
         "- Task variants:",
         "  baseline: plain end-to-end token decoding",
@@ -408,7 +410,8 @@ def save_attention_family_benchmark_reports(reports_dir, complexity_results, tas
             for seed_run in result["seed_runs"]:
                 lines.append(
                     f"  seed={seed_run['seed_root']}: "
-                    f"test_tf_seq=`{seed_run['metrics']['test_teacher_forced_seq_acc']*100:.2f}%` "
+                    f"test_gen_seq=`{seed_run['metrics']['test_generation_seq_acc']*100:.2f}%` "
+                    f"| test_tf_seq=`{seed_run['metrics']['test_teacher_forced_seq_acc']*100:.2f}%` "
                     f"| report=`{seed_run['report_dir']}`"
                 )
         lines.append("")
@@ -473,11 +476,15 @@ def run_attention_family_benchmark_suite(
     for variant_name, variant_payload in task_results.get("task_variants", {}).items():
         for model_result in variant_payload.get("model_results", []):
             aggregate_metrics = model_result.get("aggregate_metrics", {})
+            test_gen_seq = aggregate_metrics.get("test_generation_seq_acc")
             test_tf_seq = aggregate_metrics.get("test_teacher_forced_seq_acc")
-            if test_tf_seq is not None:
+            if test_gen_seq is not None:
                 swanlab_run.log(
                     {
-                        f"task/{variant_name}/{model_result['model_type']}/test_tf_seq_acc": test_tf_seq.get("mean", 0.0),
+                        f"task/{variant_name}/{model_result['model_type']}/test_generation_seq_acc": test_gen_seq.get("mean", 0.0),
+                        f"task/{variant_name}/{model_result['model_type']}/test_tf_seq_acc": (
+                            0.0 if test_tf_seq is None else test_tf_seq.get("mean", 0.0)
+                        ),
                     },
                     step=swanlab_step,
                 )

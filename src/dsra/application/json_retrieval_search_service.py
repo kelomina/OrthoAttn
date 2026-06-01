@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 SearchScore = Callable[[dict], tuple]
-GeneralizationScore = Callable[[dict], float]
+GeneralizationScore = Callable[[dict], tuple]
 
 
 class JsonRetrievalSearchService:
@@ -58,7 +58,7 @@ class JsonRetrievalSearchService:
         - 调用对象 / Calls: `scorer`
         - 作用 / Purpose: 统一泛化搜索最佳结果选择规则
         - 变量 / Variables:
-          `current_best` 是当前最佳泛化结果, `candidate` 是新候选, `scorer` 返回浮点分数
+          `current_best` 是当前最佳泛化结果, `candidate` 是新候选, `scorer` 返回可比较分数元组
         - 接入 / Integration: 每个泛化 search trial 完成验证/测试评估后调用
         - 错误处理 / Error handling: `current_best=None` 时直接返回候选
         - 关键词 / Keywords:

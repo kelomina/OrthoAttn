@@ -6920,3 +6920,323 @@ _load_merged_test_module(
     ),
 )
 
+
+def _benchmark_guard_pool(
+    *,
+    validation_generation=0.0,
+    validation_teacher_forced=0.0,
+    test_generation=0.0,
+    test_teacher_forced=0.0,
+):
+    """Build minimal JSON retrieval result payloads for benchmark guard tests."""
+    return {
+        "validation_pool_evaluation": {
+            "generation_exact_match_rate": validation_generation,
+            "generation_mean_sequence_accuracy": validation_generation,
+            "generation_mean_prefix_match_length": validation_generation,
+            "teacher_forced_exact_match_rate": validation_teacher_forced,
+            "teacher_forced_mean_sequence_accuracy": validation_teacher_forced,
+            "teacher_forced_mean_prefix_match_length": validation_teacher_forced,
+        },
+        "test_pool_evaluation": {
+            "generation_exact_match_rate": test_generation,
+            "generation_mean_sequence_accuracy": test_generation,
+            "generation_mean_prefix_match_length": test_generation,
+            "teacher_forced_exact_match_rate": test_teacher_forced,
+            "teacher_forced_mean_sequence_accuracy": test_teacher_forced,
+            "teacher_forced_mean_prefix_match_length": test_teacher_forced,
+        },
+    }
+
+
+def test_json_generalization_score_ignores_test_when_validation_ties():
+    from scripts.json_retrieval_test import score_generalization_result
+
+    low_test = _benchmark_guard_pool(
+        validation_generation=0.5,
+        validation_teacher_forced=0.5,
+        test_generation=0.1,
+        test_teacher_forced=0.1,
+    )
+    high_test = _benchmark_guard_pool(
+        validation_generation=0.5,
+        validation_teacher_forced=0.5,
+        test_generation=1.0,
+        test_teacher_forced=1.0,
+    )
+
+    assert score_generalization_result(low_test, score_mode="generation") == (
+        score_generalization_result(high_test, score_mode="generation")
+    )
+    assert score_generalization_result(low_test, score_mode="teacher_forced") == (
+        score_generalization_result(high_test, score_mode="teacher_forced")
+    )
+
+
+def test_json_generalization_default_prefers_generation_over_teacher_forced():
+    from scripts.json_retrieval_test import score_generalization_result
+
+    generation_better = _benchmark_guard_pool(
+        validation_generation=0.8,
+        validation_teacher_forced=0.1,
+    )
+    teacher_forced_better = _benchmark_guard_pool(
+        validation_generation=0.2,
+        validation_teacher_forced=0.9,
+    )
+
+    assert score_generalization_result(generation_better) > score_generalization_result(
+        teacher_forced_better
+    )
+
+
+def test_formal_json_generalization_rejects_diagnostic_shortcuts():
+    import pytest
+
+    from scripts.json_retrieval_test import validate_formal_generalization_config
+
+    validate_formal_generalization_config()
+    invalid_kwargs = (
+        {"target_case_sampling_ratio": 0.1},
+        {"final_polish_epochs": 1},
+        {"final_polish_epochs": 0.5},
+        {"final_generation_polish_epochs": 1},
+        {"final_generation_polish_epochs": 0.5},
+        {"entity_hint_use_gold_labels_during_training": True},
+    )
+    for kwargs in invalid_kwargs:
+        with pytest.raises(ValueError):
+            validate_formal_generalization_config(**kwargs)
+
+
+def test_next_round_parser_accepts_task_seed_roots_and_generation_default():
+    from scripts.next_round_benchmark_runner import build_parser
+
+    args = build_parser().parse_args(["--task-seed-roots", "3", "5"])
+
+    assert args.task_seed_roots == [3, 5]
+    assert args.json_generalization_score_mode == "generation"
+
+
+def test_next_round_json_section_reuses_split_seeds_and_aggregates(monkeypatch):
+    from scripts import next_round_benchmark_runner as runner
+
+    parser = runner.build_parser()
+    args = parser.parse_args(
+        [
+            "--task-seed-roots",
+            "7",
+            "11",
+            "--json-epochs",
+            "1",
+            "--json-train-dataset-size",
+            "2",
+            "--json-validation-dataset-size",
+            "2",
+            "--json-test-dataset-size",
+            "2",
+        ]
+    )
+    calls = []
+
+    def _fake_run_json_retrieval_generalization_test(model_type, **kwargs):
+        calls.append({"model_type": model_type, **kwargs})
+        offset = 0.1
+        seed_score = kwargs["train_dataset_seed"] / 100.0 + offset
+        return {
+            "validation_pool_evaluation": {
+                "generation_exact_match_rate": seed_score,
+                "generation_mean_sequence_accuracy": seed_score,
+                "teacher_forced_exact_match_rate": seed_score + 0.01,
+                "teacher_forced_mean_sequence_accuracy": seed_score + 0.01,
+            },
+            "test_pool_evaluation": {
+                "generation_exact_match_rate": seed_score + 0.02,
+                "generation_mean_sequence_accuracy": seed_score + 0.02,
+                "teacher_forced_exact_match_rate": seed_score + 0.03,
+                "teacher_forced_mean_sequence_accuracy": seed_score + 0.03,
+            },
+        }
+
+    monkeypatch.setattr(
+        runner,
+        "run_json_retrieval_generalization_test",
+        _fake_run_json_retrieval_generalization_test,
+    )
+
+    section = runner.run_json_generalization_section(args)
+
+    assert set(section["seed_runs"].keys()) == {"dsra", "mhdsra2"}
+    assert section["seed_runs"]["dsra"]["seed_runs"] == []
+    assert section["seed_runs"]["dsra"]["status"] == "archived_alias_normalizes_to_mhdsra2_not_run"
+    assert len(section["seed_runs"]["mhdsra2"]["seed_runs"]) == 2
+    for seed_root in (7, 11):
+        per_seed_calls = [call for call in calls if call["train_dataset_seed"] == seed_root]
+        assert {call["model_type"] for call in per_seed_calls} == {"mhdsra2"}
+        assert {call["validation_dataset_seed"] for call in per_seed_calls} == {seed_root + 101}
+        assert {call["test_dataset_seed"] for call in per_seed_calls} == {seed_root + 202}
+        assert {call["pair_split_seed"] for call in per_seed_calls} == {seed_root + 303}
+    assert any(
+        row["metric"] == "generation_mean_sequence_accuracy"
+        and row["metadata"]["seed_count"] == 2
+        and row["metadata"]["dsra_status"] == "archived_alias_normalizes_to_mhdsra2_not_run"
+        and row["winner"] == "missing"
+        and "mhdsra2_std=" in row["notes"]
+        for row in section["rows"]
+    )
+
+
+def test_json_generalization_evaluates_test_only_after_best_selection(monkeypatch):
+    from scripts import json_retrieval_test as json_task
+
+    class _FakeSwanLabRun:
+        def log(self, *_args, **_kwargs):
+            pass
+
+        def finish(self):
+            pass
+
+    class _FakeModel:
+        def __init__(self, name):
+            self.name = name
+
+    train_calls = []
+    eval_calls = []
+
+    def _fake_train_single_configuration(**kwargs):
+        model = _FakeModel(f"trial-{len(train_calls) + 1}")
+        train_calls.append(model.name)
+        return {
+            "model": model,
+            "config": {
+                "device": "cpu",
+                "model_type": kwargs["model_type"],
+                "epochs": kwargs["epochs"],
+                "dim": kwargs["dim"],
+                "K": kwargs["K"],
+                "kr": kwargs["kr"],
+                "chunk_size": kwargs["chunk_size"],
+                "lr": kwargs["lr"],
+                "warmup_ratio": kwargs["warmup_ratio"],
+                "local_context_mode": kwargs["local_context_mode"],
+                "local_context_size": kwargs["local_context_size"],
+                "train_dataset_size": kwargs["train_dataset_size"],
+                "train_dataset_seed": kwargs["train_dataset_seed"],
+                "scheduled_sampling_max_ratio": kwargs["scheduled_sampling_max_ratio"],
+                "final_generation_polish_epochs": kwargs["final_generation_polish_epochs"],
+            },
+            "history": [],
+        }
+
+    def _pool_eval(score):
+        case_result = {
+            "question": "q",
+            "museum": "m",
+            "artifact": "a",
+            "answer_len": 1,
+            "teacher_forced": {
+                "exact_byte_match": bool(score >= 0.9),
+                "sequence_accuracy": score,
+                "prefix_match_length": score,
+                "tail_sequence_accuracy": score,
+                "tail_exact_match": bool(score >= 0.9),
+                "first_mismatch_index": None if score >= 0.9 else 0,
+                "entity_span_metrics": {},
+            },
+            "generation": {
+                "exact_byte_match": bool(score >= 0.9),
+                "sequence_accuracy": score,
+                "prefix_match_length": score,
+                "tail_sequence_accuracy": score,
+                "tail_exact_match": bool(score >= 0.9),
+                "first_mismatch_index": None if score >= 0.9 else 0,
+                "entity_span_metrics": {},
+            },
+        }
+        return {
+            "num_cases": 1,
+            "case_results": [case_result],
+            "generation_exact_match_rate": score,
+            "generation_mean_sequence_accuracy": score,
+            "generation_mean_prefix_match_length": score,
+            "teacher_forced_exact_match_rate": score,
+            "teacher_forced_mean_sequence_accuracy": score,
+            "teacher_forced_mean_prefix_match_length": score,
+        }
+
+    def _fake_evaluate_case_pool(model, cases, _device):
+        pool_name = cases[0]["pool"]
+        eval_calls.append((model.name, pool_name))
+        if pool_name == "validation":
+            return _pool_eval(0.2 if model.name == "trial-1" else 0.9)
+        if pool_name == "test":
+            return _pool_eval(0.7)
+        raise AssertionError(f"Unexpected pool: {pool_name}")
+
+    def _fake_build_disjoint_case_pool(
+        reference_case,
+        dataset_size,
+        seed,
+        used_signatures,
+        allowed_museum_artifact_pairs,
+    ):
+        if seed == 101:
+            pool_name = "validation"
+        elif seed == 202:
+            pool_name = "test"
+        else:
+            pool_name = "train"
+        return ([{"pool": pool_name}] * dataset_size, set(used_signatures) | {pool_name})
+
+    monkeypatch.setattr(json_task, "init_swanlab", lambda **_kwargs: _FakeSwanLabRun())
+    monkeypatch.setattr(
+        json_task,
+        "load_json_retrieval_case",
+        lambda **_kwargs: {
+            "sample_bytes": b"abc",
+            "question_bytes": b"q",
+            "expected_answer_bytes": b"a",
+        },
+    )
+    monkeypatch.setattr(
+        json_task,
+        "split_museum_artifact_pairs",
+        lambda **_kwargs: {
+            "train": [("m1", "a1")],
+            "validation": [("m2", "a2")],
+            "test": [("m3", "a3")],
+        },
+    )
+    monkeypatch.setattr(json_task, "build_disjoint_case_pool", _fake_build_disjoint_case_pool)
+    monkeypatch.setattr(json_task, "build_curriculum_plan", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(json_task, "train_single_configuration", _fake_train_single_configuration)
+    monkeypatch.setattr(json_task, "evaluate_case_pool", _fake_evaluate_case_pool)
+
+    result = json_task.run_json_retrieval_generalization_test(
+        reports_dir=None,
+        epochs_grid=[1, 2],
+        kr_grid=[4],
+        chunk_size_grid=[8],
+        lr_grid=[0.01],
+        warmup_ratio_grid=[0.0],
+        scheduled_sampling_max_ratio_grid=[0.0],
+        validation_dataset_seed=101,
+        test_dataset_seed=202,
+        train_dataset_size=1,
+        validation_dataset_size=1,
+        test_dataset_size=1,
+        dim=8,
+        K=8,
+        generalization_score_mode="generation",
+    )
+
+    assert train_calls == ["trial-1", "trial-2"]
+    assert eval_calls == [
+        ("trial-1", "validation"),
+        ("trial-2", "validation"),
+        ("trial-2", "test"),
+    ]
+    assert result["config"]["epochs"] == 2
+    assert result["test_pool_evaluation"]["generation_mean_sequence_accuracy"] == 0.7
+    assert all("test_generation_exact_match_rate" not in row for row in result["search_results"])
+
