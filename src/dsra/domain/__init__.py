@@ -1,6 +1,6 @@
 """Domain objects for DSRA attention configuration."""
 
-from .attention_spec import AttentionLayerSpec
+from .attention_spec import AttentionLayerSpec, select_mhdsra2_heads
 from .arithmetic_emergence import (
     ArithmeticCurriculumStage,
     ArithmeticEmergenceResult,
@@ -18,4 +18,5 @@ __all__ = [
     "AttentionLayerSpec",
     "RetrievalModelSpec",
     "normalize_model_type",
+    "select_mhdsra2_heads",
 ]

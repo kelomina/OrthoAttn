@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 
 from .application import StreamingAttentionUnitOfWork
-from .domain import AttentionLayerSpec
+from .domain import AttentionLayerSpec, select_mhdsra2_heads as _domain_select_mhdsra2_heads
 from .infrastructure import PagedMemoryRepository
 from .mhdsra2.improved_dsra_mha import MHDSRA2Config, MHDSRA2State, MultiHeadDSRA2
 
@@ -113,22 +114,19 @@ def get_chunk_causal_mask(
 
 
 def _select_heads(dim: int) -> int:
-    """Select a conservative MHDSRA2 head count for the compatibility layer.
+    """Compatibility wrapper for the shared MHDSRA2 head-count policy.
 
     中文说明:
     - 调用方 / Called by: `DSRA_Chunk_Layer.__init__`
-    - 调用对象 / Calls: 内置 `min`, `max`
-    - 作用 / Purpose: 在保持维度可整除的前提下为旧 DSRA 入口选择多头数量
+    - 调用对象 / Calls: `domain.select_mhdsra2_heads`
+    - 作用 / Purpose: 保留旧兼容层私有 helper，同时复用领域层统一 head 选择规则
     - 变量 / Variables: `dim` 是隐藏维度, 返回值是可整除的 head 数
     - 接入 / Integration: 旧入口未显式提供 heads，因此由该函数集中选择
-    - 错误处理 / Error handling: 找不到更大可整除 head 时退回 `1`
+    - 错误处理 / Error handling: 非法维度由领域层 helper 抛出 `ValueError`
     - 关键词 / Keywords:
       heads|select|compat|mhdsra2|dim|divisible|multihead|adapter|dsra|头数
     """
-    for heads in range(min(8, max(1, dim // 16)), 0, -1):
-        if dim % heads == 0:
-            return heads
-    return 1
+    return _domain_select_mhdsra2_heads(dim)
 
 
 class _QKVProjectionView(nn.Module):
@@ -269,8 +267,16 @@ class DSRA_Chunk_Layer(nn.Module):
         self.W_v = _QKVProjectionView(self.core.qkv, 2 * dim, 3 * dim)
         self.W_n = nn.Linear(dim + 1, K)
         self.W_m = nn.Linear(dim, 1)
-        self.memory_repository = PagedMemoryRepository(enabled=True, dtype=torch.float32)
+        self.memory_repository = PagedMemoryRepository(
+            enabled=True,
+            dtype=torch.float32,
+            query_pooling=self.core.cfg.retrieval_query_pooling,
+        )
         self.last_V_orth = torch.empty(0)
+        self.last_external_memory_diagnostic: dict[str, object] = {
+            "status": "empty",
+            "reason": None,
+        }
 
     def reset_external_memory(self) -> None:
         """Clear the external paged retrieval memory for a new independent stream.
@@ -305,6 +311,7 @@ class DSRA_Chunk_Layer(nn.Module):
             reset, external memory, retrieval, paged memory, stream boundary
         """
         self.memory_repository.reset()
+        self.last_external_memory_diagnostic = {"status": "empty", "reason": None}
 
     def sparse_topk_distribution(self, logits: torch.Tensor) -> torch.Tensor:
         """Return the legacy sparse top-k distribution helper.
@@ -530,7 +537,7 @@ class DSRA_Chunk_Layer(nn.Module):
         state = self._coerce_state(S_prev, batch_size, x.device, x.dtype)
         head_cache = self._cache_to_heads(bypass_kv)
         if head_cache is not None:
-            state.local_k, state.local_v = head_cache
+            state = replace(state, local_k=head_cache[0], local_v=head_cache[1])
 
         qkv = self.core.qkv(x)
         query, key, value = qkv.chunk(3, dim=-1)
@@ -544,16 +551,24 @@ class DSRA_Chunk_Layer(nn.Module):
             time_state=S_time_prev,
             memory_repository=self.memory_repository,
         ) as unit_of_work:
-            retrieved_k, retrieved_v = unit_of_work.retrieve(
+            retrieved_k, retrieved_v, retrieved_mask = unit_of_work.retrieve(
                 query_heads,
                 x.device,
                 max_position=state.position,
+                return_mask=True,
             )
+            self.last_external_memory_diagnostic = {
+                "status": "active",
+                "reason": None,
+                "batch_size": int(batch_size),
+                "retrieved": retrieved_k is not None,
+            }
             out, next_state = self.core(
                 x,
                 state=unit_of_work.state,
                 retrieved_k=retrieved_k,
                 retrieved_v=retrieved_v,
+                retrieved_mask=retrieved_mask,
             )
             self._record_update_proxy(state, next_state)
             self.memory_repository.append(key_heads, value_heads)
@@ -588,27 +603,45 @@ class DSRA_Chunk_Layer(nn.Module):
         """
         if x_t.dim() != 3:
             raise ValueError(f"expected x_t rank=3, got shape={tuple(x_t.shape)}")
+        if x_t.shape[1] != 1:
+            raise ValueError(
+                f"forward_step expects one token, got sequence length={x_t.shape[1]}"
+            )
         if S_prev is None and kv_cache is None:
             self.reset_external_memory()
         state = self._coerce_state(S_prev, x_t.shape[0], x_t.device, x_t.dtype)
         head_cache = self._cache_to_heads(kv_cache)
         if head_cache is not None:
-            state.local_k, state.local_v = head_cache
-        query = self.core._to_heads(self.core.qkv(x_t).chunk(3, dim=-1)[0])
-        retrieved_k, retrieved_v = self.memory_repository.retrieve(
+            state = replace(state, local_k=head_cache[0], local_v=head_cache[1])
+        qkv = self.core.qkv(x_t)
+        query_proj, key_proj, value_proj = qkv.chunk(3, dim=-1)
+        query = self.core._to_heads(query_proj)
+        retrieved_k, retrieved_v, retrieved_mask = self.memory_repository.retrieve(
             query,
             x_t.device,
             max_position=state.position,
+            return_mask=True,
         )
-        out_t, next_state, _ = self.core.forward_step(
+        self.last_external_memory_diagnostic = {
+            "status": "active",
+            "reason": None,
+            "batch_size": int(x_t.shape[0]),
+            "retrieved": retrieved_k is not None,
+        }
+        out_t, next_state = self.core._forward_from_projected(
             x_t,
-            S_prev=state,
-            kv_cache=head_cache,
+            query_proj,
+            key_proj,
+            value_proj,
+            state=state,
             retrieved_k=retrieved_k,
             retrieved_v=retrieved_v,
+            retrieved_mask=retrieved_mask,
+            return_aux=False,
         )
-        key = self.core._to_heads(self.core.qkv(x_t).chunk(3, dim=-1)[1])
-        value = self.core._to_heads(self.core.qkv(x_t).chunk(3, dim=-1)[2])
+        next_kv_cache = self._cache_from_state(next_state)
+        key = self.core._to_heads(key_proj)
+        value = self.core._to_heads(value_proj)
         self.memory_repository.append(key, value)
         self._record_update_proxy(state, next_state)
-        return out_t, next_state, self._cache_from_state(next_state)
+        return out_t, next_state, next_kv_cache

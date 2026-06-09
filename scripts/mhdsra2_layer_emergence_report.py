@@ -173,7 +173,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
             "device": args.device,
             "include_standard_baseline": not args.skip_standard_baseline,
         },
-        mode="cloud",
+        mode="disabled",
         tags=["layer_emergence", "arithmetic"],
     )
     max_steps_per_stage = (

@@ -359,7 +359,7 @@ def run_ablation(
                 project="MHDSRA2",
                 experiment_name=f"ablation_{name}_lr{lr:.0e}_seed{seed}",
                 config={"variant": name, "lr": lr, "seed": seed},
-                mode="cloud",
+                mode="disabled",
                 tags=["ablation"],
             )
             run_result = train_with_curriculum(

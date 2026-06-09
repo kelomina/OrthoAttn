@@ -193,8 +193,13 @@ def _resolve_device(device_name: str) -> torch.device:
       device|auto|cuda|cpu|resolve|runtime|torch|gpu|fallback|设备
     """
     if device_name == "auto":
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    return torch.device(device_name)
+        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if device_name == "cuda":
+        return torch.device("cuda:0")
+    device = torch.device(device_name)
+    if device.type == "cuda" and device.index not in (0, None):
+        raise ValueError("Only cuda:0 is supported by this project.")
+    return torch.device("cuda:0") if device.type == "cuda" else device
 
 
 def run_dsra_baseline_once(
@@ -412,7 +417,7 @@ def run_comparison(args: argparse.Namespace) -> dict:
             "chunk_sizes": list(args.chunk_sizes),
             "seq_lengths": list(args.seq_lengths),
         },
-        mode="cloud",
+        mode="disabled",
         tags=["compare", "dsra", "mhdsra2"],
     )
     results = []

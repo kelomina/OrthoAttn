@@ -12,3 +12,6 @@ checkpoints/
 swanlog/
 AGENTS.md
 *.err
+*.log
+reports/*.checkpoint.jsonl
+reports/test_*/

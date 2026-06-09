@@ -20,6 +20,7 @@ from scripts.toy_task_associative_recall import (
     StandardAttentionModel,
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 BYTE_VOCAB_SIZE = 256
 PAD_TOKEN_ID = 256
@@ -177,6 +178,7 @@ def build_retrieval_model(
     chunk_size,
     local_context_size,
     local_context_mode,
+    mhdsra2_config_override=None,
 ):
     """Build retrieval benchmark model family by canonical model type.
 
@@ -216,6 +218,7 @@ def build_retrieval_model(
                 chunk_size=item.chunk_size,
                 local_context_size=item.local_context_size,
                 local_context_mode=item.local_context_mode,
+                mhdsra2_config_override=mhdsra2_config_override,
             ),
             "standard_attention": lambda item: StandardAttentionModel(
                 vocab_size=item.vocab_size,
@@ -253,10 +256,23 @@ def build_retrieval_model(
 def load_json_retrieval_case(
     input_path="tests/fixtures/test_input.json",
     metadata_path="tests/fixtures/test_metadata.json",
+    *,
+    project_root=None,
 ):
-    base_dir = Path(__file__).resolve().parents[1]
-    input_file = base_dir / input_path
-    metadata_file = base_dir / metadata_path
+    """Load JSON retrieval case files from inside the project tree.
+
+    中文说明:
+    - 调用方 / Called by: JSON retrieval train/generalization entry points and tests.
+    - 调用对象 / Calls: `resolve_project_json_file`, `Path.read_text`, `json.loads`.
+    - 作用 / Purpose: 读取 JSON 样本与元数据，同时防止 CLI 路径穿越读取项目外文件。
+    - 参数 / Parameters: `input_path` 和 `metadata_path` 是项目内 `.json` 文件路径。
+    - 返回 / Returns: 包含样本 bytes、metadata 和期望答案 bytes 的 dict。
+    - 错误处理 / Error handling: 项目外路径或非 JSON 文件抛 `ValueError`。
+    - 副作用 / Side effects: 只读文件内容。
+    """
+    root = PROJECT_ROOT if project_root is None else Path(project_root)
+    input_file = resolve_project_json_file(input_path, project_root=root)
+    metadata_file = resolve_project_json_file(metadata_path, project_root=root)
 
     sample_bytes = bytes(json.loads(input_file.read_text(encoding="utf-8")))
     metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
@@ -270,6 +286,29 @@ def load_json_retrieval_case(
         "question_bytes": metadata["question"].encode("utf-8"),
         "expected_answer_bytes": expected_bytes,
     }
+
+
+def resolve_project_json_file(path_value, *, project_root=None):
+    """Resolve a user-provided JSON path within the project root.
+
+    中文说明:
+    - 调用方 / Called by: `load_json_retrieval_case`
+    - 调用对象 / Calls: `Path.resolve`
+    - 作用 / Purpose: 防止 JSON retrieval CLI 通过 `../` 或绝对路径读取项目外文件。
+    - 参数 / Parameters: `path_value` 是用户传入路径；`project_root` 测试可覆盖。
+    - 返回 / Returns: 解析后的项目内 `.json` 文件路径。
+    - 错误处理 / Error handling: 项目外路径或非 `.json` 后缀抛 `ValueError`。
+    - 副作用 / Side effects: 无。
+    """
+    root = Path(PROJECT_ROOT if project_root is None else project_root).resolve()
+    raw_path = Path(path_value)
+    candidate = raw_path if raw_path.is_absolute() else root / raw_path
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"JSON retrieval path must stay inside project root: {resolved}")
+    if resolved.suffix.lower() != ".json":
+        raise ValueError(f"JSON retrieval path must point to a .json file: {resolved}")
+    return resolved
 
 
 def build_noise_sentence(rng):
@@ -3044,6 +3083,7 @@ def train_single_configuration(
     model_type=DEFAULT_MODEL_TYPE,
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
+    mhdsra2_config_override=None,
     return_model=False,
 ):
     if not isinstance(device, torch.device):
@@ -3071,6 +3111,7 @@ def train_single_configuration(
         chunk_size=chunk_size,
         local_context_size=local_context_size,
         local_context_mode=local_context_mode,
+        mhdsra2_config_override=mhdsra2_config_override,
     ).to(device)
     if (
         museum_aux_loss_weight > 0.0
@@ -3398,6 +3439,7 @@ def train_single_configuration(
         "evidence_min_context_bytes": int(evidence_min_context_bytes),
         "local_context_size": int(local_context_size),
         "local_context_mode": local_context_mode,
+        "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
         "best_teacher_forced_exact_match": (
             best_teacher_forced_exact_match or final_teacher_forced["exact_byte_match"]
         ),
@@ -3462,6 +3504,7 @@ def run_json_retrieval_test(
     model_type=DEFAULT_MODEL_TYPE,
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
+    mhdsra2_config_override=None,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     active_model_type = normalize_model_type(model_type)
@@ -3476,8 +3519,9 @@ def run_json_retrieval_test(
             "eval_interval": eval_interval,
             "local_context_mode": local_context_mode,
             "local_context_size": local_context_size,
+            "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
         },
-        mode="cloud",
+        mode="disabled",
         tags=["json_retrieval"],
     )
     case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
@@ -3742,6 +3786,7 @@ def run_json_retrieval_generalization_test(
     generalization_score_mode=DEFAULT_GENERALIZATION_SCORE_MODE,
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
+    mhdsra2_config_override=None,
 ):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     active_model_type = normalize_model_type(model_type)
@@ -3762,8 +3807,9 @@ def run_json_retrieval_generalization_test(
             "eval_interval": eval_interval,
             "local_context_mode": local_context_mode,
             "local_context_size": local_context_size,
+            "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
         },
-        mode="cloud",
+        mode="disabled",
         tags=["json_retrieval", "generalization"],
     )
     reference_case = load_json_retrieval_case(input_path=input_path, metadata_path=metadata_path)
@@ -3951,6 +3997,7 @@ def run_json_retrieval_generalization_test(
             model_type=active_model_type,
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
+            mhdsra2_config_override=mhdsra2_config_override,
             return_model=True,
         )
         trained_model = train_result.pop("model")

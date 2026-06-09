@@ -5,6 +5,35 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+def select_mhdsra2_heads(dim: int) -> int:
+    """Select a conservative MHDSRA2 head count for a hidden dimension.
+
+    中文说明:
+    - 调用方 / Called by: `DSRA_Chunk_Layer.__init__`, `MultiLayerMHDSRA2Model.__init__`
+    - 调用对象 / Calls: 内置 `range`, `min`, `max`
+    - 作用 / Purpose: 集中选择能整除隐藏维度的多头数量，避免兼容层和模型层各维护一份规则
+    - 参数 / Parameters: `dim` 是隐藏维度，必须为正整数
+    - 返回 / Returns: 最大不超过 8 且能整除 `dim` 的保守 head 数，找不到时返回 1
+    - 错误处理 / Error handling: 非正维度直接抛出 `ValueError`
+    - 关键词 / Keywords:
+      mhdsra2|heads|select|dim|divisible|domain|attention|config|helper|头数
+
+    English documentation:
+    Function name:
+        select_mhdsra2_heads
+    Purpose:
+        Share the MHDSRA2 head-selection policy across compatibility and model
+        constructors without coupling those modules to each other.
+    """
+    dim = int(dim)
+    if dim < 1:
+        raise ValueError("dim must be positive")
+    for heads in range(min(8, max(1, dim // 16)), 0, -1):
+        if dim % heads == 0:
+            return heads
+    return 1
+
+
 @dataclass(frozen=True)
 class AttentionLayerSpec:
     """Describe a DSRA-compatible attention layer without binding infrastructure.

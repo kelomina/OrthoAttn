@@ -813,11 +813,15 @@ def resolve_torch_device(device_name: str | torch.device) -> torch.device:
       device|cuda|cpu|auto|torch|resolve|mhdsra2|arithmetic|设备|解析
     """
     if isinstance(device_name, torch.device):
-        return device_name
+        if device_name.type == "cuda" and device_name.index not in (0, None):
+            raise ValueError("Only cuda:0 is supported by this project.")
+        return torch.device("cuda:0") if device_name.type == "cuda" else device_name
     normalized = device_name.strip().lower()
     if normalized == "auto":
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if normalized not in {"cpu", "cuda"}:
+        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if normalized == "cuda":
+        return torch.device("cuda:0")
+    if normalized not in {"cpu", "cuda:0"}:
         raise ValueError(f"Unsupported arithmetic emergence device: {device_name}")
     return torch.device(normalized)
 

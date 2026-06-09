@@ -49,42 +49,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 100.80895001010504,
-        "elapsed_ms_std": 1.5002684597964115,
+        "elapsed_ms": 187.69445000361884,
+        "elapsed_ms_std": 3.7819606158578436,
         "elapsed_ms_samples": [
-          99.7481000085827,
-          101.86980001162738
+          185.0202000059653,
+          190.36870000127237
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2539.457061841619,
+        "tokens_per_second": 1363.918858522797,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.05830219015479088,
+        "output_mean_abs": 0.0578732043504715,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 58.35700000170618,
-        "elapsed_ms_std": 1.5058546047444068,
+        "elapsed_ms": 99.31300000607735,
+        "elapsed_ms_std": 2.741452987517012,
         "elapsed_ms_samples": [
-          57.292199999210425,
-          59.42180000420194
+          101.25150000385474,
+          97.37450000829995
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4386.791644404533,
+        "tokens_per_second": 2577.7088597095485,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04506911337375641,
+        "output_mean_abs": 0.04661083221435547,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -111,7 +111,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.7274525765059494,
+      "speedup_ratio": 1.8899283073931217,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -132,42 +132,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 47.13089999859221,
-        "elapsed_ms_std": 3.6786523207974793,
+        "elapsed_ms": 87.42109999730019,
+        "elapsed_ms_std": 1.0847017991192227,
         "elapsed_ms_samples": [
-          44.529699996928684,
-          49.73210000025574
+          88.18809999502264,
+          86.65409999957774
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5431.680702206973,
+        "tokens_per_second": 2928.354825184149,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.05731622502207756,
+        "output_mean_abs": 0.05580572038888931,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 27.273000006971415,
-        "elapsed_ms_std": 1.749523594511065,
+        "elapsed_ms": 48.11475000315113,
+        "elapsed_ms_std": 0.8737718453687865,
         "elapsed_ms_samples": [
-          28.510100004496053,
-          26.035900009446777
+          47.49690000608098,
+          48.73260000022128
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9386.572798539299,
+        "tokens_per_second": 5320.613740760038,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04162142425775528,
+        "output_mean_abs": 0.043300338089466095,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -194,7 +194,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.728115718349459,
+      "speedup_ratio": 1.816929319835909,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -215,42 +215,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 26.09909999591764,
-        "elapsed_ms_std": 0.8184053846944053,
+        "elapsed_ms": 48.90484999486944,
+        "elapsed_ms_std": 0.7583720248871092,
         "elapsed_ms_samples": [
-          25.52039999864064,
-          26.67779999319464
+          48.36859999340959,
+          49.441099996329285
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9808.76735366518,
+        "tokens_per_second": 5234.6546411420695,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.060073528438806534,
+        "output_mean_abs": 0.054085616022348404,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 19.626349996542558,
-        "elapsed_ms_std": 1.548351716615484,
+        "elapsed_ms": 27.513300003192853,
+        "elapsed_ms_std": 1.4596098086862213,
         "elapsed_ms_samples": [
-          18.531499998061918,
-          20.7211999950232
+          28.54539999680128,
+          26.481200009584427
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 13043.688716704726,
+        "tokens_per_second": 9304.590869517353,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.036903589963912964,
+        "output_mean_abs": 0.038472410291433334,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -277,7 +277,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.3297989692691379,
+      "speedup_ratio": 1.7774985185053827,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -298,42 +298,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 17.226750002009794,
-        "elapsed_ms_std": 0.9830905526764139,
+        "elapsed_ms": 25.88435000507161,
+        "elapsed_ms_std": 0.12862271507794634,
         "elapsed_ms_samples": [
-          17.921899998327717,
-          16.53160000569187
+          25.97529999911785,
+          25.79340001102537
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14860.609225195305,
+        "tokens_per_second": 9890.145974298795,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.055228956043720245,
+        "output_mean_abs": 0.040869466960430145,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 10.179899996728636,
-        "elapsed_ms_std": 1.3648575090892112,
+        "elapsed_ms": 15.055800002301112,
+        "elapsed_ms_std": 2.3888895474522363,
         "elapsed_ms_samples": [
-          11.144999996758997,
-          9.214799996698275
+          16.74500000081025,
+          13.366600003791973
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 25147.59477816746,
+        "tokens_per_second": 17003.41396411172,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.03711405023932457,
+        "output_mean_abs": 0.03716032952070236,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -360,7 +360,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6922317515442882,
+      "speedup_ratio": 1.7192278059694919,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -381,42 +381,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 101.61525000148686,
-        "elapsed_ms_std": 5.751111592305547,
+        "elapsed_ms": 191.20639999164268,
+        "elapsed_ms_std": 4.324523654211968,
         "elapsed_ms_samples": [
-          97.54859999520704,
-          105.68190000776667
+          188.14849999034777,
+          194.2642999929376
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2519.306895335633,
+        "tokens_per_second": 1338.8673183072813,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.0660897046327591,
+        "output_mean_abs": 0.06445746123790741,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 62.64175000251271,
-        "elapsed_ms_std": 1.3563015136258567,
+        "elapsed_ms": 97.7363999991212,
+        "elapsed_ms_std": 7.642410085274283,
         "elapsed_ms_samples": [
-          63.60080000013113,
-          61.682700004894286
+          103.14039999502711,
+          92.3324000032153
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4086.73129326258,
+        "tokens_per_second": 2619.290254217485,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04068585857748985,
+        "output_mean_abs": 0.041591137647628784,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -443,7 +443,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6221649298975656,
+      "speedup_ratio": 1.9563478907895309,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -464,42 +464,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 56.28845000319416,
-        "elapsed_ms_std": 0.017465536719674,
+        "elapsed_ms": 93.90640000492567,
+        "elapsed_ms_std": 6.1386768067364565,
         "elapsed_ms_samples": [
-          56.3008000026457,
-          56.27610000374261
+          98.2471000024816,
+          89.56570000736974
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4548.002298614955,
+        "tokens_per_second": 2726.118773444324,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.06015312671661377,
+        "output_mean_abs": 0.05695924162864685,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 31.45059999951627,
-        "elapsed_ms_std": 0.1223294785440206,
+        "elapsed_ms": 51.87304999708431,
+        "elapsed_ms_std": 2.3101885705337653,
         "elapsed_ms_samples": [
-          31.36409999569878,
-          31.537100003333762
+          53.50660000112839,
+          50.239499993040226
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8139.749321282819,
+        "tokens_per_second": 4935.125272456301,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.03913450241088867,
+        "output_mean_abs": 0.04050102457404137,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -526,7 +526,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.7897416902717247,
+      "speedup_ratio": 1.8103119058972623,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -547,42 +547,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 26.324900005420204,
-        "elapsed_ms_std": 1.7819090847343217,
+        "elapsed_ms": 51.32525000226451,
+        "elapsed_ms_std": 7.45552177022314,
         "elapsed_ms_samples": [
-          27.584900002693757,
-          25.06490000814665
+          56.597100003273226,
+          46.053400001255795
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9724.633329938215,
+        "tokens_per_second": 4987.798403099938,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.05408373847603798,
+        "output_mean_abs": 0.049731768667697906,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 16.783750004833564,
-        "elapsed_ms_std": 0.5052277938420163,
+        "elapsed_ms": 30.011350005224813,
+        "elapsed_ms_std": 1.6776108429320902,
         "elapsed_ms_samples": [
-          16.426500005763955,
-          17.141000003903173
+          31.197600008454174,
+          28.82510000199545
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 15252.848733225554,
+        "tokens_per_second": 8530.10610837006,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.03649314492940903,
+        "output_mean_abs": 0.03761332109570503,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -609,7 +609,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5684754597654802,
+      "speedup_ratio": 1.7101946428044412,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -630,42 +630,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 17.514650004159193,
-        "elapsed_ms_std": 0.039385849212386796,
+        "elapsed_ms": 27.398850004829,
+        "elapsed_ms_std": 0.7368759796936644,
         "elapsed_ms_samples": [
-          17.486800003098324,
-          17.542500005220063
+          26.87780000269413,
+          27.91990000696387
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14616.335464266076,
+        "tokens_per_second": 9343.457844211725,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.056223634630441666,
+        "output_mean_abs": 0.038788411766290665,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 9.286800006520934,
-        "elapsed_ms_std": 0.7942223338517796,
+        "elapsed_ms": 17.099799995776266,
+        "elapsed_ms_std": 0.06236681966351132,
         "elapsed_ms_samples": [
-          8.725200008484535,
-          9.848400004557334
+          17.143899996881373,
+          17.05569999467116
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 27566.007647439794,
+        "tokens_per_second": 14970.935336274883,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.033813513815402985,
+        "output_mean_abs": 0.03396215662360191,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -692,7 +692,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.885972562331577,
+      "speedup_ratio": 1.6022906707444913,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -713,42 +713,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 91.36135000153445,
-        "elapsed_ms_std": 0.40552573995615493,
+        "elapsed_ms": 193.67114999477053,
+        "elapsed_ms_std": 8.825329023311445,
         "elapsed_ms_samples": [
-          91.07460000086576,
-          91.64810000220314
+          199.9115999933565,
+          187.43069999618456
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2802.0601709114453,
+        "tokens_per_second": 1321.8282640801815,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.058270275592803955,
+        "output_mean_abs": 0.05748360976576805,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 58.308699997724034,
-        "elapsed_ms_std": 0.050345995168985254,
+        "elapsed_ms": 101.06169999926351,
+        "elapsed_ms_std": 3.5878598184576953,
         "elapsed_ms_samples": [
-          58.34429999231361,
-          58.27310000313446
+          103.59870000684168,
+          98.52469999168534
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4390.425442686811,
+        "tokens_per_second": 2533.1060134736067,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04377672076225281,
+        "output_mean_abs": 0.043930042535066605,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -775,7 +775,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.566856232519342,
+      "speedup_ratio": 1.9163654480003989,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -796,42 +796,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 46.61925000254996,
-        "elapsed_ms_std": 1.5322296827204005,
+        "elapsed_ms": 91.91699999792036,
+        "elapsed_ms_std": 2.2191839242545894,
         "elapsed_ms_samples": [
-          45.535800003563054,
-          47.70270000153687
+          93.48619999946095,
+          90.34779999637976
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5491.2938321830015,
+        "tokens_per_second": 2785.1213595503777,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.059460945427417755,
+        "output_mean_abs": 0.05939851701259613,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 28.968749997147825,
-        "elapsed_ms_std": 0.11603623172033693,
+        "elapsed_ms": 54.091399993922096,
+        "elapsed_ms_std": 2.377434422979825,
         "elapsed_ms_samples": [
-          29.05080000346061,
-          28.88669999083504
+          55.77249999623746,
+          52.410299991606735
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8837.108954483883,
+        "tokens_per_second": 4732.730157266498,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04050381854176521,
+        "output_mean_abs": 0.04147396236658096,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -858,7 +858,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6092944986283477,
+      "speedup_ratio": 1.6992904603735248,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -879,42 +879,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 25.031350000062957,
-        "elapsed_ms_std": 0.6786103797204686,
+        "elapsed_ms": 47.90550000325311,
+        "elapsed_ms_std": 2.7106231337679794,
         "elapsed_ms_samples": [
-          24.551499998779036,
-          25.51120000134688
+          49.82220000238158,
+          45.98880000412464
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 10227.175122370792,
+        "tokens_per_second": 5343.854045623485,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.05926967039704323,
+        "output_mean_abs": 0.053341083228588104,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 16.365850002330262,
-        "elapsed_ms_std": 0.7340475516113945,
+        "elapsed_ms": 27.128950001497287,
+        "elapsed_ms_std": 0.20428315084402937,
         "elapsed_ms_samples": [
-          15.846800000872463,
-          16.88490000378806
+          27.273400002741255,
+          26.98450000025332
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 15642.328382794005,
+        "tokens_per_second": 9436.413867321477,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.04029083624482155,
+        "output_mean_abs": 0.040911901742219925,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -941,7 +941,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5294867053345138,
+      "speedup_ratio": 1.765844236529948,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -962,42 +962,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 14.892649996909313,
-        "elapsed_ms_std": 0.2540634665704154,
+        "elapsed_ms": 26.032699992356356,
+        "elapsed_ms_std": 1.6902680477960021,
         "elapsed_ms_samples": [
-          14.71299999684561,
-          15.072299996973015
+          24.837499993736856,
+          27.227899990975857
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 17189.687533993478,
+        "tokens_per_second": 9833.785972072277,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.057654500007629395,
+        "output_mean_abs": 0.042168017476797104,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 9.149000004981644,
-        "elapsed_ms_std": 0.06561951504504909,
+        "elapsed_ms": 18.019600000116043,
+        "elapsed_ms_std": 2.0001222423400664,
         "elapsed_ms_samples": [
-          9.195400009048171,
-          9.102600000915118
+          16.60529999935534,
+          19.433900000876747
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 27981.20011592607,
+        "tokens_per_second": 14206.752647026095,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.037675000727176666,
+        "output_mean_abs": 0.03806628659367561,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1024,7 +1024,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6277899211717393,
+      "speedup_ratio": 1.4446880059595502,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -1045,42 +1045,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 96.6258500047843,
-        "elapsed_ms_std": 4.425427788489331,
+        "elapsed_ms": 192.5182000049972,
+        "elapsed_ms_std": 1.3374217731548057,
         "elapsed_ms_samples": [
-          93.4966000058921,
-          99.75510000367649
+          193.4639000101015,
+          191.5724999998929
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2649.394545945257,
+        "tokens_per_second": 1329.7444085460752,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.06039123982191086,
+        "output_mean_abs": 0.05675268918275833,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 59.53635000332724,
-        "elapsed_ms_std": 0.25335635440496895,
+        "elapsed_ms": 93.60760000708979,
+        "elapsed_ms_std": 2.032507732563323,
         "elapsed_ms_samples": [
-          59.35720000707079,
-          59.7154999995837
+          92.17040000658017,
+          95.0448000075994
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4299.894098071064,
+        "tokens_per_second": 2734.820676746447,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.040667228400707245,
+        "output_mean_abs": 0.040792398154735565,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1107,7 +1107,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6229723521744996,
+      "speedup_ratio": 2.0566513829049775,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -1128,42 +1128,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 50.6821500021033,
-        "elapsed_ms_std": 1.063559320298259,
+        "elapsed_ms": 100.47604999999749,
+        "elapsed_ms_std": 2.1495339007357694,
         "elapsed_ms_samples": [
-          49.930099994526245,
-          51.43420000968035
+          101.99599999759812,
+          98.95610000239685
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5051.088006120026,
+        "tokens_per_second": 2547.870860767381,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.056947920471429825,
+        "output_mean_abs": 0.054425954818725586,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 31.20110000600107,
-        "elapsed_ms_std": 0.41436458028568784,
+        "elapsed_ms": 52.282849996117875,
+        "elapsed_ms_std": 1.966534661435551,
         "elapsed_ms_samples": [
-          30.908100001397543,
-          31.494100010604598
+          50.892300001578405,
+          53.673399990657344
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8204.838930382653,
+        "tokens_per_second": 4896.443097861126,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.03853734955191612,
+        "output_mean_abs": 0.03889700770378113,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1190,7 +1190,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6243706148935562,
+      "speedup_ratio": 1.9217783653235825,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -1211,42 +1211,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 29.247799997392576,
-        "elapsed_ms_std": 1.0410025965668863,
+        "elapsed_ms": 50.983549997908995,
+        "elapsed_ms_std": 0.9596146139992348,
         "elapsed_ms_samples": [
-          28.511700002127327,
-          29.983899992657825
+          51.662099998793565,
+          50.304999997024424
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8752.79508280357,
+        "tokens_per_second": 5021.22743532962,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.051673129200935364,
+        "output_mean_abs": 0.04698578640818596,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 17.97660000011092,
-        "elapsed_ms_std": 0.49002499547225503,
+        "elapsed_ms": 31.54260000155773,
+        "elapsed_ms_std": 0.8647915928959221,
         "elapsed_ms_samples": [
-          18.32309999736026,
-          17.63010000286158
+          30.931100001907907,
+          32.15410000120755
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14240.735177865692,
+        "tokens_per_second": 8116.00819169496,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.03337116166949272,
+        "output_mean_abs": 0.03421267494559288,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1273,7 +1273,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6269928683517523,
+      "speedup_ratio": 1.6163394899403085,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -1294,42 +1294,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 16.379000000597443,
-        "elapsed_ms_std": 0.28595396798810163,
+        "elapsed_ms": 31.017749999591615,
+        "elapsed_ms_std": 4.708836183551099,
         "elapsed_ms_samples": [
-          16.176800010725856,
-          16.58119999046903
+          34.34739999647718,
+          27.68810000270605
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 15629.769826647664,
+        "tokens_per_second": 8253.338814174804,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.051712654531002045,
+        "output_mean_abs": 0.03896632790565491,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 11.675450004986487,
-        "elapsed_ms_std": 0.027506457440707958,
+        "elapsed_ms": 20.43075000256067,
+        "elapsed_ms_std": 1.2737114403769463,
         "elapsed_ms_samples": [
-          11.656000002403744,
-          11.694900007569231
+          19.530100005795248,
+          21.331399999326095
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 21926.349724478674,
+        "tokens_per_second": 12530.132274532969,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           256,
           64
         ],
-        "output_mean_abs": 0.033191271126270294,
+        "output_mean_abs": 0.03366594761610031,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1356,7 +1356,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.4028581333997499,
+      "speedup_ratio": 1.5181894935674918,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -1377,42 +1377,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 185.18475000018952,
-        "elapsed_ms_std": 0.1716148157545941,
+        "elapsed_ms": 413.0305500002578,
+        "elapsed_ms_std": 3.0751366768209785,
         "elapsed_ms_samples": [
-          185.06340000021737,
-          185.30610000016168
+          415.20499999751337,
+          410.8561000030022
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2764.806497292439,
+        "tokens_per_second": 1239.617747403141,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.06081090494990349,
+        "output_mean_abs": 0.05863427370786667,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 113.22184999880847,
-        "elapsed_ms_std": 3.089561662098507,
+        "elapsed_ms": 193.78794999647653,
+        "elapsed_ms_std": 4.2844306928341345,
         "elapsed_ms_samples": [
-          111.03719999664463,
-          115.4065000009723
+          190.75840000004973,
+          196.81749999290332
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4522.0953376524785,
+        "tokens_per_second": 2642.063141744929,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.04515780881047249,
+        "output_mean_abs": 0.04745437577366829,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1439,7 +1439,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6355919816019469,
+      "speedup_ratio": 2.1313531104889005,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -1460,42 +1460,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 91.16159999393858,
-        "elapsed_ms_std": 0.3750494320000878,
+        "elapsed_ms": 188.3000500019989,
+        "elapsed_ms_std": 7.7370916736547475,
         "elapsed_ms_samples": [
-          90.89639999729116,
-          91.426799990586
+          193.77099999110214,
+          182.82910001289565
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5616.399888045442,
+        "tokens_per_second": 2719.064599263595,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.06248880550265312,
+        "output_mean_abs": 0.058470968157052994,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 57.196549998479895,
-        "elapsed_ms_std": 2.430679567737383,
+        "elapsed_ms": 102.0455000034417,
+        "elapsed_ms_std": 6.346990466054257,
         "elapsed_ms_samples": [
-          55.477799993241206,
-          58.915300003718585
+          97.55750000476837,
+          106.53350000211503
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8951.588863552213,
+        "tokens_per_second": 5017.369702561423,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.040545474737882614,
+        "output_mean_abs": 0.042654167860746384,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1522,7 +1522,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5938303970494963,
+      "speedup_ratio": 1.8452557927164654,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -1543,42 +1543,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 55.918299993209075,
-        "elapsed_ms_std": 4.808891793519683,
+        "elapsed_ms": 103.72024999378482,
+        "elapsed_ms_std": 9.52578900430808,
         "elapsed_ms_samples": [
-          52.51789999601897,
-          59.31869999039918
+          110.45599999488331,
+          96.98449999268632
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9156.21540823271,
+        "tokens_per_second": 4936.35524432963,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.05934642255306244,
+        "output_mean_abs": 0.05673716217279434,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 35.28370000276482,
-        "elapsed_ms_std": 1.4368409821744885,
+        "elapsed_ms": 54.24275000405032,
+        "elapsed_ms_std": 0.8859340820066438,
         "elapsed_ms_samples": [
-          34.2677000007825,
-          36.29970000474714
+          53.616300006979145,
+          54.8692000011215
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14510.94981421676,
+        "tokens_per_second": 9439.04945751771,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.035516947507858276,
+        "output_mean_abs": 0.03776799887418747,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1605,7 +1605,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5848196189409653,
+      "speedup_ratio": 1.912149549682492,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -1626,42 +1626,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 36.46535000007134,
-        "elapsed_ms_std": 1.465054541490885,
+        "elapsed_ms": 58.41704999329522,
+        "elapsed_ms_std": 5.061965313348232,
         "elapsed_ms_samples": [
-          37.50130000116769,
-          35.429399998974986
+          54.8376999940956,
+          61.996399992494844
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14040.726333327346,
+        "tokens_per_second": 8764.564456075143,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0597844123840332,
+        "output_mean_abs": 0.049013372510671616,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 22.531599999638274,
-        "elapsed_ms_std": 1.3897476720972832,
+        "elapsed_ms": 33.29880000092089,
+        "elapsed_ms_std": 2.943119843928405,
         "elapsed_ms_samples": [
-          23.51430000271648,
-          21.548899996560067
+          31.217700001434423,
+          35.37990000040736
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 22723.641463909342,
+        "tokens_per_second": 15375.929462498361,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.03372545540332794,
+        "output_mean_abs": 0.03498219698667526,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1688,7 +1688,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.618409256362476,
+      "speedup_ratio": 1.7543289845784136,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -1709,42 +1709,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 207.49974999489496,
-        "elapsed_ms_std": 0.14686607517961142,
+        "elapsed_ms": 400.8668500027852,
+        "elapsed_ms_std": 3.3998401136520813,
         "elapsed_ms_samples": [
-          207.3958999972092,
-          207.6035999925807
+          398.4628000034718,
+          403.27090000209864
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2467.472852437637,
+        "tokens_per_second": 1277.2320784231538,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.06227649748325348,
+        "output_mean_abs": 0.06032322719693184,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 107.54770000494318,
-        "elapsed_ms_std": 1.9329470908207933,
+        "elapsed_ms": 194.58845000190195,
+        "elapsed_ms_std": 0.9345830285580735,
         "elapsed_ms_samples": [
-          108.91450000053737,
-          106.18090000934899
+          195.24929999897722,
+          193.92760000482667
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4760.678284858413,
+        "tokens_per_second": 2631.194194696528,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.04144364595413208,
+        "output_mean_abs": 0.04243416339159012,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1771,7 +1771,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.9293741287387616,
+      "speedup_ratio": 2.0600752511203364,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -1792,42 +1792,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 97.101350002049,
-        "elapsed_ms_std": 3.0317203294245787,
+        "elapsed_ms": 207.1049000005587,
+        "elapsed_ms_std": 13.996330209390884,
         "elapsed_ms_samples": [
-          99.24510000564624,
-          94.95759999845177
+          197.20799999777228,
+          217.00180000334512
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5272.841211674152,
+        "tokens_per_second": 2472.177143073963,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.056482452899217606,
+        "output_mean_abs": 0.052937835454940796,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 63.825650002399925,
-        "elapsed_ms_std": 3.3714144206860506,
+        "elapsed_ms": 97.88630000548437,
+        "elapsed_ms_std": 0.21439478278160798,
         "elapsed_ms_samples": [
-          66.20960000145715,
-          61.4417000033427
+          98.03790001024026,
+          97.73470000072848
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8021.853282822002,
+        "tokens_per_second": 5230.558310726973,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.03827422857284546,
+        "output_mean_abs": 0.03956444561481476,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1854,7 +1854,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.521353092344502,
+      "speedup_ratio": 2.1157700310355487,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -1875,42 +1875,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 55.7457999966573,
-        "elapsed_ms_std": 1.5272092275047624,
+        "elapsed_ms": 99.69020000426099,
+        "elapsed_ms_std": 1.230365804197091,
         "elapsed_ms_samples": [
-          56.82569999771658,
-          54.66589999559801
+          98.82020000077318,
+          100.56020000774879
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9184.548432899002,
+        "tokens_per_second": 5135.91105222094,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.05597055330872536,
+        "output_mean_abs": 0.05416988581418991,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 34.94574999785982,
-        "elapsed_ms_std": 1.0610137370821677,
+        "elapsed_ms": 55.35500000405591,
+        "elapsed_ms_std": 5.271763887633953,
         "elapsed_ms_samples": [
-          34.19549998943694,
-          35.6960000062827
+          59.082699997816235,
+          51.627300010295585
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14651.280914885398,
+        "tokens_per_second": 9249.390298301605,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.03296530991792679,
+        "output_mean_abs": 0.034860219806432724,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -1937,7 +1937,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.59520971792196,
+      "speedup_ratio": 1.8009249389749182,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -1958,42 +1958,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 35.68565000023227,
-        "elapsed_ms_std": 0.17472607841328466,
+        "elapsed_ms": 64.74509999679867,
+        "elapsed_ms_std": 1.2022229458074813,
         "elapsed_ms_samples": [
-          35.562100005336106,
-          35.80919999512844
+          65.59519999427721,
+          63.894999999320135
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14347.503828476361,
+        "tokens_per_second": 7907.934346001719,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.04994921386241913,
+        "output_mean_abs": 0.04379783198237419,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 21.493299995199777,
-        "elapsed_ms_std": 0.438830475994492,
+        "elapsed_ms": 30.65970000170637,
+        "elapsed_ms_std": 0.02248600222506995,
         "elapsed_ms_samples": [
-          21.803600000566803,
-          21.18299998983275
+          30.675600006361492,
+          30.643799997051246
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 23821.3768995151,
+        "tokens_per_second": 16699.445851443576,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0325503870844841,
+        "output_mean_abs": 0.03373541682958603,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2020,7 +2020,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6603150753119416,
+      "speedup_ratio": 2.1117329912946072,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -2041,42 +2041,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 216.11965000192868,
-        "elapsed_ms_std": 10.692798031810037,
+        "elapsed_ms": 410.1130999988527,
+        "elapsed_ms_std": 24.21784155347687,
         "elapsed_ms_samples": [
-          223.68060000007972,
-          208.55870000377763
+          427.23769998701755,
+          392.98850001068786
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2369.058065730862,
+        "tokens_per_second": 1248.4361021421464,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.06153668463230133,
+        "output_mean_abs": 0.05936959385871887,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 118.58394999580923,
-        "elapsed_ms_std": 3.2114668733432596,
+        "elapsed_ms": 223.64124999876367,
+        "elapsed_ms_std": 8.207176280987298,
         "elapsed_ms_samples": [
-          120.85479999950621,
-          116.31309999211226
+          217.83789999608416,
+          229.44460000144318
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4317.616338619974,
+        "tokens_per_second": 2289.3808722801828,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.04227263852953911,
+        "output_mean_abs": 0.04287152737379074,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2103,7 +2103,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.822503382705386,
+      "speedup_ratio": 1.8337989972830142,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -2124,42 +2124,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 110.92939999798546,
-        "elapsed_ms_std": 6.27458273595947,
+        "elapsed_ms": 219.7140499993111,
+        "elapsed_ms_std": 7.967042821178598,
         "elapsed_ms_samples": [
-          115.36619999969844,
-          106.49259999627247
+          225.3476000041701,
+          214.0804999944521
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4615.548267720715,
+        "tokens_per_second": 2330.301589732679,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.05656711012125015,
+        "output_mean_abs": 0.05402708053588867,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 88.19584998855134,
-        "elapsed_ms_std": 8.71502036926195,
+        "elapsed_ms": 115.63704998843605,
+        "elapsed_ms_std": 7.0693000483270625,
         "elapsed_ms_samples": [
-          82.03339998726733,
-          94.35829998983536
+          120.6357999908505,
+          110.6382999860216
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 5805.261812959027,
+        "tokens_per_second": 4427.646675967617,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.03742154687643051,
+        "output_mean_abs": 0.03859599307179451,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2186,7 +2186,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.2577621284038325,
+      "speedup_ratio": 1.9000316077008448,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -2207,42 +2207,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 64.73089999781223,
-        "elapsed_ms_std": 1.067589808192514,
+        "elapsed_ms": 117.8520999965258,
+        "elapsed_ms_std": 0.223021489461507,
         "elapsed_ms_samples": [
-          63.97600000491366,
-          65.4857999907108
+          118.00980000407435,
+          117.69439998897724
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 7909.6691072934955,
+        "tokens_per_second": 4344.42831324256,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.05416980758309364,
+        "output_mean_abs": 0.050589196383953094,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 37.7356500030146,
-        "elapsed_ms_std": 1.8881872405998033,
+        "elapsed_ms": 63.86135000502691,
+        "elapsed_ms_std": 2.4127190422121383,
         "elapsed_ms_samples": [
-          39.070800004992634,
-          36.40050000103656
+          65.56740000087302,
+          62.15530000918079
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 13568.071570493625,
+        "tokens_per_second": 8017.3688774148595,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0377558097243309,
+        "output_mean_abs": 0.039201702922582626,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2269,7 +2269,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.715377898423402,
+      "speedup_ratio": 1.8454370286135346,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -2290,42 +2290,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 36.794499996176455,
-        "elapsed_ms_std": 0.9954649229639052,
+        "elapsed_ms": 68.12694999825908,
+        "elapsed_ms_std": 1.0979246937154918,
         "elapsed_ms_samples": [
-          37.49839999363758,
-          36.090599998715334
+          67.35060000210069,
+          68.90329999441747
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 13915.123185617555,
+        "tokens_per_second": 7515.381211298666,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.051758699119091034,
+        "output_mean_abs": 0.04332033544778824,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 23.216350004076958,
-        "elapsed_ms_std": 0.2987526055748609,
+        "elapsed_ms": 36.165400000754744,
+        "elapsed_ms_std": 1.951473295788637,
         "elapsed_ms_samples": [
-          23.005100010777824,
-          23.427599997376092
+          34.78549999999814,
+          37.54530000151135
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 22053.42355323249,
+        "tokens_per_second": 14157.177854781503,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.03723769262433052,
+        "output_mean_abs": 0.03872103616595268,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2352,7 +2352,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5848529157130675,
+      "speedup_ratio": 1.8837604449788286,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -2373,42 +2373,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 235.6166499957908,
-        "elapsed_ms_std": 6.619580137592516,
+        "elapsed_ms": 437.49530000059167,
+        "elapsed_ms_std": 20.350957435383172,
         "elapsed_ms_samples": [
-          240.29739999969024,
-          230.93589999189135
+          451.8856000067899,
+          423.10499999439344
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2173.0213039237537,
+        "tokens_per_second": 1170.2982866314394,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.05924484506249428,
+        "output_mean_abs": 0.056855425238609314,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 117.78374999994412,
-        "elapsed_ms_std": 1.0834997187277218,
+        "elapsed_ms": 208.47644999594195,
+        "elapsed_ms_std": 0.8566598544420777,
         "elapsed_ms_samples": [
-          117.01760000141803,
-          118.54989999847021
+          207.87070000369567,
+          209.08219998818822
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4346.949388181672,
+        "tokens_per_second": 2455.9128861315808,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.038270898163318634,
+        "output_mean_abs": 0.03877628222107887,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2435,7 +2435,7 @@
           ]
         ]
       },
-      "speedup_ratio": 2.0004172901262067,
+      "speedup_ratio": 2.098535829870029,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -2456,42 +2456,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 103.7244000035571,
-        "elapsed_ms_std": 1.974383544733459,
+        "elapsed_ms": 229.58680000010645,
+        "elapsed_ms_std": 12.600642836262882,
         "elapsed_ms_samples": [
-          102.32830001041293,
-          105.12049999670126
+          220.67680000327528,
+          238.49679999693763
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4936.157740921534,
+        "tokens_per_second": 2230.0933677361354,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0555315725505352,
+        "output_mean_abs": 0.05453792214393616,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 64.42900000547525,
-        "elapsed_ms_std": 1.3427957741634091,
+        "elapsed_ms": 119.19065000256523,
+        "elapsed_ms_std": 4.5224428264362535,
         "elapsed_ms_samples": [
-          65.37850000313483,
-          63.47950000781566
+          115.9928000124637,
+          122.38849999266677
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 7946.732060973935,
+        "tokens_per_second": 4295.638961520729,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.032598163932561874,
+        "output_mean_abs": 0.03337564691901207,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2518,7 +2518,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.609902373073344,
+      "speedup_ratio": 1.9262148498658682,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -2539,42 +2539,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 56.33824999677017,
-        "elapsed_ms_std": 1.51822896474214,
+        "elapsed_ms": 121.38550000236137,
+        "elapsed_ms_std": 9.026218066630605,
         "elapsed_ms_samples": [
-          55.264700000407174,
-          57.41179999313317
+          127.7680000057444,
+          115.00299999897834
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9087.964216661905,
+        "tokens_per_second": 4217.966725762466,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0583367645740509,
+        "output_mean_abs": 0.05345943570137024,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 38.398299999244045,
-        "elapsed_ms_std": 1.6368107796785685,
+        "elapsed_ms": 70.45500000094762,
+        "elapsed_ms_std": 3.656024906429078,
         "elapsed_ms_samples": [
-          37.24089999741409,
-          39.555700001074
+          67.8697999974247,
+          73.04020000447053
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 13333.923637506865,
+        "tokens_per_second": 7267.049889902968,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.0327153205871582,
+        "output_mean_abs": 0.033860236406326294,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2601,7 +2601,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.4672068814994235,
+      "speedup_ratio": 1.7228798523983924,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -2622,42 +2622,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 35.86714999983087,
-        "elapsed_ms_std": 1.7522813216665483,
+        "elapsed_ms": 76.08365000487538,
+        "elapsed_ms_std": 7.279169333829329,
         "elapsed_ms_samples": [
-          34.62809999473393,
-          37.106200004927814
+          81.23080000223126,
+          70.9365000075195
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14274.900570645124,
+        "tokens_per_second": 6729.435298742785,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.058603424578905106,
+        "output_mean_abs": 0.04735672101378441,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 23.33070000167936,
-        "elapsed_ms_std": 1.5635545046954875,
+        "elapsed_ms": 41.09595000045374,
+        "elapsed_ms_std": 1.5610796326959406,
         "elapsed_ms_samples": [
-          24.436299994704314,
-          22.225100008654408
+          39.992100006202236,
+          42.199799994705245
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 21945.333828952662,
+        "tokens_per_second": 12458.648601488638,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           512,
           64
         ],
-        "output_mean_abs": 0.030285870656371117,
+        "output_mean_abs": 0.0315803661942482,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2684,7 +2684,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5373370707800935,
+      "speedup_ratio": 1.851366132283968,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -2705,42 +2705,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 452.15789999929257,
-        "elapsed_ms_std": 54.435908432120364,
+        "elapsed_ms": 1019.5366499974625,
+        "elapsed_ms_std": 10.994025519674201,
         "elapsed_ms_samples": [
-          413.6659000068903,
-          490.64989999169484
+          1027.310599994962,
+          1011.7626999999629
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2264.695585328935,
+        "tokens_per_second": 1004.377822025867,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.06397569179534912,
+        "output_mean_abs": 0.061223722994327545,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 262.11090000288095,
-        "elapsed_ms_std": 17.5464305160372,
+        "elapsed_ms": 457.88960000209045,
+        "elapsed_ms_std": 25.50449306416342,
         "elapsed_ms_samples": [
-          274.51810000638943,
-          249.70369999937247
+          439.8552000056952,
+          475.92399999848567
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 3906.743290678659,
+        "tokens_per_second": 2236.346927284055,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.042109087109565735,
+        "output_mean_abs": 0.04409897327423096,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2767,7 +2767,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.7250633224117071,
+      "speedup_ratio": 2.2265992719485395,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -2788,42 +2788,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 219.4682500048657,
-        "elapsed_ms_std": 0.2813577800717315,
+        "elapsed_ms": 489.9507499940228,
+        "elapsed_ms_std": 6.952203168938071,
         "elapsed_ms_samples": [
-          219.26930001063738,
-          219.667199999094
+          494.8666999989655,
+          485.03479998908006
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4665.822960620944,
+        "tokens_per_second": 2090.005985320958,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05876878648996353,
+        "output_mean_abs": 0.05583631619811058,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 139.91070000338368,
-        "elapsed_ms_std": 17.05400134949219,
+        "elapsed_ms": 214.92614999442594,
+        "elapsed_ms_std": 4.681541859760024,
         "elapsed_ms_samples": [
-          127.85170000279322,
-          151.96970000397414
+          211.61579999898095,
+          218.23649998987094
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 7318.95416129885,
+        "tokens_per_second": 4764.427223148776,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03927672654390335,
+        "output_mean_abs": 0.041027992963790894,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2850,7 +2850,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.568630919576258,
+      "speedup_ratio": 2.279623721946955,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -2871,42 +2871,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 133.48370001040166,
-        "elapsed_ms_std": 14.736246740526694,
+        "elapsed_ms": 250.81800000043586,
+        "elapsed_ms_std": 8.842935982464208,
         "elapsed_ms_samples": [
-          143.90380000986625,
-          123.06360001093708
+          257.0708999992348,
+          244.5651000016369
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 7671.348635977316,
+        "tokens_per_second": 4082.6415966885174,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.06268098950386047,
+        "output_mean_abs": 0.05952738970518112,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 78.2637500014971,
-        "elapsed_ms_std": 0.44342667420062004,
+        "elapsed_ms": 121.44959999568528,
+        "elapsed_ms_std": 14.665394636616373,
         "elapsed_ms_samples": [
-          77.95019999321084,
-          78.57730000978336
+          131.81959999201354,
+          111.07959999935701
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 13083.962881671425,
+        "tokens_per_second": 8431.481042641388,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03481040522456169,
+        "output_mean_abs": 0.03656291961669922,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -2933,7 +2933,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.705562281488534,
+      "speedup_ratio": 2.065202355621975,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -2954,42 +2954,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 82.32599999610102,
-        "elapsed_ms_std": 2.1143906936467873,
+        "elapsed_ms": 121.97040000319248,
+        "elapsed_ms_std": 33.02980627004871,
         "elapsed_ms_samples": [
-          83.82109999365639,
-          80.83089999854565
+          98.61480000836309,
+          145.32599999802187
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 12438.354833813095,
+        "tokens_per_second": 8395.47955875522,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05248401686549187,
+        "output_mean_abs": 0.04797001928091049,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 48.89594999986002,
-        "elapsed_ms_std": 4.56274792146372,
+        "elapsed_ms": 57.91909999970812,
+        "elapsed_ms_std": 3.925008326503076,
         "elapsed_ms_samples": [
-          45.6696000037482,
-          52.122299995971844
+          55.143699995824136,
+          60.69450000359211
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 20942.42979230246,
+        "tokens_per_second": 17679.832732296607,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03278269246220589,
+        "output_mean_abs": 0.03496097773313522,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3016,7 +3016,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6836977294916389,
+      "speedup_ratio": 2.105875264011477,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -3037,42 +3037,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 447.38759999745525,
-        "elapsed_ms_std": 10.87869641040907,
+        "elapsed_ms": 1027.2289499916951,
+        "elapsed_ms_std": 39.6069600069867,
         "elapsed_ms_samples": [
-          439.69519999518525,
-          455.07999999972526
+          1055.2352999948198,
+          999.2225999885704
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2288.8430524355717,
+        "tokens_per_second": 996.8566403899333,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.06311199069023132,
+        "output_mean_abs": 0.05991329997777939,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 242.57760000182316,
-        "elapsed_ms_std": 6.531262507252279,
+        "elapsed_ms": 407.32779999962077,
+        "elapsed_ms_std": 4.237973783705831,
         "elapsed_ms_samples": [
-          247.1959000104107,
-          237.95929999323562
+          404.33109999867156,
+          410.32450000056997
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4221.329586871599,
+        "tokens_per_second": 2513.9457704604333,
         "max_state_bytes": 26112,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.039724428206682205,
+        "output_mean_abs": 0.04111267253756523,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3099,7 +3099,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.8443071412780603,
+      "speedup_ratio": 2.5218729239513027,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -3120,42 +3120,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 217.2507499999483,
-        "elapsed_ms_std": 6.175658484876084,
+        "elapsed_ms": 474.59909999452066,
+        "elapsed_ms_std": 3.9070478009778316,
         "elapsed_ms_samples": [
-          221.61759999289643,
-          212.8839000070002
+          471.83640000002924,
+          477.36179998901207
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4713.447479468971,
+        "tokens_per_second": 2157.610496968541,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05490991473197937,
+        "output_mean_abs": 0.052932992577552795,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 120.39489999733632,
-        "elapsed_ms_std": 2.4747323160826844,
+        "elapsed_ms": 216.1134499910986,
+        "elapsed_ms_std": 29.8050458011824,
         "elapsed_ms_samples": [
-          122.14479999965988,
-          118.64499999501277
+          237.1887999906903,
+          195.0380999915069
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8505.343665077637,
+        "tokens_per_second": 4738.25206178596,
         "max_state_bytes": 34304,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03685714304447174,
+        "output_mean_abs": 0.03819793462753296,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3182,7 +3182,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.8044846584427985,
+      "speedup_ratio": 2.1960646133503894,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -3203,42 +3203,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 111.91150000377093,
-        "elapsed_ms_std": 3.8113055546389543,
+        "elapsed_ms": 221.5387499963981,
+        "elapsed_ms_std": 12.076040313144244,
         "elapsed_ms_samples": [
-          114.60650000663009,
-          109.21650000091176
+          212.9997000010917,
+          230.07779999170452
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9150.08734549618,
+        "tokens_per_second": 4622.216203786691,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05830717831850052,
+        "output_mean_abs": 0.05467400699853897,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 71.75760000245646,
-        "elapsed_ms_std": 0.6834894125030173,
+        "elapsed_ms": 112.59460001019761,
+        "elapsed_ms_std": 0.6679330683402908,
         "elapsed_ms_samples": [
-          71.27430000400636,
-          72.24090000090655
+          112.12230000819545,
+          113.06690001219977
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14270.265448746135,
+        "tokens_per_second": 9094.574694587991,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03372783958911896,
+        "output_mean_abs": 0.0357942134141922,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3265,7 +3265,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5595769646691067,
+      "speedup_ratio": 1.9675788179569313,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -3286,42 +3286,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 68.6770499960403,
-        "elapsed_ms_std": 2.4472258586419766,
+        "elapsed_ms": 139.2173000058392,
+        "elapsed_ms_std": 0.502470076976291,
         "elapsed_ms_samples": [
-          70.40749999578111,
-          66.94659999629948
+          139.57260000461247,
+          138.86200000706594
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14910.36670997139,
+        "tokens_per_second": 7355.407696867058,
         "max_state_bytes": 50688,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05531802773475647,
+        "output_mean_abs": 0.05119231715798378,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 44.79810000339057,
-        "elapsed_ms_std": 0.04666905306769549,
+        "elapsed_ms": 66.60664999071741,
+        "elapsed_ms_std": 2.7601913158447315,
         "elapsed_ms_samples": [
-          44.76509999949485,
-          44.831100007286295
+          68.55839998752344,
+          64.65489999391139
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 22858.1122842821,
+        "tokens_per_second": 15373.840301872395,
         "max_state_bytes": 83456,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.029729874804615974,
+        "output_mean_abs": 0.03163959085941315,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3348,7 +3348,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5330348829714302,
+      "speedup_ratio": 2.0901411499488582,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "state_bytes_ratio": 0.6073619631901841
@@ -3369,42 +3369,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 539.4252500045695,
-        "elapsed_ms_std": 158.07294311773603,
+        "elapsed_ms": 893.1108500037226,
+        "elapsed_ms_std": 12.13374023367484,
         "elapsed_ms_samples": [
-          651.1997000052361,
-          427.650800003903
+          901.6907000041101,
+          884.5310000033351
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 1898.316773253246,
+        "tokens_per_second": 1146.5542043249523,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.056627869606018066,
+        "output_mean_abs": 0.05360995605587959,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 231.8595499964431,
-        "elapsed_ms_std": 1.2516497157409021,
+        "elapsed_ms": 359.2276000053971,
+        "elapsed_ms_std": 4.199931447607793,
         "elapsed_ms_samples": [
-          230.9744999947725,
-          232.7445999981137
+          356.257799998275,
+          362.1974000125192
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4416.466779201931,
+        "tokens_per_second": 2850.5604802766134,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.04086574539542198,
+        "output_mean_abs": 0.041480422019958496,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3431,7 +3431,7 @@
           ]
         ]
       },
-      "speedup_ratio": 2.326517281745974,
+      "speedup_ratio": 2.4861977475848303,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -3452,42 +3452,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 210.79404999909457,
-        "elapsed_ms_std": 1.4667516106879566,
+        "elapsed_ms": 418.49419999925885,
+        "elapsed_ms_std": 3.306289894446572,
         "elapsed_ms_samples": [
-          209.75689998886082,
-          211.8312000093283
+          420.8321000041906,
+          416.1562999943271
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4857.822125455621,
+        "tokens_per_second": 2446.86784190035,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05939868837594986,
+        "output_mean_abs": 0.05762244015932083,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 127.0188499984215,
-        "elapsed_ms_std": 2.628386616601792,
+        "elapsed_ms": 207.06480000080774,
+        "elapsed_ms_std": 11.125476673124176,
         "elapsed_ms_samples": [
-          128.8773999986006,
-          125.16029999824241
+          199.19790000130888,
+          214.9317000003066
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 8061.7955524926065,
+        "tokens_per_second": 4945.311805753588,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03802453354001045,
+        "output_mean_abs": 0.040023431181907654,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3514,7 +3514,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.659549350365825,
+      "speedup_ratio": 2.0210784256794314,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -3535,42 +3535,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 108.74784999759868,
-        "elapsed_ms_std": 0.513713078088826,
+        "elapsed_ms": 226.57624999555992,
+        "elapsed_ms_std": 10.174347343371752,
         "elapsed_ms_samples": [
-          108.38459999649785,
-          109.1110999986995
+          233.77059999620542,
+          219.38189999491442
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9416.278115131578,
+        "tokens_per_second": 4519.449854166386,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05506923794746399,
+        "output_mean_abs": 0.0535179004073143,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 71.92940000823,
-        "elapsed_ms_std": 3.285218106262637,
+        "elapsed_ms": 109.44190000009257,
+        "elapsed_ms_std": 0.542633739280911,
         "elapsed_ms_samples": [
-          69.60640000761487,
-          74.25240000884514
+          109.82559999683872,
+          109.05820000334643
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14236.181587540506,
+        "tokens_per_second": 9356.562705866161,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.034460537135601044,
+        "output_mean_abs": 0.03668184578418732,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3597,7 +3597,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.51186927716839,
+      "speedup_ratio": 2.070287979241664,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -3618,42 +3618,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 63.53629999648547,
-        "elapsed_ms_std": 0.2827012931860797,
+        "elapsed_ms": 130.0104999972973,
+        "elapsed_ms_std": 1.8224970246279675,
         "elapsed_ms_samples": [
-          63.336399995023385,
-          63.73619999794755
+          128.72179999249056,
+          131.29920000210404
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 16116.771043586783,
+        "tokens_per_second": 7876.286915451346,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.0540296733379364,
+        "output_mean_abs": 0.05027133226394653,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 40.66379999858327,
-        "elapsed_ms_std": 0.651811034445207,
+        "elapsed_ms": 63.84490000345977,
+        "elapsed_ms_std": 0.7557557304544733,
         "elapsed_ms_samples": [
-          41.124700001091696,
-          40.20289999607485
+          63.31050000153482,
+          64.37930000538472
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 25182.103001580672,
+        "tokens_per_second": 16038.869196200623,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.033662065863609314,
+        "output_mean_abs": 0.035751327872276306,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3680,7 +3680,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5624781746590106,
+      "speedup_ratio": 2.036349026942669,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -3701,42 +3701,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 403.0509500007611,
-        "elapsed_ms_std": 4.148807618767059,
+        "elapsed_ms": 869.5501500042155,
+        "elapsed_ms_std": 8.39795369236888,
         "elapsed_ms_samples": [
-          405.9846000018297,
-          400.1172999996925
+          863.6119000002509,
+          875.4884000081802
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 2540.621725362678,
+        "tokens_per_second": 1177.6204052118624,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.06181655079126358,
+        "output_mean_abs": 0.058068521320819855,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 239.15774999477435,
-        "elapsed_ms_std": 5.284845380376649,
+        "elapsed_ms": 385.3933999998844,
+        "elapsed_ms_std": 1.7376441924496282,
         "elapsed_ms_samples": [
-          235.42079998878762,
-          242.89470000076108
+          386.622099991655,
+          384.16470000811387
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4281.69273219193,
+        "tokens_per_second": 2657.0252630177556,
         "max_state_bytes": 44032,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03783963620662689,
+        "output_mean_abs": 0.03827150538563728,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3763,7 +3763,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6852932844934685,
+      "speedup_ratio": 2.256266324240312,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "state_bytes_ratio": 2.302325581395349
@@ -3784,42 +3784,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 224.8537999985274,
-        "elapsed_ms_std": 0.5235418548704681,
+        "elapsed_ms": 487.9025499976706,
+        "elapsed_ms_std": 12.976894369233985,
         "elapsed_ms_samples": [
-          225.22399999434128,
-          224.4836000027135
+          497.07860000489745,
+          478.7264999904437
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 4554.070244784417,
+        "tokens_per_second": 2098.7797665843086,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05441548675298691,
+        "output_mean_abs": 0.05214934051036835,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 134.7620000015013,
-        "elapsed_ms_std": 1.7976068616198955,
+        "elapsed_ms": 197.11149999784539,
+        "elapsed_ms_std": 14.233352396251135,
         "elapsed_ms_samples": [
-          133.4908999997424,
-          136.0331000032602
+          187.0469999994384,
+          207.17599999625236
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 7598.581202331461,
+        "tokens_per_second": 5195.029209412913,
         "max_state_bytes": 52224,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.03407614305615425,
+        "output_mean_abs": 0.035721227526664734,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3846,7 +3846,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6685252518961016,
+      "speedup_ratio": 2.4752617173681077,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
@@ -3867,42 +3867,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 110.47590000089258,
-        "elapsed_ms_std": 2.6140323528305665,
+        "elapsed_ms": 215.4448000001139,
+        "elapsed_ms_std": 11.059574333792463,
         "elapsed_ms_samples": [
-          108.62749999796506,
-          112.3243000038201
+          207.62449999165256,
+          223.26510000857525
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 9268.989888217491,
+        "tokens_per_second": 4752.957602130377,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.05141514912247658,
+        "output_mean_abs": 0.050022292882204056,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 67.44759999855887,
-        "elapsed_ms_std": 1.4190218893720914,
+        "elapsed_ms": 127.48849999479717,
+        "elapsed_ms_std": 7.218428872146344,
         "elapsed_ms_samples": [
-          68.45099999918602,
-          66.44419999793172
+          122.38429998978972,
+          132.5926999998046
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 15182.156222339705,
+        "tokens_per_second": 8032.097012999523,
         "max_state_bytes": 68608,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.035020239651203156,
+        "output_mean_abs": 0.03673623874783516,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -3929,7 +3929,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.6379515357589163,
+      "speedup_ratio": 1.6899155610812446,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
       "state_bytes_ratio": 1.4776119402985075
@@ -3950,42 +3950,42 @@
       ],
       "dsra": {
         "model": "dsra",
-        "elapsed_ms": 68.83455000206595,
-        "elapsed_ms_std": 0.7341889740444837,
+        "elapsed_ms": 145.1956499950029,
+        "elapsed_ms_std": 1.7439374598528277,
         "elapsed_ms_samples": [
-          68.3153999998467,
-          69.3537000042852
+          146.42879999883007,
+          143.96249999117572
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 14876.25037091499,
+        "tokens_per_second": 7052.55288319755,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.060565389692783356,
+        "output_mean_abs": 0.05463229492306709,
         "is_finite": true
       },
       "mhdsra2": {
         "model": "mhdsra2",
-        "elapsed_ms": 43.106999997689854,
-        "elapsed_ms_std": 1.7230778053185267,
+        "elapsed_ms": 66.40860000334214,
+        "elapsed_ms_std": 0.5696452182058064,
         "elapsed_ms_samples": [
-          44.32539999834262,
-          41.88859999703709
+          66.00580000667833,
+          66.81140000000596
         ],
         "warmup_runs": 1,
         "repeat_runs": 2,
-        "tokens_per_second": 23754.842602242727,
+        "tokens_per_second": 15419.689617737238,
         "max_state_bytes": 101376,
         "output_shape": [
           1,
           1024,
           64
         ],
-        "output_mean_abs": 0.031261928379535675,
+        "output_mean_abs": 0.03350158408284187,
         "is_finite": true,
         "use_retrieval": false,
         "retrieval_tokens": 0,
@@ -4012,7 +4012,7 @@
           ]
         ]
       },
-      "speedup_ratio": 1.5968299813430502,
+      "speedup_ratio": 2.186398297625543,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
       "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
       "state_bytes_ratio": 1.0
@@ -4023,242 +4023,242 @@
       "total_cases": 48,
       "mhdsra2_faster_cases": 48,
       "mhdsra2_faster_ratio": 1.0,
-      "avg_speedup_ratio": 1.6492127131492866,
-      "median_speedup_ratio": 1.6236714835340278,
+      "avg_speedup_ratio": 1.9518792611651208,
+      "median_speedup_ratio": 1.9190719066619906,
       "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
       "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
       "avg_state_bytes_ratio": 1.4684080457948774
     },
     "best_speedup_case": {
-      "label": "batch=1, dim=64, seq=1024, slots=64, topk=4, chunk=16",
-      "speedup_ratio": 2.326517281745974,
-      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
-      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
-      "state_bytes_ratio": 2.302325581395349
-    },
-    "worst_speedup_case": {
-      "label": "batch=1, dim=64, seq=512, slots=64, topk=4, chunk=32",
-      "speedup_ratio": 1.2577621284038325,
+      "label": "batch=1, dim=64, seq=1024, slots=32, topk=8, chunk=16",
+      "speedup_ratio": 2.5218729239513027,
       "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
       "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
       "state_bytes_ratio": 1.9411764705882353
+    },
+    "worst_speedup_case": {
+      "label": "batch=1, dim=64, seq=256, slots=64, topk=4, chunk=128",
+      "speedup_ratio": 1.4446880059595502,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
     },
     "mhdsra2_min_state_overhead_case": {
       "label": "batch=1, dim=64, seq=256, slots=64, topk=4, chunk=16",
       "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
       "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
       "state_bytes_ratio": 2.302325581395349,
-      "speedup_ratio": 1.566856232519342
+      "speedup_ratio": 1.9163654480003989
     },
     "mhdsra2_max_state_overhead_case": {
       "label": "batch=1, dim=64, seq=256, slots=32, topk=4, chunk=128",
       "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
       "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
       "state_bytes_ratio": 0.6073619631901841,
-      "speedup_ratio": 1.6922317515442882
+      "speedup_ratio": 1.7192278059694919
     },
     "best_memory_case": {
       "label": "batch=1, dim=64, seq=256, slots=32, topk=4, chunk=128",
       "state_bytes_ratio": 0.6073619631901841,
-      "speedup_ratio": 1.6922317515442882
+      "speedup_ratio": 1.7192278059694919
     },
     "worst_memory_case": {
       "label": "batch=1, dim=64, seq=256, slots=64, topk=4, chunk=16",
       "state_bytes_ratio": 2.302325581395349,
-      "speedup_ratio": 1.566856232519342
+      "speedup_ratio": 1.9163654480003989
     },
     "grouped": {
       "batch_size": [
         {
           "value": 1,
-          "avg_speedup_ratio": 1.6492127131492866,
+          "avg_speedup_ratio": 1.9518792611651208,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 121.89819166678717,
-          "avg_dsra_std_ms": 6.876878611236205,
-          "avg_mhdsra2_ms": 70.8574177090971,
-          "avg_mhdsra2_std_ms": 2.36194730959472,
+          "avg_dsra_ms": 245.7425166659656,
+          "avg_dsra_std_ms": 7.38600727975158,
+          "avg_mhdsra2_ms": 116.58497083362818,
+          "avg_mhdsra2_std_ms": 4.400720299339548,
           "cases": 48
         }
       ],
       "dim": [
         {
           "value": 64,
-          "avg_speedup_ratio": 1.6492127131492866,
+          "avg_speedup_ratio": 1.9518792611651208,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 121.89819166678717,
-          "avg_dsra_std_ms": 6.876878611236205,
-          "avg_mhdsra2_ms": 70.8574177090971,
-          "avg_mhdsra2_std_ms": 2.36194730959472,
+          "avg_dsra_ms": 245.7425166659656,
+          "avg_dsra_std_ms": 7.38600727975158,
+          "avg_mhdsra2_ms": 116.58497083362818,
+          "avg_mhdsra2_std_ms": 4.400720299339548,
           "cases": 48
         }
       ],
       "seq_len": [
         {
           "value": 256,
-          "avg_speedup_ratio": 1.6221609365255427,
+          "avg_speedup_ratio": 1.7638672465337133,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 47.74052187667621,
-          "avg_dsra_std_ms": 1.516041357702916,
-          "avg_mhdsra2_ms": 29.29880937699636,
-          "avg_mhdsra2_std_ms": 0.6936231391233266,
+          "avg_dsra_ms": 90.51647187470735,
+          "avg_dsra_std_ms": 3.0631291228986424,
+          "avg_mhdsra2_ms": 49.05518125087838,
+          "avg_mhdsra2_std_ms": 2.091471598082579,
           "cases": 16
         },
         {
           "value": 512,
-          "avg_speedup_ratio": 1.6333914505623004,
+          "avg_speedup_ratio": 1.9246009620553852,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 101.55521562319336,
-          "avg_dsra_std_ms": 2.6622526100592547,
-          "avg_mhdsra2_ms": 60.48247812486807,
-          "avg_mhdsra2_std_ms": 2.180695217171014,
+          "avg_dsra_ms": 201.014524999664,
+          "avg_dsra_std_ms": 7.999472498194877,
+          "avg_mhdsra2_ms": 102.524221875683,
+          "avg_mhdsra2_std_ms": 3.196286167083789,
           "cases": 16
         },
         {
           "value": 1024,
-          "avg_speedup_ratio": 1.6920857523600168,
+          "avg_speedup_ratio": 2.1671695749062643,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 216.39883750049194,
-          "avg_dsra_std_ms": 16.452341865946444,
-          "avg_mhdsra2_ms": 122.7909656254269,
-          "avg_mhdsra2_std_ms": 4.21152357248982,
+          "avg_dsra_ms": 445.6965531235255,
+          "avg_dsra_std_ms": 11.095420218161221,
+          "avg_mhdsra2_ms": 198.17550937432316,
+          "avg_mhdsra2_std_ms": 7.914403132852276,
           "cases": 16
         }
       ],
       "slots": [
         {
           "value": 32,
-          "avg_speedup_ratio": 1.6628006177723653,
+          "avg_speedup_ratio": 1.9778032429403225,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.2565375935192318,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.9595959595959597,
-          "avg_dsra_ms": 120.43476041708345,
-          "avg_dsra_std_ms": 5.048008792881491,
-          "avg_mhdsra2_ms": 70.84811458450228,
-          "avg_mhdsra2_std_ms": 3.0600193293172673,
+          "avg_dsra_ms": 249.76985416590955,
+          "avg_dsra_std_ms": 7.731228593591549,
+          "avg_mhdsra2_ms": 116.8087020838963,
+          "avg_mhdsra2_std_ms": 5.262816047898592,
           "cases": 24
         },
         {
           "value": 64,
-          "avg_speedup_ratio": 1.635624808526208,
+          "avg_speedup_ratio": 1.9259552793899193,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.680278498070523,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.6565656565656566,
-          "avg_dsra_ms": 123.36162291649089,
-          "avg_dsra_std_ms": 8.70574842959092,
-          "avg_mhdsra2_ms": 70.86672083369194,
-          "avg_mhdsra2_std_ms": 1.6638752898721727,
+          "avg_dsra_ms": 241.7151791660217,
+          "avg_dsra_std_ms": 7.040785965911611,
+          "avg_mhdsra2_ms": 116.36123958336005,
+          "avg_mhdsra2_std_ms": 3.5386245507805048,
           "cases": 24
         }
       ],
       "read_topk": [
         {
           "value": 4,
-          "avg_speedup_ratio": 1.640314262059612,
+          "avg_speedup_ratio": 1.9344625588161402,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 124.01725208322507,
-          "avg_dsra_std_ms": 11.150246033945324,
-          "avg_mhdsra2_ms": 71.86862291685732,
-          "avg_mhdsra2_std_ms": 3.209106901068239,
+          "avg_dsra_ms": 243.29886666509992,
+          "avg_dsra_std_ms": 6.973363331136791,
+          "avg_mhdsra2_ms": 116.8642583337108,
+          "avg_mhdsra2_std_ms": 4.797283460553945,
           "cases": 24
         },
         {
           "value": 8,
-          "avg_speedup_ratio": 1.6581111642389612,
+          "avg_speedup_ratio": 1.9692959635141019,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
-          "avg_dsra_ms": 119.77913125034927,
-          "avg_dsra_std_ms": 2.603511188527086,
-          "avg_mhdsra2_ms": 69.8462125013369,
-          "avg_mhdsra2_std_ms": 1.5147877181212008,
+          "avg_dsra_ms": 248.18616666683133,
+          "avg_dsra_std_ms": 7.798651228366371,
+          "avg_mhdsra2_ms": 116.30568333354556,
+          "avg_mhdsra2_std_ms": 4.004157138125151,
           "cases": 24
         }
       ],
       "chunk_size": [
         {
           "value": 16,
-          "avg_speedup_ratio": 1.792376158683239,
+          "avg_speedup_ratio": 2.1194993737979413,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 2.121751025991792,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.47474747474747475,
-          "avg_dsra_ms": 256.40449166773277,
-          "avg_dsra_std_ms": 21.43746235165973,
-          "avg_mhdsra2_ms": 139.30723750005805,
-          "avg_mhdsra2_std_ms": 3.591460161028461,
+          "avg_dsra_ms": 519.668549999551,
+          "avg_dsra_std_ms": 11.70380752488115,
+          "avg_mhdsra2_ms": 235.1709333343024,
+          "avg_mhdsra2_std_ms": 5.497260247380048,
           "cases": 12
         },
         {
           "value": 32,
-          "avg_speedup_ratio": 1.6196300577746037,
+          "avg_speedup_ratio": 2.000634234257824,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.7093942054433713,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.5959595959595959,
-          "avg_dsra_ms": 123.00036250053381,
-          "avg_dsra_std_ms": 2.1995793860966373,
-          "avg_mhdsra2_ms": 76.21891250043215,
-          "avg_mhdsra2_std_ms": 3.5180742633922057,
+          "avg_dsra_ms": 257.4477458322993,
+          "avg_dsra_std_ms": 6.752969933744134,
+          "avg_mhdsra2_ms": 123.02812083119836,
+          "avg_mhdsra2_std_ms": 7.127206196186236,
           "cases": 12
         },
         {
           "value": 64,
-          "avg_speedup_ratio": 1.5693606815492984,
+          "avg_speedup_ratio": 1.8286877476126027,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.2388059701492538,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8383838383838383,
-          "avg_dsra_ms": 67.00461249965883,
-          "avg_dsra_std_ms": 2.9097620804800184,
-          "avg_mhdsra2_ms": 42.209525001453585,
-          "avg_mhdsra2_std_ms": 1.260971739951212,
+          "avg_dsra_ms": 129.67874999897808,
+          "avg_dsra_std_ms": 6.170201990020618,
+          "avg_mhdsra2_ms": 69.25707500219384,
+          "avg_mhdsra2_std_ms": 3.293927302502,
           "cases": 12
         },
         {
           "value": 128,
-          "avg_speedup_ratio": 1.6154839545900053,
+          "avg_speedup_ratio": 1.8586956889921158,
           "avg_dsra_to_mhdsra2_state_bytes_ratio": 0.8036809815950919,
           "avg_mhdsra2_to_dsra_state_bytes_ratio": 1.3232323232323233,
-          "avg_dsra_ms": 41.18329999922329,
-          "avg_dsra_std_ms": 0.9607106267084391,
-          "avg_mhdsra2_ms": 25.69399583444465,
-          "avg_mhdsra2_std_ms": 1.0772830740070016,
+          "avg_dsra_ms": 76.17502083303407,
+          "avg_dsra_std_ms": 4.91704967036042,
+          "avg_mhdsra2_ms": 38.88375416681811,
+          "avg_mhdsra2_std_ms": 1.6844874512899084,
           "cases": 12
         }
       ]
     },
     "top_speedup_cases": [
       {
-        "label": "batch=1, dim=64, seq=1024, slots=64, topk=4, chunk=16",
-        "speedup_ratio": 2.326517281745974,
-        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
-        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
-        "state_bytes_ratio": 2.302325581395349
-      },
-      {
-        "label": "batch=1, dim=64, seq=512, slots=64, topk=8, chunk=16",
-        "speedup_ratio": 2.0004172901262067,
-        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
-        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
-        "state_bytes_ratio": 2.302325581395349
-      },
-      {
-        "label": "batch=1, dim=64, seq=512, slots=32, topk=8, chunk=16",
-        "speedup_ratio": 1.9293741287387616,
-        "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
-        "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
-        "state_bytes_ratio": 1.9411764705882353
-      },
-      {
-        "label": "batch=1, dim=64, seq=256, slots=32, topk=8, chunk=128",
-        "speedup_ratio": 1.885972562331577,
-        "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
-        "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
-        "state_bytes_ratio": 0.6073619631901841
-      },
-      {
         "label": "batch=1, dim=64, seq=1024, slots=32, topk=8, chunk=16",
-        "speedup_ratio": 1.8443071412780603,
+        "speedup_ratio": 2.5218729239513027,
         "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
         "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
         "state_bytes_ratio": 1.9411764705882353
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=64, topk=4, chunk=16",
+        "speedup_ratio": 2.4861977475848303,
+        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+        "state_bytes_ratio": 2.302325581395349
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=64, topk=8, chunk=32",
+        "speedup_ratio": 2.4752617173681077,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+        "state_bytes_ratio": 1.9411764705882353
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=32, topk=4, chunk=32",
+        "speedup_ratio": 2.279623721946955,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+        "state_bytes_ratio": 1.4776119402985075
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=64, topk=8, chunk=16",
+        "speedup_ratio": 2.256266324240312,
+        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+        "state_bytes_ratio": 2.302325581395349
       }
     ]
   }

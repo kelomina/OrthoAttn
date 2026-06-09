@@ -5,28 +5,25 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from .domain import normalize_model_type
+from .domain import normalize_model_type, select_mhdsra2_heads as _domain_select_mhdsra2_heads
 from .infrastructure import PagedMemoryRepository
 from .mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
 
 
 def select_mhdsra2_heads(dim: int) -> int:
-    """Select a valid MHDSRA2 head count for a hidden dimension.
+    """Compatibility wrapper for the shared MHDSRA2 head-count policy.
 
     中文说明:
     - 调用方 / Called by: `MultiLayerMHDSRA2Model.__init__`
-    - 调用对象 / Calls: 内置 `range`, `min`, `max`
-    - 作用 / Purpose: 为多层 MHDSRA2 模型选择能整除隐藏维度的保守 head 数
+    - 调用对象 / Calls: `domain.select_mhdsra2_heads`
+    - 作用 / Purpose: 保留旧导入位置，同时复用领域层统一 head 选择规则
     - 变量 / Variables: `dim` 是隐藏维度, `heads` 是候选头数
-    - 接入 / Integration: 新模型构建时复用本函数避免重复 head 选择逻辑
-    - 错误处理 / Error handling: 找不到更大可整除值时返回 `1`
+    - 接入 / Integration: 新模型构建时复用本函数，外部旧导入无需迁移
+    - 错误处理 / Error handling: 非法维度由领域层 helper 抛出 `ValueError`
     - 关键词 / Keywords:
       mhdsra2|heads|select|dim|divisible|model|multi_layer|attention|config|头数
     """
-    for heads in range(min(8, max(1, dim // 16)), 0, -1):
-        if dim % heads == 0:
-            return heads
-    return 1
+    return _domain_select_mhdsra2_heads(dim)
 
 
 class MultiLayerMHDSRA2Model(nn.Module):
@@ -91,12 +88,37 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for key, value in mhdsra2_config_override.items():
                 if hasattr(base_cfg, key):
                     setattr(base_cfg, key, value)
+            base_cfg.__post_init__()
         self.layers = nn.ModuleList(
             [MultiHeadDSRA2(base_cfg) for _ in range(num_layers)]
         )
         self.norms = nn.ModuleList([nn.LayerNorm(dim) for _ in range(num_layers)])
         self.final_norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
+
+    def update_momentum(self) -> None:
+        """Update slow Momentum-QKV projections for every MHDSRA2 layer.
+
+        中文说明:
+        - 调用方 / Called by: training loops after `optimizer.step()` when `momentum_qkv=True`
+        - 调用对象 / Calls: `MultiHeadDSRA2.update_momentum`
+        - 作用 / Purpose: 提供模型级便利入口，避免训练脚本手动逐层遍历更新 slow QKV
+        - 参数 / Parameters: 无
+        - 返回 / Returns: None
+        - 错误处理 / Error handling: 单层更新异常直接向上抛出，不吞掉训练错误
+        - 副作用 / Side effects: 原地更新启用 Momentum-QKV 层的 slow projection 权重
+        - 关键词 / Keywords:
+          momentum|qkv|ema|update|multilayer|mhdsra2|training|optimizer|动量
+
+        English documentation:
+        Function name:
+            update_momentum
+        Purpose:
+            Provide one model-level call that forwards EMA QKV updates to each
+            MHDSRA2 layer after an optimizer step.
+        """
+        for layer in self.layers:
+            layer.update_momentum()
 
     def _new_retrieval_repositories(self) -> list[PagedMemoryRepository]:
         """Create per-layer paged retrieval memories for one independent forward pass.
@@ -128,7 +150,11 @@ class MultiLayerMHDSRA2Model(nn.Module):
             retrieval, paged memory, multilayer, mhdsra2, forward, chunk
         """
         return [
-            PagedMemoryRepository(enabled=bool(layer.cfg.use_retrieval), dtype=torch.float32)
+            PagedMemoryRepository(
+                enabled=bool(layer.cfg.use_retrieval),
+                dtype=torch.float32,
+                query_pooling=layer.cfg.retrieval_query_pooling,
+            )
             for layer in self.layers
         ]
 
@@ -138,9 +164,13 @@ class MultiLayerMHDSRA2Model(nn.Module):
         repository: PagedMemoryRepository,
         chunk_normed: torch.Tensor,
         state,
+        sequence_lengths: torch.Tensor | None = None,
+        return_metadata: bool = False,
     ) -> tuple[
         torch.Tensor | None,
         torch.Tensor | None,
+        torch.Tensor | None,
+        dict[str, object] | None,
         torch.Tensor | None,
         torch.Tensor | None,
     ]:
@@ -154,7 +184,8 @@ class MultiLayerMHDSRA2Model(nn.Module):
           同时计算当前 chunk 的 key/value heads，等待前向成功后写入仓储。
         - 参数 / Parameters: `layer` 是当前 MHDSRA2 层，`repository` 是对应层的分页记忆，
           `chunk_normed` 是 LayerNorm 后输入，`state` 提供当前流式位置。
-        - 返回 / Returns: `(retrieved_k, retrieved_v, key_heads, value_heads)`。
+        - 返回 / Returns:
+          `(retrieved_k, retrieved_v, retrieved_mask, retrieval_metadata, key_heads, value_heads)`。
         - 错误处理 / Error handling: 禁用 retrieval 时返回四个 `None`；仓储错误直接抛出。
         - 副作用 / Side effects: 本函数只读取仓储，不写入；写入由调用方在前向成功后执行。
 
@@ -169,7 +200,7 @@ class MultiLayerMHDSRA2Model(nn.Module):
         Calls:
             `layer.qkv`, `layer._to_heads`, and `PagedMemoryRepository.retrieve`.
         Returns:
-            `(retrieved_k, retrieved_v, key_heads, value_heads)`.
+            `(retrieved_k, retrieved_v, retrieved_mask, retrieval_metadata, key_heads, value_heads)`.
         Side effects:
             None; appending is intentionally delayed until the caller finishes
             the current layer forward.
@@ -177,19 +208,68 @@ class MultiLayerMHDSRA2Model(nn.Module):
             retrieval, key, value, chunk, no self recall, paged memory
         """
         if not layer.cfg.use_retrieval:
-            return None, None, None, None
+            return None, None, None, None, None, None
 
         query, key, value = layer.qkv(chunk_normed).chunk(3, dim=-1)
         query_heads = layer._to_heads(query)
         key_heads = layer._to_heads(key)
         value_heads = layer._to_heads(value)
-        max_position = 0 if state is None else state.position
-        retrieved_k, retrieved_v = repository.retrieve(
-            query_heads.detach(),
-            chunk_normed.device,
-            max_position=max_position,
-        )
-        return retrieved_k, retrieved_v, key_heads, value_heads
+        state_position = 0 if state is None else state.position
+        max_position = state_position
+        if sequence_lengths is not None:
+            current_position = torch.full_like(sequence_lengths, int(state_position))
+            max_position = torch.minimum(sequence_lengths, current_position)
+        if return_metadata:
+            retrieved_k, retrieved_v, retrieved_mask, retrieval_metadata = repository.retrieve(
+                query_heads.detach(),
+                chunk_normed.device,
+                max_position=max_position,
+                return_mask=True,
+                return_metadata=True,
+            )
+        else:
+            retrieved_k, retrieved_v, retrieved_mask = repository.retrieve(
+                query_heads.detach(),
+                chunk_normed.device,
+                max_position=max_position,
+                return_mask=True,
+            )
+            retrieval_metadata = None
+        return retrieved_k, retrieved_v, retrieved_mask, retrieval_metadata, key_heads, value_heads
+
+    def _normalize_sequence_lengths(
+        self,
+        sequence_lengths: int | torch.Tensor | None,
+        batch_size: int,
+        seq_len: int,
+    ) -> torch.Tensor | None:
+        """Normalize optional true sequence lengths for padded batch retrieval.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `forward_selected_logits`
+        - 调用对象 / Calls: `torch.as_tensor`, tensor validation operations
+        - 作用 / Purpose: 将变长 batch 的真实长度规范为 `[B]` CPU tensor，供外部检索逐样本裁剪
+        - 参数 / Parameters: `sequence_lengths` 是每个样本真实 token 数；None 表示所有样本等长
+        - 返回 / Returns: None 或 `[B]` CPU long tensor
+        - 错误处理 / Error handling: 长度数不匹配、非正或超过当前 `seq_len` 时抛 `ValueError`
+        - 副作用 / Side effects: 无。
+        """
+        if sequence_lengths is None:
+            return None
+        if isinstance(sequence_lengths, int):
+            normalized = torch.full((batch_size,), sequence_lengths, dtype=torch.long)
+        else:
+            normalized = torch.as_tensor(sequence_lengths, dtype=torch.long).detach().cpu().flatten()
+            if normalized.numel() == 1:
+                normalized = normalized.expand(batch_size).clone()
+        if normalized.numel() != batch_size:
+            raise ValueError(
+                f"expected one sequence length per batch item, got {normalized.numel()} "
+                f"lengths for batch_size={batch_size}"
+            )
+        if bool(((normalized <= 0) | (normalized > seq_len)).any().item()):
+            raise ValueError(f"sequence lengths must be within [1, {seq_len}]")
+        return normalized
 
     def _normalize_selected_positions(
         self,
@@ -265,24 +345,35 @@ class MultiLayerMHDSRA2Model(nn.Module):
         stage_id: int | None = None,
         context_id: int | None = None,
         *,
+        sequence_lengths: int | torch.Tensor | None = None,
         return_hidden: bool = False,
-    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        return_aux: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor, dict[str, object]]:
         """Run MHDSRA2 over a long sequence and return logits only at selected positions.
 
         When return_hidden=True, also returns the pre-out_proj normalized hidden
         states of shape [B, dim] for diagnostic callers that need selected-token
-        representations without materializing full-sequence logits.
+        representations without materializing full-sequence logits. When
+        return_aux=True, also returns lightweight MHDSRA2 diagnostics collected
+        from the final layer's latest processed chunk.
         """
         if x.dim() != 2:
             raise ValueError(f"expected token ids with shape [B, SeqLen], got {tuple(x.shape)}")
 
         batch_size, seq_len = x.shape
         selected_positions = self._normalize_selected_positions(positions, batch_size, seq_len)
+        normalized_lengths = self._normalize_sequence_lengths(sequence_lengths, batch_size, seq_len)
+        if normalized_lengths is not None and bool(
+            (selected_positions >= normalized_lengths).any().item()
+        ):
+            raise ValueError("selected positions must be before each sample's sequence length")
         model_device = self.embedding.weight.device
         state_list = [None] * self.num_layers
         retrieval_repositories = self._new_retrieval_repositories()
         logits_by_batch: list[torch.Tensor | None] = [None] * batch_size
         hidden_by_batch: list[torch.Tensor | None] = [None] * batch_size if return_hidden else None
+        latest_aux_by_layer: list[dict[str, object] | None] = [None] * self.num_layers
+        selected_aux_by_layer: list[dict[str, object] | None] = [None] * self.num_layers
 
         for start in range(0, seq_len, self.chunk_size):
             end = min(start + self.chunk_size, seq_len)
@@ -292,20 +383,38 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)
-                retrieved_k, retrieved_v, key_heads, value_heads = self._prepare_layer_retrieval(
+                (
+                    retrieved_k,
+                    retrieved_v,
+                    retrieved_mask,
+                    retrieval_metadata,
+                    key_heads,
+                    value_heads,
+                ) = self._prepare_layer_retrieval(
                     layer,
                     retrieval_repositories[layer_idx],
                     chunk_normed,
                     state_list[layer_idx],
+                    normalized_lengths,
+                    return_metadata=return_aux,
                 )
-                out_chunk, next_state = layer(
+                layer_result = layer(
                     chunk_normed,
                     state=state_list[layer_idx],
                     retrieved_k=retrieved_k,
                     retrieved_v=retrieved_v,
+                    retrieved_mask=retrieved_mask,
+                    return_aux=return_aux,
                     stage_id=stage_id,
                     context_id=context_id,
                 )
+                if return_aux:
+                    out_chunk, next_state, aux = layer_result
+                    if retrieval_metadata is not None:
+                        aux["retrieval_metadata"] = retrieval_metadata
+                    latest_aux_by_layer[layer_idx] = aux
+                else:
+                    out_chunk, next_state = layer_result
                 state_list[layer_idx] = next_state
                 if key_heads is not None and value_heads is not None:
                     retrieval_repositories[layer_idx].append(key_heads, value_heads)
@@ -324,17 +433,101 @@ class MultiLayerMHDSRA2Model(nn.Module):
                     logits_by_batch[batch_id] = selected_logits[row_idx : row_idx + 1]
                     if return_hidden:
                         hidden_by_batch[batch_id] = hidden_normed[row_idx : row_idx + 1]
+                if return_aux:
+                    selected_aux_by_layer = []
+                    for aux in latest_aux_by_layer:
+                        if not isinstance(aux, dict):
+                            selected_aux_by_layer.append(aux)
+                            continue
+                        selected_aux = dict(aux)
+                        selected_aux["selected_batch_indices"] = batch_idx.detach().cpu()
+                        gate_by_token = aux.get("gate_retrieval_by_token")
+                        if isinstance(gate_by_token, torch.Tensor) and gate_by_token.dim() == 2:
+                            selected_aux["selected_gate_retrieval_by_sample"] = gate_by_token[
+                                batch_idx,
+                                local_idx,
+                            ]
+                        gate_by_token_for_loss = aux.get("gate_retrieval_by_token_for_loss")
+                        if (
+                            isinstance(gate_by_token_for_loss, torch.Tensor)
+                            and gate_by_token_for_loss.dim() == 2
+                        ):
+                            selected_aux[
+                                "selected_gate_retrieval_by_sample_for_loss"
+                            ] = gate_by_token_for_loss[batch_idx, local_idx]
+                        weights_by_token = aux.get("retrieval_token_weight_by_token")
+                        if (
+                            isinstance(weights_by_token, torch.Tensor)
+                            and weights_by_token.dim() == 3
+                        ):
+                            selected_aux[
+                                "selected_retrieval_token_weight_by_sample"
+                            ] = weights_by_token[batch_idx, local_idx, :]
+                        weights_by_token_for_loss = aux.get(
+                            "retrieval_token_weight_by_token_for_loss"
+                        )
+                        if (
+                            isinstance(weights_by_token_for_loss, torch.Tensor)
+                            and weights_by_token_for_loss.dim() == 3
+                        ):
+                            selected_aux[
+                                "selected_retrieval_token_weight_by_sample_for_loss"
+                            ] = weights_by_token_for_loss[batch_idx, local_idx, :]
+                        retrieval_metadata = aux.get("retrieval_metadata")
+                        if isinstance(retrieval_metadata, dict):
+                            selected_metadata: dict[str, object] = {}
+                            positions = retrieval_metadata.get("positions")
+                            if isinstance(positions, torch.Tensor):
+                                if positions.dim() == 1:
+                                    selected_metadata["positions"] = positions
+                                elif positions.dim() >= 2:
+                                    selected_metadata["positions"] = positions[batch_idx, ...]
+                            mask = retrieval_metadata.get("mask")
+                            if isinstance(mask, torch.Tensor):
+                                if mask.dim() == 1:
+                                    selected_metadata["mask"] = mask
+                                elif mask.dim() >= 2:
+                                    selected_metadata["mask"] = mask[batch_idx, ...]
+                            counts = retrieval_metadata.get("retrieved_token_counts")
+                            if isinstance(counts, torch.Tensor):
+                                selected_metadata["retrieved_token_counts"] = counts[
+                                    batch_idx
+                                ]
+                            if "max_position" in retrieval_metadata:
+                                selected_metadata["max_position"] = retrieval_metadata[
+                                    "max_position"
+                                ]
+                            if selected_metadata:
+                                selected_aux["selected_retrieval_metadata"] = selected_metadata
+                        selected_aux_by_layer.append(selected_aux)
 
         if any(item is None for item in logits_by_batch):
             raise RuntimeError("failed to collect logits for all selected positions")
         logits = torch.cat([item for item in logits_by_batch if item is not None], dim=0)
+        if return_aux:
+            aux_payload: dict[str, object] = {
+                "layers": selected_aux_by_layer,
+                "last_layer": selected_aux_by_layer[-1] if selected_aux_by_layer else None,
+                "latest_layers": latest_aux_by_layer,
+                "latest_last_layer": latest_aux_by_layer[-1] if latest_aux_by_layer else None,
+            }
+            if return_hidden:
+                hidden = torch.cat([item for item in hidden_by_batch if item is not None], dim=0)
+                return logits, hidden, aux_payload
+            return logits, aux_payload
         if return_hidden:
             hidden = torch.cat([item for item in hidden_by_batch if item is not None], dim=0)
             return logits, hidden
         return logits
 
-    def forward(self, x: torch.Tensor, stage_id: int | None = None,
-                context_id: int | None = None) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        stage_id: int | None = None,
+        context_id: int | None = None,
+        *,
+        sequence_lengths: int | torch.Tensor | None = None,
+    ) -> torch.Tensor:
         """Run a stacked MHDSRA2 token model over chunked long sequences.
 
         中文说明:
@@ -350,7 +543,8 @@ class MultiLayerMHDSRA2Model(nn.Module):
         - 关键词 / Keywords:
           forward|mhdsra2|multilayer|chunked|streaming|state|token|logits|compat|前向
         """
-        _, seq_len = x.shape
+        batch_size, seq_len = x.shape
+        normalized_lengths = self._normalize_sequence_lengths(sequence_lengths, batch_size, seq_len)
         model_device = self.embedding.weight.device
         state_list = [None] * self.num_layers
         retrieval_repositories = self._new_retrieval_repositories()
@@ -364,17 +558,19 @@ class MultiLayerMHDSRA2Model(nn.Module):
             for layer_idx, (layer, norm) in enumerate(zip(self.layers, self.norms)):
                 residual = chunk
                 chunk_normed = norm(chunk)
-                retrieved_k, retrieved_v, key_heads, value_heads = self._prepare_layer_retrieval(
+                retrieved_k, retrieved_v, retrieved_mask, _, key_heads, value_heads = self._prepare_layer_retrieval(
                     layer,
                     retrieval_repositories[layer_idx],
                     chunk_normed,
                     state_list[layer_idx],
+                    normalized_lengths,
                 )
                 out_chunk, next_state = layer(
                     chunk_normed,
                     state=state_list[layer_idx],
                     retrieved_k=retrieved_k,
                     retrieved_v=retrieved_v,
+                    retrieved_mask=retrieved_mask,
                     stage_id=stage_id,
                     context_id=context_id,
                 )

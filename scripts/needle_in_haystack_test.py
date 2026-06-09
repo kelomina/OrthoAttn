@@ -54,6 +54,8 @@ DEFAULT_NIAH_LIGHT_EVAL_BATCHES_PER_DEPTH = 1
 DEFAULT_NIAH_ROBUST_EVAL_BATCHES_PER_DEPTH = 32
 DEFAULT_NIAH_CAPACITY_BATCHES_PER_DEPTH = 3
 NIAH_MIN_EVAL_SAMPLES_FOR_EARLY_STOP = 24
+INVALID_REPORT_NAME_CHARS = set('/\\:<>"|?*')
+NIAH_CHECKPOINT_SUFFIXES = {".pt", ".pth", ".ckpt"}
 
 
 def resolve_device(device_name):
@@ -755,6 +757,164 @@ def extract_query_positions_and_targets(X, Y, device):
     return query_positions, targets
 
 
+def compute_retrieval_evidence_gate_loss(
+    aux,
+    evidence_positions,
+    *,
+    device,
+):
+    """Train retrieval gate confidence against known synthetic evidence positions.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 调用对象 / Calls: tensor comparison, `F.binary_cross_entropy`
+    - 作用 / Purpose: NIAH 训练样本知道 needle value 的真实历史位置；本函数检查 external
+      retrieval 的候选位置是否包含该证据，并用这个命中标签监督 retrieval gate。
+    - 参数 / Parameters:
+      `aux` 来自 `forward_selected_logits(..., return_aux=True)`;
+      `evidence_positions` 是每个样本的 needle value 全局位置。
+    - 返回 / Returns: `(loss, metrics)`；aux 不可用时返回 0 loss 和 unavailable 指标。
+    - 错误处理 / Error handling: 缺少 metadata/gate 时不抛错，返回 unavailable，避免默认训练路径受影响。
+    - 副作用 / Side effects: 无；不修改模型状态。
+    - 关键词 / Keywords:
+      niah|retrieval|evidence|gate|auxiliary_loss|metadata|needle_position|检索监督
+
+    English documentation:
+    Function name:
+        compute_retrieval_evidence_gate_loss
+    Purpose:
+        Supervise retrieval gate probability with whether the known synthetic
+        evidence token was returned by external paged retrieval.
+    """
+    zero = torch.tensor(0.0, device=device)
+    metrics = {
+        "available": False,
+        "unavailable_reason": None,
+        "hit_rate": 0.0,
+        "gate_mean": 0.0,
+        "evidence_weight_mean": 0.0,
+        "ranking_loss": 0.0,
+        "gate_loss": 0.0,
+        "positive_count": 0,
+    }
+    if not isinstance(aux, dict):
+        metrics["unavailable_reason"] = "missing_aux"
+        return zero, metrics
+    last_layer = aux.get("last_layer")
+    if not isinstance(last_layer, dict):
+        metrics["unavailable_reason"] = "missing_last_layer_aux"
+        return zero, metrics
+    metadata = last_layer.get("selected_retrieval_metadata")
+    gate_by_sample = last_layer.get(
+        "selected_gate_retrieval_by_sample_for_loss",
+        last_layer.get(
+            "selected_gate_retrieval_by_sample",
+            None,
+        ),
+    )
+    if not isinstance(metadata, dict) or not isinstance(gate_by_sample, torch.Tensor):
+        metrics["unavailable_reason"] = "missing_selected_metadata_or_gate"
+        return zero, metrics
+    positions = metadata.get("positions")
+    mask = metadata.get("mask")
+    if not isinstance(positions, torch.Tensor) or not isinstance(mask, torch.Tensor):
+        metrics["unavailable_reason"] = "missing_selected_positions_or_mask"
+        return zero, metrics
+
+    evidence = torch.as_tensor(evidence_positions, dtype=torch.long, device=positions.device)
+    evidence = evidence.flatten()
+    selected_batch_size = 1 if positions.dim() == 1 else int(positions.shape[0])
+    selected_batch_indices = last_layer.get("selected_batch_indices")
+    if isinstance(selected_batch_indices, torch.Tensor) and evidence.numel() > selected_batch_size:
+        selected_indices = selected_batch_indices.to(device=evidence.device, dtype=torch.long).flatten()
+        if selected_indices.numel() != selected_batch_size:
+            metrics["unavailable_reason"] = "selected_index_count_mismatch"
+            return zero, metrics
+        if bool(((selected_indices < 0) | (selected_indices >= evidence.numel())).any().item()):
+            metrics["unavailable_reason"] = "selected_index_out_of_range"
+            return zero, metrics
+        evidence = evidence[selected_indices]
+    elif evidence.numel() == 1 and selected_batch_size > 1:
+        evidence = evidence.expand(selected_batch_size)
+    if mask.dim() != positions.dim():
+        metrics["unavailable_reason"] = "selected_mask_rank_mismatch"
+        return zero, metrics
+    if positions.dim() == 2 and mask.shape[0] != selected_batch_size:
+        metrics["unavailable_reason"] = "selected_mask_batch_mismatch"
+        return zero, metrics
+    if positions.shape[-1] != mask.shape[-1]:
+        metrics["unavailable_reason"] = "selected_mask_width_mismatch"
+        return zero, metrics
+    if evidence.numel() != selected_batch_size:
+        metrics["unavailable_reason"] = "evidence_batch_mismatch"
+        return zero, metrics
+    if gate_by_sample.numel() != selected_batch_size:
+        metrics["unavailable_reason"] = "gate_batch_mismatch"
+        return zero, metrics
+    if positions.dim() == 1:
+        hit = ((positions.unsqueeze(0) == evidence.view(-1, 1)) & mask.view(1, -1)).any(dim=1)
+    elif positions.dim() == 2:
+        hit = ((positions == evidence.view(-1, 1)) & mask).any(dim=1)
+    else:
+        metrics["unavailable_reason"] = "selected_positions_rank_unsupported"
+        return zero, metrics
+    gate_prob = gate_by_sample.to(device=device, dtype=torch.float32).flatten()
+    target = hit.to(device=device, dtype=torch.float32).flatten()
+    if gate_prob.numel() != target.numel():
+        metrics["unavailable_reason"] = "gate_target_count_mismatch"
+        return zero, metrics
+    gate_loss = F.binary_cross_entropy(gate_prob.clamp(1e-6, 1.0 - 1e-6), target)
+    ranking_loss = torch.tensor(0.0, device=device)
+    evidence_weight_mean = torch.tensor(0.0, device=device)
+    token_weights = last_layer.get(
+        "selected_retrieval_token_weight_by_sample_for_loss",
+        last_layer.get(
+            "selected_retrieval_token_weight_by_sample",
+            None,
+        ),
+    )
+    if isinstance(token_weights, torch.Tensor) and bool(hit.any().item()):
+        weights = token_weights.to(device=device, dtype=torch.float32)
+        if weights.dim() == 1:
+            weights = weights.view(1, -1)
+        if (
+            weights.dim() == 2
+            and weights.shape[0] == selected_batch_size
+            and weights.shape[0] == target.numel()
+        ):
+            if positions.dim() == 1:
+                evidence_mask = (
+                    positions.to(device=weights.device).view(1, -1)
+                    == evidence.to(device=weights.device).view(-1, 1)
+                ) & mask.to(device=weights.device, dtype=torch.bool).view(1, -1)
+            else:
+                evidence_mask = (
+                    positions.to(device=weights.device)
+                    == evidence.to(device=weights.device).view(-1, 1)
+                ) & mask.to(device=weights.device, dtype=torch.bool)
+            positive_rows = evidence_mask.any(dim=1)
+            if bool(positive_rows.any().item()):
+                evidence_weights = (
+                    weights.masked_fill(~evidence_mask, 0.0).sum(dim=1).clamp_min(1e-6)
+                )
+                evidence_weight_mean = evidence_weights[positive_rows].mean()
+                ranking_loss = -torch.log(evidence_weights[positive_rows]).mean()
+    loss = gate_loss + ranking_loss
+    metrics.update(
+        {
+            "available": True,
+            "unavailable_reason": None,
+            "hit_rate": float(target.mean().detach().cpu().item()) if target.numel() else 0.0,
+            "gate_mean": float(gate_prob.mean().detach().cpu().item()) if gate_prob.numel() else 0.0,
+            "evidence_weight_mean": float(evidence_weight_mean.detach().cpu().item()),
+            "ranking_loss": float(ranking_loss.detach().cpu().item()),
+            "gate_loss": float(gate_loss.detach().cpu().item()),
+            "positive_count": int(target.sum().detach().cpu().item()) if target.numel() else 0,
+        }
+    )
+    return loss, metrics
+
+
 def build_niah_model(
     device,
     vocab_size=100,
@@ -784,8 +944,13 @@ def build_niah_model(
     active_model_type = normalize_model_type(model_type)
     if active_model_type == "mhdsra2":
         return MultiLayerMHDSRA2Model(
-            vocab_size, dim, num_layers, K, kr, chunk_size,
-        mhdsra2_config_override=mhdsra2_config_override,
+            vocab_size,
+            dim,
+            num_layers,
+            K,
+            kr,
+            chunk_size,
+            mhdsra2_config_override=mhdsra2_config_override,
         ).to(device)
     raise ValueError(f"Unsupported model_type: {model_type} (normalized: {active_model_type})")
 
@@ -1758,11 +1923,12 @@ def run_niah_verification_case(
     cudnn_benchmark=False,
     model_type="mhdsra2",
     mhdsra2_config_override=None,
-    swanlab_mode: str = "cloud",
+    swanlab_mode: str = "disabled",
     load_checkpoint: str | None = None,
     save_checkpoint: str | None = None,
     needle_loss_alpha: float = 0.5,
     hidden_mse_alpha: float = 0.0,
+    retrieval_evidence_loss_alpha: float = 0.0,
 ):
     """Run a reproducible NIAH verification case and return report-ready metrics.
 
@@ -1872,6 +2038,7 @@ def run_niah_verification_case(
             "detach_state": resolved_config_override["detach_state"],
             "needle_loss_alpha": needle_loss_alpha,
             "hidden_mse_alpha": hidden_mse_alpha,
+            "retrieval_evidence_loss_alpha": retrieval_evidence_loss_alpha,
             "light_eval_batches_per_depth": eval_batches_per_depth,
             "robust_eval_interval": resolved_robust_eval_interval,
             "robust_eval_batches_per_depth": robust_eval_batches_per_depth,
@@ -1894,7 +2061,8 @@ def run_niah_verification_case(
     )
 
     if load_checkpoint is not None:
-        checkpoint = torch.load(load_checkpoint, map_location=device, weights_only=True)
+        resolved_load_checkpoint = resolve_niah_checkpoint_path(load_checkpoint)
+        checkpoint = torch.load(resolved_load_checkpoint, map_location=device, weights_only=True)
         ckpt_state = checkpoint["model_state_dict"]
         ckpt_vocab = checkpoint.get("vocab_size", vocab_size)
         if ckpt_vocab != vocab_size:
@@ -1910,7 +2078,10 @@ def run_niah_verification_case(
         if unexpected:
             print(f"Checkpoint load: unexpected keys: {unexpected}")
         if not missing and not unexpected:
-            print(f"Loaded checkpoint from {load_checkpoint} (source step {checkpoint.get('step', '?')})")
+            print(
+                f"Loaded checkpoint from {resolved_load_checkpoint} "
+                f"(source step {checkpoint.get('step', '?')})"
+            )
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss(ignore_index=0)
@@ -1934,6 +2105,16 @@ def run_niah_verification_case(
     final_step_train_accuracy = 0.0
     final_train_loss = None
     final_loss = None
+    final_retrieval_evidence_metrics = {
+        "available": False,
+        "unavailable_reason": None,
+        "hit_rate": None,
+        "gate_mean": None,
+        "evidence_weight_mean": None,
+        "ranking_loss": None,
+        "gate_loss": None,
+        "positive_count": 0,
+    }
     success_step = None
     status = "completed"
     train_step_sec = 0.0
@@ -1957,9 +2138,20 @@ def run_niah_verification_case(
 
         step_start = time.perf_counter()
         optimizer.zero_grad()
-        logits_target, hidden_query = model.forward_selected_logits(
-            X, query_positions, return_hidden=True
-        )
+        retrieval_aux = None
+        if retrieval_evidence_loss_alpha > 0.0:
+            logits_target, hidden_query, retrieval_aux = model.forward_selected_logits(
+                X,
+                query_positions,
+                return_hidden=True,
+                return_aux=True,
+            )
+        else:
+            logits_target, hidden_query = model.forward_selected_logits(
+                X,
+                query_positions,
+                return_hidden=True,
+            )
         loss = criterion(logits_target, targets)
 
         # Hidden-state MSE auxiliary loss
@@ -1975,6 +2167,25 @@ def run_niah_verification_case(
             logits_needle = model.forward_selected_logits(X, needle_val_positions)
             loss_needle_val = criterion(logits_needle, needle_val_targets)
             loss = loss + needle_loss_alpha * loss_needle_val
+
+        retrieval_evidence_loss = torch.tensor(0.0, device=device)
+        retrieval_evidence_metrics = {
+            "available": False,
+            "unavailable_reason": None,
+            "hit_rate": None,
+            "gate_mean": None,
+            "evidence_weight_mean": None,
+            "ranking_loss": None,
+            "gate_loss": None,
+            "positive_count": 0,
+        }
+        if retrieval_evidence_loss_alpha > 0.0:
+            retrieval_evidence_loss, retrieval_evidence_metrics = compute_retrieval_evidence_gate_loss(
+                retrieval_aux,
+                needle_positions + 1,
+                device=device,
+            )
+            loss = loss + retrieval_evidence_loss_alpha * retrieval_evidence_loss
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -1992,6 +2203,7 @@ def run_niah_verification_case(
         best_step_train_accuracy = max(best_step_train_accuracy, step_train_accuracy)
         final_step_train_accuracy = step_train_accuracy
         final_train_loss = loss_value
+        final_retrieval_evidence_metrics = retrieval_evidence_metrics
         should_stop = False
 
         light_eval_result = evaluate_niah_depths(
@@ -2115,6 +2327,21 @@ def run_niah_verification_case(
             "mean_prob_margin": light_eval_result["mean_prob_margin"],
             "mean_entropy": light_eval_result["mean_entropy"],
             "total_samples": light_eval_result["total_samples"],
+            "retrieval_evidence_loss": float(
+                retrieval_evidence_loss.detach().cpu().item()
+            ),
+            "retrieval_evidence_available": retrieval_evidence_metrics["available"],
+            "retrieval_evidence_unavailable_reason": retrieval_evidence_metrics[
+                "unavailable_reason"
+            ],
+            "retrieval_evidence_hit_rate": retrieval_evidence_metrics["hit_rate"],
+            "retrieval_evidence_gate_mean": retrieval_evidence_metrics["gate_mean"],
+            "retrieval_evidence_weight_mean": retrieval_evidence_metrics[
+                "evidence_weight_mean"
+            ],
+            "retrieval_evidence_ranking_loss": retrieval_evidence_metrics["ranking_loss"],
+            "retrieval_evidence_gate_loss": retrieval_evidence_metrics["gate_loss"],
+            "retrieval_evidence_positive_count": retrieval_evidence_metrics["positive_count"],
         }
         step_rows.append(row)
         print(
@@ -2128,6 +2355,9 @@ def run_niah_verification_case(
                 "train/loss": loss_value,
                 "train/accuracy": step_train_accuracy,
                 "train/depth": current_depth,
+                "train/retrieval_evidence_loss": float(
+                    retrieval_evidence_loss.detach().cpu().item()
+                ),
             }
             add_niah_eval_metrics_to_swanlab_payload(
                 swanlab_payload,
@@ -2181,6 +2411,36 @@ def run_niah_verification_case(
     if device.type == "cuda":
         peak_allocated_mb = torch.cuda.max_memory_allocated() / (1024 ** 2)
         peak_reserved_mb = torch.cuda.max_memory_reserved() / (1024 ** 2)
+
+    final_aux_diagnostics = None
+    if hasattr(model, "forward_selected_logits"):
+        try:
+            diagnostic_depth = depths_to_test[-1] if depths_to_test else 0.5
+            X_diag, Y_diag, _ = generate_haystack_with_needle(
+                1,
+                seq_len,
+                resolved_data_vocab,
+                diagnostic_depth,
+            )
+            query_positions_diag, _ = extract_query_positions_and_targets(
+                X_diag,
+                Y_diag,
+                device,
+            )
+            model.eval()
+            with torch.no_grad():
+                diagnostic_result = model.forward_selected_logits(
+                    X_diag,
+                    query_positions_diag,
+                    return_aux=True,
+                )
+            if isinstance(diagnostic_result, tuple) and len(diagnostic_result) == 2:
+                final_aux_diagnostics = diagnostic_result[1]
+            del X_diag, Y_diag, query_positions_diag, diagnostic_result
+        except (AttributeError, RuntimeError, ValueError) as exc:
+            final_aux_diagnostics = {
+                "error": str(exc),
+            }
 
     parameter_count = sum(p.numel() for p in model.parameters())
     result = {
@@ -2243,6 +2503,8 @@ def run_niah_verification_case(
         "train_step_sec": train_step_sec,
         "peak_memory_allocated_mb": peak_allocated_mb,
         "peak_memory_reserved_mb": peak_reserved_mb,
+        "final_aux_diagnostics": final_aux_diagnostics,
+        "final_retrieval_evidence_metrics": final_retrieval_evidence_metrics,
         "passed_accuracy": final_min_depth_accuracy >= target_accuracy,
         "passed_success_criteria": status == "success",
         "re_eval_mean_accuracy": re_eval_mean_accuracy,
@@ -2250,8 +2512,7 @@ def run_niah_verification_case(
     }
 
     if save_checkpoint is not None and best_state_dict is not None:
-        ckpt_path = Path(save_checkpoint)
-        ckpt_path.parent.mkdir(parents=True, exist_ok=True)
+        ckpt_path = resolve_niah_checkpoint_path(save_checkpoint, create_parent=True)
         torch.save({
             "model_state_dict": best_state_dict,
             "dim": dim,
@@ -2262,8 +2523,11 @@ def run_niah_verification_case(
             "chunk_size": chunk_size,
             "step": best_accuracy_step,
             "eval_accuracy": best_accuracy,
-        }, save_checkpoint)
-        print(f"Saved best checkpoint to {save_checkpoint} (step {best_accuracy_step}, acc {best_accuracy*100:.2f}%)")
+        }, ckpt_path)
+        print(
+            f"Saved best checkpoint to {ckpt_path} "
+            f"(step {best_accuracy_step}, acc {best_accuracy*100:.2f}%)"
+        )
 
     del model, optimizer
     gc.collect()
@@ -2477,12 +2741,209 @@ def build_niah_verification_markdown(title, result):
     return lines
 
 
-def save_niah_verification_report(result, reports_dir, report_name, title):
+def sanitize_report_name(report_name):
+    """Validate a report file stem before joining it with reports/.
+
+    中文说明:
+    - 调用方 / Called by: `save_niah_verification_report`
+    - 调用对象 / Calls: `Path`
+    - 作用 / Purpose: 防止 `--report-name` 通过 `../`、绝对路径或 Windows 盘符逃出 reports/
+    - 参数 / Parameters: `report_name` 是用户传入的报告文件名前缀
+    - 返回 / Returns: 校验后的普通文件名前缀字符串
+    - 错误处理 / Error handling: 空值、路径片段或非法字符抛 `ValueError`
+    - 副作用 / Side effects: 无；只做字符串与路径结构校验
+    - 关键词 / Keywords: report_name|path_traversal|reports|sanitize|security|路径逃逸
+
+    English documentation:
+    Function name:
+        sanitize_report_name
+    Purpose:
+        Ensure a report stem is a plain filename before it is written under reports/.
+    Called by:
+        `save_niah_verification_report`.
+    Calls:
+        `Path`.
+    Parameters:
+        - report_name: user-provided report stem.
+    Returns:
+        Sanitized report stem.
+    Error handling:
+        Raises `ValueError` for empty names, path components, absolute paths, drives, or invalid characters.
+    Side effects:
+        None.
+    """
+    raw_name = str(report_name)
+    if raw_name.strip() != raw_name or raw_name == "":
+        raise ValueError("--report-name must be a non-empty plain filename stem")
+    candidate = Path(raw_name)
+    if (
+        candidate.is_absolute()
+        or candidate.drive
+        or candidate.root
+        or candidate.name != raw_name
+        or any(part in {".", ".."} for part in candidate.parts)
+        or any(char in INVALID_REPORT_NAME_CHARS for char in raw_name)
+    ):
+        raise ValueError(
+            "--report-name must be a plain filename stem under reports/; "
+            "path separators, absolute paths, drive prefixes, and '..' are not allowed"
+        )
+    return raw_name
+
+
+def resolve_niah_reports_dir(reports_dir, project_root=None):
+    """Resolve the NIAH verification output directory to project reports/.
+
+    中文说明:
+    - 调用方 / Called by: `save_niah_verification_report`
+    - 调用对象 / Calls: `Path.resolve`, `Path.mkdir`
+    - 作用 / Purpose: 防止 `--reports-dir` 指向项目外目录，确保 NIAH 验证报告仍写入项目 reports/
+    - 参数 / Parameters: `reports_dir` 是 CLI 传入目录；`project_root` 测试可覆盖，默认项目根
+    - 返回 / Returns: 已创建且解析后的项目 reports/ 路径
+    - 错误处理 / Error handling: 解析后不是项目 `reports/` 时抛 `ValueError`
+    - 副作用 / Side effects: 创建项目 reports/ 目录
+    - 关键词 / Keywords: reports_dir|project_reports|path_boundary|niah|security|路径边界
+
+    English documentation:
+    Function name:
+        resolve_niah_reports_dir
+    Purpose:
+        Resolve NIAH verification report output to the project's reports/ directory.
+    Called by:
+        `save_niah_verification_report`.
+    Calls:
+        `Path.resolve` and `Path.mkdir`.
+    Parameters:
+        - reports_dir: CLI-provided output directory.
+        - project_root: optional root override for tests.
+    Returns:
+        Resolved project reports directory.
+    Error handling:
+        Raises `ValueError` when the path resolves outside project reports/.
+    Side effects:
+        Creates the reports directory.
+    """
+    root = Path(PROJECT_ROOT if project_root is None else project_root).resolve()
+    raw_reports_dir = Path(reports_dir)
+    candidate = raw_reports_dir if raw_reports_dir.is_absolute() else root / raw_reports_dir
+    candidate = candidate if candidate.name == "reports" else candidate / "reports"
+    resolved_reports_dir = candidate.resolve()
+    expected_reports_dir = (root / "reports").resolve()
+    if resolved_reports_dir != expected_reports_dir:
+        raise ValueError(
+            "--reports-dir must resolve to the project reports/ directory; "
+            f"got {resolved_reports_dir}"
+        )
+    resolved_reports_dir.mkdir(parents=True, exist_ok=True)
+    return resolved_reports_dir
+
+
+def resolve_niah_checkpoint_path(checkpoint_path, *, project_root=None, create_parent=False):
+    """Resolve a NIAH checkpoint path inside reports/checkpoints/.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 调用对象 / Calls: `Path.resolve`, `Path.mkdir`
+    - 作用 / Purpose: 防止 `--save-checkpoint` 或 `--load-checkpoint` 读写项目外任意文件
+    - 参数 / Parameters: `checkpoint_path` 是 CLI 路径；`project_root` 测试可覆盖；
+      `create_parent` 控制是否创建父目录
+    - 返回 / Returns: 解析后的 `reports/checkpoints/*.pt|*.pth|*.ckpt` 路径
+    - 错误处理 / Error handling: 路径逃逸或后缀非法时抛 `ValueError`
+    - 副作用 / Side effects: `create_parent=True` 时创建父目录
+    - 关键词 / Keywords: checkpoint|reports|path_boundary|niah|torch_save|security
+
+    English documentation:
+    Function name:
+        resolve_niah_checkpoint_path
+    Purpose:
+        Keep NIAH checkpoints inside project reports/checkpoints/.
+    Called by:
+        `run_niah_verification_case`.
+    Calls:
+        `Path.resolve` and `Path.mkdir`.
+    Parameters:
+        - checkpoint_path: CLI-provided path.
+        - project_root: optional root override for tests.
+        - create_parent: whether to create the parent directory.
+    Returns:
+        Resolved checkpoint path.
+    Error handling:
+        Raises `ValueError` for escaped paths or unsupported suffixes.
+    Side effects:
+        May create the parent directory.
+    """
+    root = Path(PROJECT_ROOT if project_root is None else project_root).resolve()
+    checkpoint_dir = (root / "reports" / "checkpoints").resolve()
+    raw_path = Path(checkpoint_path)
+    if raw_path.is_absolute():
+        candidate = raw_path
+    elif len(raw_path.parts) == 1:
+        candidate = checkpoint_dir / raw_path
+    else:
+        candidate = root / raw_path
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(checkpoint_dir):
+        raise ValueError(
+            "--load-checkpoint/--save-checkpoint must stay inside reports/checkpoints/; "
+            f"got {resolved}"
+        )
+    if resolved.suffix.lower() not in NIAH_CHECKPOINT_SUFFIXES:
+        raise ValueError(
+            "NIAH checkpoint path must use one of "
+            f"{sorted(NIAH_CHECKPOINT_SUFFIXES)}; got {resolved.suffix!r}"
+        )
+    if create_parent:
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+    return resolved
+
+
+def build_report_output_path(reports_dir, report_name, suffix):
+    """Build and verify one report output path under reports/.
+
+    中文说明:
+    - 调用方 / Called by: `save_niah_verification_report`
+    - 调用对象 / Calls: `sanitize_report_name`, `Path.resolve`, `Path.is_relative_to`
+    - 作用 / Purpose: 在最终写文件前确认 JSON/Markdown 输出仍位于 reports_dir 内
+    - 参数 / Parameters: `reports_dir` 是已创建目录；`report_name` 是文件名前缀；`suffix` 是扩展名
+    - 返回 / Returns: 安全的输出路径
+    - 错误处理 / Error handling: 路径不在 reports_dir 内时抛 `ValueError`
+    - 副作用 / Side effects: 无；不创建或写入文件
+    - 关键词 / Keywords: reports|output_path|resolve|guard|json|markdown|路径校验
+
+    English documentation:
+    Function name:
+        build_report_output_path
+    Purpose:
+        Build a report path and assert it remains inside the reports directory.
+    Called by:
+        `save_niah_verification_report`.
+    Calls:
+        `sanitize_report_name`, `Path.resolve`, and `Path.is_relative_to`.
+    Parameters:
+        - reports_dir: resolved reports directory.
+        - report_name: report stem.
+        - suffix: output suffix such as `.json`.
+    Returns:
+        Safe output path.
+    Error handling:
+        Raises `ValueError` if the final path escapes reports_dir.
+    Side effects:
+        None.
+    """
+    safe_report_name = sanitize_report_name(report_name)
+    resolved_reports_dir = Path(reports_dir).resolve()
+    output_path = (resolved_reports_dir / f"{safe_report_name}{suffix}").resolve()
+    if not output_path.is_relative_to(resolved_reports_dir):
+        raise ValueError(f"Report output escaped reports_dir: {output_path}")
+    return output_path
+
+
+def save_niah_verification_report(result, reports_dir, report_name, title, *, project_root=None):
     """Persist a NIAH verification result to JSON and Markdown under reports/.
 
     中文说明:
     - 调用方 / Called by: CLI `verify-2m`, CLI `benchmark-scale`
-    - 调用对象 / Calls: `ensure_reports_dir`, `write_json`, `write_markdown`,
+    - 调用对象 / Calls: `resolve_niah_reports_dir`, `write_json`, `write_markdown`,
       `build_niah_verification_markdown`, `Path.exists`, `Path.stat`
     - 作用 / Purpose: 固化 2M NIAH 与更大参数 benchmark 的可复现报告文件
     - 参数 / Parameters:
@@ -2490,7 +2951,8 @@ def save_niah_verification_report(result, reports_dir, report_name, title):
       `title` 是 Markdown 标题
     - 返回 / Returns: dict，包含 JSON 和 Markdown 路径
     - 接入 / Integration: CLI 完成训练后调用；报告统一放入 reports/
-    - 错误处理 / Error handling: 文件写入错误直接向上抛出；写入后文件不存在或为空时抛出 `IOError`
+    - 错误处理 / Error handling: 非法 reports_dir 或 report_name 抛 `ValueError`；
+      文件写入错误直接向上抛出；写入后文件不存在或为空时抛出 `IOError`
     - 副作用 / Side effects: 写入 `reports/*.json` 和 `reports/*.md`
     - 事务边界 / Transaction boundary: 文件写入非事务性；失败时保留已写文件需人工处理
     - 并发与幂等 / Concurrency and idempotency: 同名报告会覆盖旧文件；不同 report_name 可并行
@@ -2505,13 +2967,14 @@ def save_niah_verification_report(result, reports_dir, report_name, title):
     Called by:
         CLI `verify-2m` and `benchmark-scale`.
     Calls:
-        Report directory and writer helpers, followed by filesystem existence/size checks.
+        Project report directory resolver, path sanitizer, and writer helpers, followed by checks.
     Parameters:
         Result payload, output directory, report name, and title.
     Returns:
         Dictionary with JSON and Markdown paths.
     Error handling:
-        File write errors propagate to the caller; empty or missing output raises `IOError`.
+        Invalid report directories or report names raise `ValueError`; file write errors propagate
+        to the caller; empty or missing output raises `IOError`.
     Side effects:
         Writes JSON and Markdown files.
     Transaction boundary:
@@ -2521,9 +2984,9 @@ def save_niah_verification_report(result, reports_dir, report_name, title):
     English keywords:
         save_report, json, markdown, reports, niah, 2m, benchmark, mhdsra2, persist, filesystem
     """
-    resolved_reports_dir = ensure_reports_dir(reports_dir)
-    json_path = resolved_reports_dir / f"{report_name}.json"
-    markdown_path = resolved_reports_dir / f"{report_name}.md"
+    resolved_reports_dir = resolve_niah_reports_dir(reports_dir, project_root=project_root)
+    json_path = build_report_output_path(resolved_reports_dir, report_name, ".json")
+    markdown_path = build_report_output_path(resolved_reports_dir, report_name, ".md")
     write_json(json_path, result)
     write_markdown(markdown_path, build_niah_verification_markdown(title, result))
     verify_nonempty_report_outputs(json_path, markdown_path)
@@ -2585,7 +3048,7 @@ def run_niah_capacity_test(
     *,
     batches_per_depth=DEFAULT_NIAH_CAPACITY_BATCHES_PER_DEPTH,
     cudnn_benchmark=False,
-    swanlab_mode: str = "cloud",
+    swanlab_mode: str = "disabled",
 ):
     """Run the legacy NIAH capacity sweep with traceable RNG and OOM cleanup.
 
@@ -2774,7 +3237,7 @@ def run_niah_test(
     *,
     eval_batches_per_depth=DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
     cudnn_benchmark=False,
-    swanlab_mode: str = "cloud",
+    swanlab_mode: str = "disabled",
 ):
     """Run the legacy NIAH long-context sweep with final-eval reporting.
 
@@ -3000,7 +3463,7 @@ def build_parser():
             help="Robust eval batches per depth, used for report conclusions and early stop.",
         )
         command_parser.add_argument("--cudnn-benchmark", action="store_true")
-        command_parser.add_argument("--swanlab-mode", default="cloud", choices=["cloud", "local", "offline", "disabled"])
+        command_parser.add_argument("--swanlab-mode", default="disabled", choices=["cloud", "local", "offline", "disabled"])
         command_parser.add_argument("--reports-dir", default="reports")
         command_parser.add_argument("--report-name", default=None)
         command_parser.add_argument(
@@ -3033,13 +3496,19 @@ def build_parser():
             "--load-checkpoint",
             type=str,
             default=None,
-            help="Load model state_dict from this checkpoint file before training.",
+            help=(
+                "Load model state_dict from reports/checkpoints/. "
+                "Plain filenames are resolved inside that directory."
+            ),
         )
         command_parser.add_argument(
             "--save-checkpoint",
             type=str,
             default=None,
-            help="Save best model state_dict to this checkpoint file after training.",
+            help=(
+                "Save best model state_dict under reports/checkpoints/. "
+                "Plain filenames are resolved inside that directory."
+            ),
         )
 
     verify_parser = subparsers.add_parser(

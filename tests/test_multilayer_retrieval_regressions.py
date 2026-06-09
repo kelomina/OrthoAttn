@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
 import torch
 
+from src.dsra.infrastructure import PagedMemoryRepository
 from src.dsra.dsra_model import MultiLayerMHDSRA2Model
 
 
@@ -45,7 +47,15 @@ def _record_retrieval_calls(model: MultiLayerMHDSRA2Model) -> list[dict[str, obj
     for layer_idx, layer in enumerate(model.layers):
         original = layer._retrieval_attention
 
-        def wrapped(q, retrieved_k, retrieved_v, *, _idx=layer_idx, _original=original):
+        def wrapped(
+            q,
+            retrieved_k,
+            retrieved_v,
+            retrieved_mask=None,
+            *,
+            _idx=layer_idx,
+            _original=original,
+        ):
             records.append(
                 {
                     "layer_idx": _idx,
@@ -54,9 +64,15 @@ def _record_retrieval_calls(model: MultiLayerMHDSRA2Model) -> list[dict[str, obj
                     "retrieved_k_shape": None
                     if retrieved_k is None
                     else tuple(retrieved_k.shape),
+                    "retrieved_mask_shape": None
+                    if retrieved_mask is None
+                    else tuple(retrieved_mask.shape),
+                    "retrieved_mask_valid": None
+                    if retrieved_mask is None
+                    else int(retrieved_mask.sum().item()),
                 }
             )
-            return _original(q, retrieved_k, retrieved_v)
+            return _original(q, retrieved_k, retrieved_v, retrieved_mask)
 
         layer._retrieval_attention = wrapped
     return records
@@ -134,14 +150,14 @@ def test_multilayer_retrieval_disabled_passes_no_external_kv() -> None:
     assert all(row["retrieved_v_is_none"] is True for row in records)
 
 
-def test_multilayer_retrieval_skips_reference_memory_for_batch_gt_one() -> None:
-    """The reference paged memory should skip unsupported batch-size > 1 safely.
+def test_multilayer_retrieval_supports_batch_gt_one_with_masks() -> None:
+    """The multilayer retrieval path should keep batch rows isolated.
 
     中文说明:
     - 调用方 / Called by: pytest。
     - 调用对象 / Calls: `MultiLayerMHDSRA2Model.forward`。
-    - 作用 / Purpose: 覆盖 CPU 分页记忆参考实现只支持 batch=1 的边界行为。
-    - 错误处理 / Error handling: batch>1 抛错或错误传入 retrieval K/V 时断言失败。
+    - 作用 / Purpose: 覆盖 batch>1 时 external paged memory 真实启用并携带 mask。
+    - 错误处理 / Error handling: 输出 shape、retrieval shape 或 mask 错误都会触发断言。
     """
     torch.manual_seed(20260602)
     model = _build_model(use_retrieval=True)
@@ -152,6 +168,83 @@ def test_multilayer_retrieval_skips_reference_memory_for_batch_gt_one() -> None:
         logits = model(tokens)
 
     assert logits.shape == (2, 12, 32)
-    assert records
-    assert all(row["retrieved_k_is_none"] is True for row in records)
-    assert all(row["retrieved_v_is_none"] is True for row in records)
+    retrieved_records = [row for row in records if row["retrieved_k_is_none"] is False]
+    assert retrieved_records
+    assert all(row["retrieved_k_shape"][0] == 2 for row in retrieved_records)
+    assert all(row["retrieved_mask_shape"][0] == 2 for row in retrieved_records)
+    assert all(row["retrieved_mask_valid"] > 0 for row in retrieved_records)
+
+
+class _CapturingRepository(PagedMemoryRepository):
+    """Paged memory repository that records max_position arguments in tests."""
+
+    def __init__(self) -> None:
+        super().__init__(enabled=True, page_size=4, dtype=torch.float32, max_tokens=2)
+        self.max_position_calls: list[torch.Tensor | int | None] = []
+
+    def retrieve(self, query, device, max_position=None, *, return_mask=False, profile=False):
+        if isinstance(max_position, torch.Tensor):
+            self.max_position_calls.append(max_position.detach().cpu().clone())
+        else:
+            self.max_position_calls.append(max_position)
+        return super().retrieve(
+            query,
+            device,
+            max_position=max_position,
+            return_mask=return_mask,
+            profile=profile,
+        )
+
+
+def test_multilayer_retrieval_uses_per_sample_sequence_lengths_for_max_position() -> None:
+    """Padded batch retrieval should pass per-sample max_position to paged memory.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `MultiLayerMHDSRA2Model.forward`, `PagedMemoryRepository.retrieve`。
+    - 作用 / Purpose: 防止 batch 内样本真实长度不同时，用单个 `state.position` 召回短样本的 pad/future token。
+    - 错误处理 / Error handling: 第二个 chunk 未传 `[4, 2]` 这类逐样本边界时断言失败。
+    """
+    torch.manual_seed(20260602)
+    model = MultiLayerMHDSRA2Model(
+        vocab_size=32,
+        dim=16,
+        num_layers=1,
+        K=8,
+        kr=2,
+        chunk_size=4,
+        use_retrieval=True,
+    )
+    repository = _CapturingRepository()
+    model._new_retrieval_repositories = lambda: [repository]
+    tokens = torch.arange(16, dtype=torch.long).view(2, 8) % 32
+    sequence_lengths = torch.tensor([8, 2], dtype=torch.long)
+
+    with torch.no_grad():
+        logits = model(tokens, sequence_lengths=sequence_lengths)
+
+    assert logits.shape == (2, 8, 32)
+    assert len(repository.max_position_calls) == 2
+    assert repository.max_position_calls[0].tolist() == [0, 0]
+    assert repository.max_position_calls[1].tolist() == [4, 2]
+
+
+def test_multilayer_selected_logits_rejects_positions_after_sequence_length() -> None:
+    """Selected logits should reject positions outside each sample's true length."""
+    model = MultiLayerMHDSRA2Model(
+        vocab_size=32,
+        dim=16,
+        num_layers=1,
+        K=8,
+        kr=2,
+        chunk_size=4,
+        use_retrieval=True,
+    )
+    tokens = torch.arange(16, dtype=torch.long).view(2, 8) % 32
+
+    with pytest.raises(ValueError, match="before each sample"):
+        model.forward_selected_logits(
+            tokens,
+            torch.tensor([7, 3], dtype=torch.long),
+            sequence_lengths=torch.tensor([8, 2], dtype=torch.long),
+        )

@@ -81,20 +81,34 @@ def _forward_chunked_hidden(model, x):
 
 
 class MHDSRA2CompatChunkLayer(nn.Module):
-    def __init__(self, dim, K=128, kr=8, local_window=256, use_local=True, use_retrieval=True):
+    def __init__(
+        self,
+        dim,
+        K=128,
+        kr=8,
+        local_window=256,
+        use_local=True,
+        use_retrieval=True,
+        mhdsra2_config_override=None,
+    ):
         super().__init__()
+        cfg = MHDSRA2Config(
+            dim=dim,
+            heads=max(1, min(8, dim // 16 if dim >= 16 else 1)),
+            slots=K,
+            read_topk=max(1, min(kr, K)),
+            write_topk=max(1, min(kr, K)),
+            local_window=max(1, int(local_window)),
+            use_local=use_local,
+            use_retrieval=use_retrieval,
+            detach_state=False,
+        )
+        for key, value in dict(mhdsra2_config_override or {}).items():
+            if hasattr(cfg, key):
+                setattr(cfg, key, value)
+        cfg.__post_init__()
         self.layer = MultiHeadDSRA2(
-            MHDSRA2Config(
-                dim=dim,
-                heads=max(1, min(8, dim // 16 if dim >= 16 else 1)),
-                slots=K,
-                read_topk=max(1, min(kr, K)),
-                write_topk=max(1, min(kr, K)),
-                local_window=max(1, int(local_window)),
-                use_local=use_local,
-                use_retrieval=use_retrieval,
-                detach_state=False,
-            )
+            cfg
         )
 
     def forward(self, chunk, S_prev=None, bypass_kv=None, S_time_prev=None, chunk_idx=None):
@@ -218,6 +232,7 @@ class MHDSRA2Model(LocalContextTokenModel):
         use_local=True,
         use_retrieval=True,
         local_window=None,
+        mhdsra2_config_override=None,
     ):
         super().__init__(
             vocab_size=vocab_size,
@@ -237,6 +252,7 @@ class MHDSRA2Model(LocalContextTokenModel):
             local_window=resolved_local_window,
             use_local=use_local,
             use_retrieval=use_retrieval,
+            mhdsra2_config_override=mhdsra2_config_override,
         )
         self.norm = nn.LayerNorm(dim)
         self.out_proj = nn.Linear(dim, vocab_size)
@@ -813,7 +829,7 @@ def train():
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
     model.train()
-    swanlab_run = init_swanlab(project="MHDSRA2", experiment_name="associative_recall", config={"epochs": epochs}, mode="cloud", tags=["associative_recall"])
+    swanlab_run = init_swanlab(project="MHDSRA2", experiment_name="associative_recall", config={"epochs": epochs}, mode="disabled", tags=["associative_recall"])
     for epoch in range(epochs):
         X, Y = generate_associative_recall_data(batch_size, seq_len, vocab_size, num_pairs=20)
         X, Y = X.to(device), Y.to(device)

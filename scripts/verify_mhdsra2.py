@@ -138,7 +138,7 @@ def main(argv=None):
     swanlab_run = init_swanlab(
         project="MHDSRA2",
         experiment_name="verify_mhdsra2",
-        mode="cloud",
+        mode="disabled",
         tags=["verify"],
     )
 

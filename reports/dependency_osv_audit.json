@@ -1,0 +1,7 @@
+{
+  "ecosystem": "PyPI",
+  "osv_endpoint": "https://api.osv.dev/v1/querybatch",
+  "package_count": 56,
+  "vulnerable_package_count": 0,
+  "vulnerable_packages": []
+}

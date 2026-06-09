@@ -444,7 +444,7 @@ def run_next_round_benchmark(args: argparse.Namespace) -> dict:
             "json_epochs": args.json_epochs,
             "diagnostic_device": args.diagnostic_device,
         },
-        mode="cloud",
+        mode="disabled",
         tags=["next_round", "benchmark"],
     )
     sections = [

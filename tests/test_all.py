@@ -5683,7 +5683,7 @@ _load_merged_test_module(
             ' verify_swanlab_args = parser.parse_',
             'args(["verify-2m"])\n        self.ass',
             'ertEqual(verify_swanlab_args.swanlab',
-            '_mode, "cloud")\n        disabled_arg',
+            '_mode, "disabled")\n        disabled_arg',
             's = parser.parse_args(["verify-2m", ',
             '"--swanlab-mode", "disabled"])\n     ',
             '   self.assertEqual(disabled_args.sw',
@@ -5970,7 +5970,8 @@ _load_merged_test_module(
             'oraryDirectory() as tmp_dir:\n       ',
             '     paths = save_niah_verification_',
             'report(result, tmp_dir, "niah_test",',
-            ' "NIAH Test")\n\n            self.asse',
+            ' "NIAH Test", project_root=tmp_dir)',
+            '\n\n            self.asse',
             'rtGreater(Path(paths["json"]).stat()',
             '.st_size, 0)\n            self.assert',
             'Greater(Path(paths["markdown"]).stat',
@@ -6921,6 +6922,59 @@ _load_merged_test_module(
 )
 
 
+def test_quality_ablation_group_overrides_are_explicit_regression() -> None:
+    from scripts.mhdsra2_quality_improvement_ablation import group_override
+
+    assert group_override("baseline") == {}
+    assert group_override("retrieval_query_pooling") == {
+        "retrieval_query_pooling": "max_token"
+    }
+    assert group_override("retrieval_gate_quality") == {
+        "retrieval_quality_gate_bias": 2.0
+    }
+    assert group_override("combined") == {
+        "retrieval_query_pooling": "max_token",
+        "retrieval_quality_gate_bias": 2.0,
+    }
+
+
+def test_quality_ablation_dry_run_expands_requested_matrix_regression() -> None:
+    from scripts.mhdsra2_quality_improvement_ablation import (
+        build_parser,
+        build_run_rows,
+        run_ablation,
+    )
+
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "--dry-run",
+            "--tasks",
+            "smoke,niah,json,two_digit",
+            "--groups",
+            "baseline,combined",
+            "--niah-seq-lengths",
+            "8192",
+            "--niah-seeds",
+            "101,202",
+            "--json-task-seed-roots",
+            "7",
+            "--two-digit-seeds",
+            "101",
+        ]
+    )
+
+    rows = build_run_rows(groups=args.groups, tasks=args.tasks, args=args)
+    payload = run_ablation(args)
+
+    assert len(rows) == 1 + 2 * 1 * 2 + 2 * 1 + 1 * 2 * 1 * 1 * 4
+    assert payload["config"]["dry_run"] is True
+    assert payload["rows"] == []
+    assert len(payload["planned_rows"]) == len(rows)
+    assert payload["planned_rows"][0]["status"] == "planned"
+    assert "config" in payload["planned_rows"][0]
+
+
 def _benchmark_guard_pool(
     *,
     validation_generation=0.0,
@@ -7239,4 +7293,806 @@ def test_json_generalization_evaluates_test_only_after_best_selection(monkeypatc
     assert result["config"]["epochs"] == 2
     assert result["test_pool_evaluation"]["generation_mean_sequence_accuracy"] == 0.7
     assert all("test_generation_exact_match_rate" not in row for row in result["search_results"])
+
+
+def test_slot_write_allows_same_key_value_overwrite_regression() -> None:
+    """Ensure zero novelty no longer blocks same-key correction writes.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `MultiHeadDSRA2._slot_write`。
+    - 作用 / Purpose: 保护同 key 新 value 覆盖旧 value 的核心记忆更新语义。
+    - 错误处理 / Error handling: 写入质量或写入门被 novelty 清零时断言失败。
+    """
+    import torch
+    from src.dsra.mhdsra2.improved_dsra_mha import (
+        MHDSRA2Config,
+        MHDSRA2State,
+        MultiHeadDSRA2,
+    )
+
+    cfg = MHDSRA2Config(
+        dim=2,
+        heads=1,
+        slots=1,
+        read_topk=1,
+        write_topk=1,
+        use_local=False,
+        use_retrieval=False,
+        detach_state=False,
+    )
+    layer = MultiHeadDSRA2(cfg)
+    with torch.no_grad():
+        layer.token_write_gate.weight.zero_()
+        layer.token_write_gate.bias.fill_(10.0)
+
+    same_key = torch.tensor([[[[1.0, 0.0]]]])
+    old_value = torch.tensor([[[[1.0, 0.0]]]])
+    new_value = torch.tensor([[[[0.0, 1.0]]]])
+    state = MHDSRA2State(
+        slot_k=same_key.clone(),
+        slot_v=old_value.clone(),
+        age=torch.zeros(1, 1, 1),
+        usage=torch.zeros(1, 1, 1),
+        confidence=torch.ones(1, 1, 1),
+        position=0,
+    )
+
+    next_state = layer._slot_write(same_key, new_value, state, torch.ones(1, 1, 1))
+
+    assert float(layer.last_write_stats["novelty_mean"]) == 0.0
+    assert float(layer.last_write_stats["write_mass_max"]) > 0.0
+    assert float(layer.last_write_stats["write_gate_max"]) > 0.0
+    assert float(layer.last_write_stats["overwrite_gate_mean"]) > 0.0
+    assert next_state.slot_v[0, 0, 0, 1] > state.slot_v[0, 0, 0, 1]
+    assert torch.isfinite(next_state.slot_v).all()
+
+
+def test_paged_exact_memory_single_key_token_survives_page_filter_regression() -> None:
+    """Ensure page selection can find a single exact token diluted by page mean.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `PagedExactMemory.append`, `PagedExactMemory.retrieve`。
+    - 作用 / Purpose: 防止页均值 summary 漏掉页内唯一关键 token。
+    - 错误处理 / Error handling: 返回错误页位置时断言失败。
+    """
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=4, dtype=torch.float32)
+    key = torch.tensor(
+        [
+            [
+                [
+                    [1.0, 0.0],
+                    [-1.0, 0.0],
+                    [-1.0, 0.0],
+                    [-1.0, 0.0],
+                    [0.2, 0.98],
+                    [0.2, 0.98],
+                    [0.2, 0.98],
+                    [0.2, 0.98],
+                ]
+            ]
+        ],
+        dtype=torch.float32,
+    )
+    value = torch.arange(8, dtype=torch.float32).view(1, 1, 8, 1).expand(1, 1, 8, 2)
+    memory.append(key, value)
+
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+    _, _, positions = memory.retrieve(query, top_pages=1, max_tokens=1)
+
+    assert positions is not None
+    assert positions.tolist() == [0]
+
+
+def test_paged_memory_repository_batch_gt_one_is_isolated_regression() -> None:
+    """Batch>1 external paged memory should retrieve per-sample tokens only.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `PagedMemoryRepository.append`, `PagedMemoryRepository.retrieve`。
+    - 作用 / Purpose: 防止 batch-isolated retrieval 退回到串样本或禁用行为。
+    - 错误处理 / Error handling: shape、mask 或 value marker 错误时断言失败。
+    """
+    import torch
+    from src.dsra.infrastructure.paged_memory_repository import PagedMemoryRepository
+
+    repository = PagedMemoryRepository(
+        enabled=True,
+        page_size=2,
+        dtype=torch.float32,
+        max_tokens=1,
+    )
+    key = torch.zeros(2, 1, 1, 4)
+    value = torch.zeros(2, 1, 1, 4)
+    key[0, 0, 0, 0] = 1.0
+    key[1, 0, 0, 1] = 1.0
+    value[0, 0, 0, 2] = 10.0
+    value[1, 0, 0, 3] = 20.0
+
+    repository.append(key, value)
+    retrieved_k, retrieved_v, retrieved_mask = repository.retrieve(
+        key,
+        device=key.device,
+        return_mask=True,
+    )
+
+    assert retrieved_k is not None
+    assert retrieved_v is not None
+    assert retrieved_mask is not None
+    assert retrieved_k.shape == (2, 1, 1, 4)
+    assert retrieved_v.shape == (2, 1, 1, 4)
+    assert retrieved_mask.tolist() == [[True], [True]]
+    assert float(retrieved_v[0, 0, 0, 2]) == 10.0
+    assert float(retrieved_v[0, 0, 0, 3]) == 0.0
+    assert float(retrieved_v[1, 0, 0, 2]) == 0.0
+    assert float(retrieved_v[1, 0, 0, 3]) == 20.0
+
+
+def test_paged_memory_repository_batch_padding_requires_mask_for_default_api_regression() -> None:
+    """Default repository retrieval should reject padded batch rows without a mask."""
+    import pytest
+    import torch
+    from src.dsra.infrastructure.paged_memory_repository import PagedMemoryRepository
+
+    repository = PagedMemoryRepository(
+        enabled=True,
+        page_size=2,
+        dtype=torch.float32,
+        max_tokens=1,
+    )
+    key = torch.zeros(2, 1, 2, 4)
+    value = torch.zeros(2, 1, 2, 4)
+    key[0, 0, :, 0] = 1.0
+    key[1, 0, :, 1] = 1.0
+    value[0, 0, :, 2] = 10.0
+    value[1, 0, :, 3] = 20.0
+    repository.append(key, value)
+
+    with pytest.raises(ValueError, match="return_mask=True"):
+        repository.retrieve(
+            key[:, :, -1:, :],
+            device=key.device,
+            max_position=torch.tensor([0, 2]),
+        )
+
+    _, retrieved_v, retrieved_mask = repository.retrieve(
+        key[:, :, -1:, :],
+        device=key.device,
+        max_position=torch.tensor([0, 2]),
+        return_mask=True,
+    )
+    assert retrieved_v is not None
+    assert retrieved_mask is not None
+    assert retrieved_mask.tolist() == [[False], [True]]
+
+
+def test_paged_exact_memory_batch_size_change_requires_reset_regression() -> None:
+    """Changing stream batch size requires an explicit memory reset."""
+    import pytest
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=2, dtype=torch.float32)
+    memory.append(torch.randn(2, 1, 1, 4), torch.randn(2, 1, 1, 4))
+
+    with pytest.raises(ValueError, match="reset"):
+        memory.append(torch.randn(1, 1, 1, 4), torch.randn(1, 1, 1, 4))
+
+    memory.reset()
+    memory.append(torch.randn(1, 1, 1, 4), torch.randn(1, 1, 1, 4))
+    assert memory.batch_size == 1
+    assert memory.next_position == 1
+
+
+def test_paged_exact_memory_batch_max_position_returns_padding_mask_regression() -> None:
+    """Per-sample max_position should produce mask=False padding for empty rows."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=2, dtype=torch.float32)
+    key = torch.zeros(2, 1, 2, 4)
+    value = torch.zeros(2, 1, 2, 4)
+    key[0, 0, :, 0] = 1.0
+    key[1, 0, :, 1] = 1.0
+    value[0, 0, :, 2] = 10.0
+    value[1, 0, :, 3] = 20.0
+    memory.append(key, value)
+
+    _, retrieved_v, positions, retrieved_mask = memory.retrieve(
+        key[:, :, -1:, :],
+        top_pages=1,
+        max_tokens=1,
+        max_position=torch.tensor([0, 2]),
+        return_mask=True,
+    )
+
+    assert retrieved_v is not None
+    assert positions is not None
+    assert retrieved_mask is not None
+    assert positions.tolist() == [[-1], [1]]
+    assert retrieved_mask.tolist() == [[False], [True]]
+    assert float(retrieved_v[0, 0, 0, 2]) == 0.0
+    assert float(retrieved_v[1, 0, 0, 3]) == 20.0
+
+
+def test_paged_exact_memory_invalidate_before_is_per_batch_sample_regression() -> None:
+    """invalidate_before should apply independently to each batch row."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=1, dtype=torch.float32)
+    key = torch.randn(2, 1, 2, 4)
+    value = torch.randn(2, 1, 2, 4)
+    memory.append(key, value)
+
+    memory.invalidate_before(torch.tensor([1, 0]))
+
+    assert [[page.valid for page in pages] for pages in memory.pages_by_sample] == [
+        [False, True],
+        [True, True],
+    ]
+
+
+def test_paged_exact_memory_profile_does_not_change_batch_results_regression() -> None:
+    """Profiling should fill diagnostics without changing retrieve outputs."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=2, dtype=torch.float32)
+    key = torch.zeros(2, 1, 4, 4)
+    value = torch.zeros(2, 1, 4, 4)
+    key[0, 0, :, 0] = 1.0
+    key[1, 0, :, 1] = 1.0
+    value[0, 0, :, 2] = torch.arange(4, dtype=torch.float32)
+    value[1, 0, :, 3] = torch.arange(10, 14, dtype=torch.float32)
+    memory.append(key, value)
+
+    plain = memory.retrieve(key[:, :, -1:, :], top_pages=2, max_tokens=2, return_mask=True)
+    profiled = memory.retrieve(
+        key[:, :, -1:, :],
+        top_pages=2,
+        max_tokens=2,
+        return_mask=True,
+        profile=True,
+    )
+
+    assert memory.last_retrieve_profile is not None
+    assert memory.last_retrieve_profile["page_score_mode"] == "vectorized"
+    assert memory.last_retrieve_profile["batch_size"] == 2
+    assert memory.last_retrieve_profile["retrieved_token_counts"] == [2, 2]
+    for plain_item, profiled_item in zip(plain, profiled):
+        assert plain_item is not None
+        assert profiled_item is not None
+        torch.testing.assert_close(plain_item, profiled_item)
+
+
+def test_paged_exact_memory_vectorized_page_scores_match_fallback_regression() -> None:
+    """Vectorized page scoring should match the sample-loop fallback."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=2, dtype=torch.float32)
+    key = torch.zeros(2, 1, 5, 4)
+    value = torch.zeros(2, 1, 5, 4)
+    key[0, 0, :, 0] = torch.tensor([1.0, -1.0, 0.8, 1.0, -0.5])
+    key[1, 0, :, 1] = torch.tensor([0.5, 1.0, -1.0, 0.7, 1.0])
+    value[0, 0, :, 2] = torch.arange(5, dtype=torch.float32)
+    value[1, 0, :, 3] = torch.arange(20, 25, dtype=torch.float32)
+    memory.append(key, value)
+    query = torch.zeros(2, 1, 1, 4)
+    query[0, 0, 0, 0] = 1.0
+    query[1, 0, 0, 1] = 1.0
+
+    vectorized = memory.retrieve(
+        query,
+        top_pages=2,
+        max_tokens=3,
+        max_position=torch.tensor([5, 4]),
+        return_mask=True,
+        profile=True,
+    )
+    assert memory.last_retrieve_profile is not None
+    assert memory.last_retrieve_profile["page_score_mode"] == "vectorized"
+    original_limit = memory._VECTOR_PAGE_SCORE_MAX_ELEMENTS
+    memory._VECTOR_PAGE_SCORE_MAX_ELEMENTS = 1
+    try:
+        fallback = memory.retrieve(
+            query,
+            top_pages=2,
+            max_tokens=3,
+            max_position=torch.tensor([5, 4]),
+            return_mask=True,
+            profile=True,
+        )
+    finally:
+        memory._VECTOR_PAGE_SCORE_MAX_ELEMENTS = original_limit
+
+    assert memory.last_retrieve_profile is not None
+    assert memory.last_retrieve_profile["page_score_mode"] == "sample_loop"
+    for vectorized_item, fallback_item in zip(vectorized, fallback):
+        assert vectorized_item is not None
+        assert fallback_item is not None
+        torch.testing.assert_close(vectorized_item, fallback_item)
+
+
+def test_retrieval_mask_disables_empty_batch_row_regression() -> None:
+    """Masked retrieval padding should not affect empty batch rows."""
+    import torch
+    from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
+
+    torch.manual_seed(0)
+    cfg = MHDSRA2Config(
+        dim=8,
+        heads=2,
+        slots=4,
+        read_topk=1,
+        write_topk=1,
+        use_local=False,
+        use_retrieval=True,
+        detach_state=False,
+    )
+    layer = MultiHeadDSRA2(cfg)
+    x = torch.randn(2, 1, 8)
+    q_proj, _, _ = layer.qkv(x).chunk(3, dim=-1)
+    query_heads = layer._to_heads(q_proj)
+    retrieved_k = torch.randn(2, 2, 1, 4)
+    retrieved_v = torch.randn(2, 2, 1, 4)
+    retrieved_mask = torch.tensor([[True], [False]])
+
+    retrieval_out = layer._retrieval_attention(query_heads, retrieved_k, retrieved_v, retrieved_mask)
+    _, _, aux = layer(
+        x,
+        retrieved_k=retrieved_k,
+        retrieved_v=retrieved_v,
+        retrieved_mask=retrieved_mask,
+        return_aux=True,
+    )
+
+    assert torch.isfinite(retrieval_out).all()
+    assert float(retrieval_out[0].detach().abs().sum().item()) > 0.0
+    assert float(retrieval_out[1].detach().abs().sum().item()) == 0.0
+    assert aux["retrieval_available"] is True
+    assert float(aux["retrieval_available_ratio"]) == 0.5
+    assert float(aux["retrieved_token_count_mean"]) == 0.5
+    assert aux["gate_retrieval_by_sample"].shape == (2,)
+    assert float(aux["gate_retrieval_by_sample"][0]) > 0.0
+    assert float(aux["gate_retrieval_by_sample"][1]) == 0.0
+
+
+def test_retrieval_mask_is_finite_in_half_precision_regression() -> None:
+    """Half precision retrieval masking should avoid overflow."""
+    import torch
+    from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
+
+    cfg = MHDSRA2Config(
+        dim=8,
+        heads=2,
+        slots=4,
+        read_topk=1,
+        write_topk=1,
+        use_local=False,
+        use_retrieval=True,
+        detach_state=False,
+    )
+    layer = MultiHeadDSRA2(cfg).half()
+    q = torch.randn(2, 2, 1, 4, dtype=torch.float16)
+    retrieved_k = torch.randn(2, 2, 1, 4, dtype=torch.float16)
+    retrieved_v = torch.randn(2, 2, 1, 4, dtype=torch.float16)
+    retrieved_mask = torch.tensor([[True], [False]])
+
+    retrieval_out = layer._retrieval_attention(q, retrieved_k, retrieved_v, retrieved_mask)
+
+    assert retrieval_out.dtype == torch.float16
+    assert torch.isfinite(retrieval_out).all()
+    assert float(retrieval_out[1].detach().abs().sum().item()) == 0.0
+
+
+def test_dsra_chunk_layer_forward_step_uses_single_fast_qkv_projection_regression() -> None:
+    """Ensure compatibility forward_step only computes fast QKV once.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `DSRA_Chunk_Layer.forward_step`。
+    - 作用 / Purpose: 防止逐 token 解码路径重复执行 `core.qkv(x_t)`。
+    - 错误处理 / Error handling: 调用次数、输出形状或 external memory 写入异常都会触发断言。
+    """
+    import torch
+    from src.dsra.dsra_layer import DSRA_Chunk_Layer
+
+    torch.manual_seed(0)
+    layer = DSRA_Chunk_Layer(dim=8, K=4, kr=1, use_bypass=True)
+    call_count = {"qkv": 0}
+    original_forward = layer.core.qkv.forward
+
+    def counted_forward(x: torch.Tensor) -> torch.Tensor:
+        call_count["qkv"] += 1
+        return original_forward(x)
+
+    layer.core.qkv.forward = counted_forward
+    out, state, kv_cache = layer.forward_step(torch.randn(1, 1, 8), None, None)
+
+    assert call_count["qkv"] == 1
+    assert out.shape == (1, 1, 8)
+    assert state.position == 1
+    assert kv_cache[0] is not None
+    assert kv_cache[1] is not None
+    assert kv_cache[0].shape == (1, 1, 8)
+    assert kv_cache[1].shape == (1, 1, 8)
+    assert layer.memory_repository.memory.next_position == 1
+
+
+def test_dsra_chunk_layer_forward_step_rejects_multi_token_input_regression() -> None:
+    """Preserve the public one-token contract for compatibility forward_step.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `DSRA_Chunk_Layer.forward_step`。
+    - 作用 / Purpose: 防止绕过核心层 `forward_step` 后丢失单 token 输入校验。
+    - 错误处理 / Error handling: 多 token 输入未抛出 ValueError 时断言失败。
+    """
+    import pytest
+    import torch
+    from src.dsra.dsra_layer import DSRA_Chunk_Layer
+
+    layer = DSRA_Chunk_Layer(dim=8, K=4, kr=1, use_bypass=True)
+
+    with pytest.raises(ValueError, match="one token"):
+        layer.forward_step(torch.randn(1, 2, 8), None, None)
+
+
+def test_dsra_chunk_layer_batch_gt_one_external_memory_is_active_regression() -> None:
+    """Batch>1 compatibility layer should keep external memory active.
+
+    中文说明:
+    - 调用方 / Called by: pytest。
+    - 调用对象 / Calls: `DSRA_Chunk_Layer.forward`。
+    - 作用 / Purpose: 确认旧兼容层不再因 batch>1 禁用 external paged memory。
+    - 错误处理 / Error handling: warning、诊断或写入位置错误都会触发断言。
+    """
+    import warnings
+    import torch
+    from src.dsra.dsra_layer import DSRA_Chunk_Layer
+
+    layer = DSRA_Chunk_Layer(dim=8, K=4, kr=1, use_bypass=True)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        out, state, kv_cache, _ = layer(torch.randn(2, 3, 8))
+
+    assert out.shape == (2, 3, 8)
+    assert state.position == 3
+    assert kv_cache[0] is not None
+    assert not any("batch_size>1" in str(item.message) for item in caught)
+    assert layer.memory_repository.memory.next_positions == [3, 3]
+    assert [len(pages) for pages in layer.memory_repository.memory.pages_by_sample] == [1, 1]
+    assert layer.last_external_memory_diagnostic["status"] == "active"
+    assert layer.last_external_memory_diagnostic["batch_size"] == 2
+
+
+def test_paged_exact_memory_max_pages_prunes_oldest_pages_regression() -> None:
+    """Bounded paged memory should prune old pages only when explicitly configured."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    default_memory = PagedExactMemory(page_size=1, dtype=torch.float32)
+    bounded_memory = PagedExactMemory(page_size=1, dtype=torch.float32, max_pages=2)
+    key = torch.randn(1, 1, 4, 4)
+    value = torch.randn(1, 1, 4, 4)
+
+    default_memory.append(key[:, :, :3, :], value[:, :, :3, :])
+    bounded_memory.append(key, value)
+
+    assert len(default_memory) == 3
+    assert len(bounded_memory) == 2
+    assert bounded_memory.next_position == 4
+    assert [(page.start, page.end) for page in bounded_memory.pages] == [(2, 3), (3, 4)]
+
+
+def test_paged_exact_memory_max_pages_prefers_invalid_pages_regression() -> None:
+    """Invalid pages should be pruned before still-valid recent pages."""
+    import torch
+    from src.dsra.mhdsra2.paged_exact_memory import PagedExactMemory
+
+    memory = PagedExactMemory(page_size=1, dtype=torch.float32, max_pages=3)
+    memory.append(torch.randn(1, 1, 3, 4), torch.randn(1, 1, 3, 4))
+    memory.invalidate_before(2)
+    memory.append(torch.randn(1, 1, 1, 4), torch.randn(1, 1, 1, 4))
+
+    assert len(memory) == 3
+    assert [(page.start, page.end, page.valid) for page in memory.pages] == [
+        (1, 2, False),
+        (2, 3, True),
+        (3, 4, True),
+    ]
+
+
+def test_retrieval_gate_diagnostics_and_quality_bias_regression() -> None:
+    """Gate diagnostics should be present, and opt-in retrieval bias should raise retrieval weight."""
+    import torch
+    from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
+
+    torch.manual_seed(0)
+    cfg = MHDSRA2Config(
+        dim=8,
+        heads=2,
+        slots=4,
+        read_topk=1,
+        write_topk=1,
+        use_local=False,
+        use_retrieval=True,
+        retrieval_quality_gate_bias=0.0,
+        detach_state=False,
+    )
+    biased_cfg = MHDSRA2Config(**{**cfg.__dict__, "retrieval_quality_gate_bias": 2.0})
+    base = MultiHeadDSRA2(cfg)
+    biased = MultiHeadDSRA2(biased_cfg)
+    biased.load_state_dict(base.state_dict())
+    x = torch.randn(1, 2, 8)
+    q_proj, _, _ = base.qkv(x).chunk(3, dim=-1)
+    retrieved_k = base._to_heads(q_proj[:, :1, :]).detach()
+    retrieved_v = torch.randn_like(retrieved_k)
+
+    _, _, base_aux = base(x, retrieved_k=retrieved_k, retrieved_v=retrieved_v, return_aux=True)
+    _, _, biased_aux = biased(x, retrieved_k=retrieved_k, retrieved_v=retrieved_v, return_aux=True)
+    _, _, missing_aux = biased(x, return_aux=True)
+
+    assert base_aux["retrieval_available"] is True
+    assert base_aux["retrieved_token_count"] == 1
+    assert "slot_confidence_mean" in base_aux
+    assert biased_aux["gate_retrieval_mean"] > base_aux["gate_retrieval_mean"]
+    assert missing_aux["retrieval_available"] is False
+    assert float(missing_aux["gate_retrieval_mean"]) == 0.0
+
+
+def test_context_film_hidden_and_mask_cache_regression() -> None:
+    """FiLM hidden width should scale by default, and local mask cache should preserve output."""
+    import torch
+    from src.dsra.mhdsra2.improved_dsra_mha import MHDSRA2Config, MultiHeadDSRA2
+
+    scaled = MultiHeadDSRA2(MHDSRA2Config(dim=64, heads=4, use_context_film=True))
+    legacy = MultiHeadDSRA2(
+        MHDSRA2Config(dim=64, heads=4, use_context_film=True, context_film_hidden=8)
+    )
+    assert scaled.film_net[0].out_features == 16
+    assert legacy.film_net[0].out_features == 8
+
+    torch.manual_seed(0)
+    cfg = MHDSRA2Config(
+        dim=8,
+        heads=2,
+        slots=4,
+        read_topk=1,
+        write_topk=1,
+        local_window=4,
+        use_local=True,
+        use_retrieval=False,
+        detach_state=False,
+    )
+    cached = MultiHeadDSRA2(cfg)
+    reference = MultiHeadDSRA2(cfg)
+    reference.load_state_dict(cached.state_dict())
+    x = torch.randn(1, 2, 8)
+
+    y_cached, _ = cached(x)
+    first_mask = cached._local_mask_cache
+    y_cached_again, _ = cached(x)
+    y_ref, _ = reference(x)
+    y_ref_again, _ = reference(x)
+
+    assert first_mask is not None
+    assert cached._local_mask_cache is first_mask
+    torch.testing.assert_close(y_cached, y_ref)
+    torch.testing.assert_close(y_cached_again, y_ref_again)
+
+
+def test_state_head_selector_and_momentum_helpers_regression() -> None:
+    """State cache injection should be non-mutating, and helper wrappers should remain compatible."""
+    import torch
+    from src.dsra.domain import select_mhdsra2_heads
+    from src.dsra.dsra_layer import DSRA_Chunk_Layer
+    from src.dsra.dsra_model import MultiLayerMHDSRA2Model, select_mhdsra2_heads as model_heads
+
+    assert model_heads(32) == select_mhdsra2_heads(32)
+    layer = DSRA_Chunk_Layer(dim=32, K=4, kr=1)
+    assert layer.core.heads == select_mhdsra2_heads(32)
+
+    state = layer._coerce_state(None, 1, torch.device("cpu"), torch.float32)
+    cached_k = torch.randn(1, layer.core.heads, 1, layer.core.d_head)
+    cached_v = torch.randn(1, layer.core.heads, 1, layer.core.d_head)
+    layer.forward_step(torch.randn(1, 1, 32), state, (cached_k, cached_v))
+    assert state.local_k is None
+    assert state.local_v is None
+
+    model = MultiLayerMHDSRA2Model(
+        vocab_size=16,
+        dim=16,
+        num_layers=2,
+        K=4,
+        kr=1,
+        chunk_size=2,
+        mhdsra2_config_override={"momentum_qkv": True},
+    )
+    called = [0, 0]
+    for idx, mh_layer in enumerate(model.layers):
+        def _mark_call(index: int = idx) -> None:
+            called[index] += 1
+
+        mh_layer.update_momentum = _mark_call
+    model.update_momentum()
+    assert called == [1, 1]
+
+
+def test_batch_retrieval_quality_smoke_core_regression() -> None:
+    """Batch retrieval quality smoke should pass on a fast deterministic grid."""
+    import torch
+    from scripts.mhdsra2_batch_retrieval_quality_smoke import run_quality_smoke
+
+    payload = run_quality_smoke(
+        batch_sizes=(1, 2),
+        tokens=(64,),
+        page_size=16,
+        top_pages=2,
+        max_tokens=4,
+        device=torch.device("cpu"),
+    )
+
+    assert payload["summary"]["passed"] is True
+    assert payload["summary"]["no_cross_sample_leak"] is True
+    assert payload["summary"]["no_future_leak"] is True
+    assert payload["summary"]["all_batch_loop_positions_match"] is True
+    assert payload["model_call_chain"]["passed"] is True
+    assert {case["scenario"] for case in payload["cases"]} == {
+        "niah_single_needle",
+        "json_latest_field",
+        "future_cutoff",
+    }
+    assert all(case["top1_hit_rate"] == 1.0 for case in payload["cases"])
+    assert all(case["owner_clean"] is True for case in payload["cases"])
+
+
+def test_quality_ablation_invalid_query_pooling_override_is_rejected_regression() -> None:
+    """Invalid experiment query pooling overrides should fail at model construction."""
+    import pytest
+    from scripts.toy_task_associative_recall import MHDSRA2CompatChunkLayer
+    from src.dsra.dsra_model import MultiLayerMHDSRA2Model
+
+    with pytest.raises(ValueError, match="retrieval_query_pooling"):
+        MultiLayerMHDSRA2Model(
+            vocab_size=16,
+            dim=16,
+            num_layers=1,
+            K=4,
+            kr=1,
+            chunk_size=8,
+            mhdsra2_config_override={"retrieval_query_pooling": "invalid"},
+        )
+
+    with pytest.raises(ValueError, match="retrieval_query_pooling"):
+        MHDSRA2CompatChunkLayer(
+            dim=16,
+            K=4,
+            kr=1,
+            local_window=8,
+            mhdsra2_config_override={"retrieval_query_pooling": "invalid"},
+        )
+
+
+def test_quality_ablation_smoke_run_is_reported_as_row_regression() -> None:
+    """The shared smoke quality gate should appear in the unified report rows."""
+    from scripts.mhdsra2_quality_improvement_ablation import build_parser, run_ablation
+
+    args = build_parser().parse_args(
+        [
+            "--tasks",
+            "smoke",
+            "--groups",
+            "baseline",
+            "--device",
+            "cpu",
+            "--smoke-batch-sizes",
+            "1",
+            "--smoke-tokens",
+            "64",
+            "--smoke-page-size",
+            "16",
+            "--smoke-top-pages",
+            "2",
+            "--smoke-max-tokens",
+            "4",
+        ]
+    )
+
+    payload = run_ablation(args)
+
+    assert len(payload["rows"]) == 1
+    row = payload["rows"][0]
+    assert row["group"] == "shared"
+    assert row["task"] == "smoke"
+    assert row["status"] == "passed"
+    assert row["config"]["page_size"] == 16
+    assert row["validation_metrics"]["passed"] is True
+    assert row["test_metrics"] == {}
+
+
+def test_quality_ablation_slot_collision_diagnostic_summarizes_usage_regression() -> None:
+    """Slot collision diagnostics should report concentration without changing training."""
+    import pytest
+    import torch
+    from scripts.mhdsra2_quality_improvement_ablation import (
+        summarize_slot_collision_diagnostics,
+    )
+
+    summary = summarize_slot_collision_diagnostics(
+        {
+            "slot_usage": torch.tensor([[[10.0, 0.0, 0.0, 0.0]]]),
+            "slot_confidence": torch.tensor([[[0.5, 0.0, 0.0, 0.0]]]),
+        }
+    )
+
+    assert summary["available"] is True
+    assert summary["effective_slot_count"] == pytest.approx(1.0)
+    assert summary["top1_usage_share"] == pytest.approx(1.0)
+    assert summary["collision_risk"] == "high"
+
+
+def test_multilayer_selected_logits_return_aux_is_opt_in_regression() -> None:
+    """Selected-logit aux diagnostics should be opt-in and preserve logits."""
+    import torch
+    from src.dsra.dsra_model import MultiLayerMHDSRA2Model
+
+    model = MultiLayerMHDSRA2Model(
+        vocab_size=32,
+        dim=16,
+        num_layers=1,
+        K=4,
+        kr=1,
+        chunk_size=4,
+        use_retrieval=True,
+    )
+    tokens = torch.arange(8, dtype=torch.long).view(1, 8) % 32
+    positions = torch.tensor([7], dtype=torch.long)
+
+    with torch.no_grad():
+        logits = model.forward_selected_logits(tokens, positions)
+        logits_with_aux, aux = model.forward_selected_logits(
+            tokens,
+            positions,
+            return_aux=True,
+        )
+
+    torch.testing.assert_close(logits_with_aux, logits)
+    assert aux["last_layer"] is not None
+    assert "slot_usage" in aux["last_layer"]
+
+
+def test_quality_ablation_checkpoint_rows_round_trip_regression(tmp_path) -> None:
+    """Row checkpoints should round-trip by stable row key."""
+    from scripts.mhdsra2_quality_improvement_ablation import (
+        append_checkpoint_row,
+        load_checkpoint_rows,
+        row_key,
+    )
+
+    row = {
+        "group": "baseline",
+        "task": "json",
+        "seed": 7,
+        "status": "completed",
+        "config": {"epochs": 1, "mhdsra2_config_override": {}},
+        "validation_metrics": {"validation_generation_exact_match_rate": 1.0},
+        "test_metrics": {},
+    }
+    checkpoint_path = tmp_path / "rows.jsonl"
+
+    append_checkpoint_row(checkpoint_path, row)
+    loaded = load_checkpoint_rows(checkpoint_path)
+
+    assert loaded[row_key(row)]["status"] == "completed"
+    assert loaded[row_key(row)]["validation_metrics"][
+        "validation_generation_exact_match_rate"
+    ] == 1.0
 

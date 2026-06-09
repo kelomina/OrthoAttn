@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import math
 
+import pytest
 import torch
 
 from scripts.tiny_llama_mhdsra2 import evaluate_ppl
-from scripts.tiny_llama_shared import PAD_ID, split_train_validation_text
+from scripts.tiny_llama_shared import PAD_ID, resolve_device, split_train_validation_text
 
 
 class FixedLogitModel(torch.nn.Module):
@@ -72,3 +73,19 @@ def test_split_train_validation_text_uses_tail_as_validation() -> None:
 
     assert train_text == "abcdefgh"
     assert valid_text == "ij"
+
+
+def test_tiny_llama_resolve_device_uses_cuda_zero_alias() -> None:
+    """Validate tiny LLaMA device parsing follows the project cuda:0 policy.
+
+    中文说明:
+    - 调用方 / Called by: pytest.
+    - 调用对象 / Calls: `scripts.tiny_llama_shared.resolve_device`.
+    - 作用 / Purpose: 防止 `auto/cuda` 路径返回裸 `cuda` 或接受非 0 号 GPU。
+    - 错误处理 / Error handling: `cuda:1` 必须抛出 `ValueError`。
+    - 副作用 / Side effects: 只构造 `torch.device`，不分配 CUDA 张量。
+    """
+    assert resolve_device("cpu") == torch.device("cpu")
+    assert resolve_device("cuda") == torch.device("cuda:0")
+    with pytest.raises(ValueError):
+        resolve_device("cuda:1")

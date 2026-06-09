@@ -12,7 +12,7 @@ O(B * H * C * K) per chunk, not O(B * H * T^2).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Dict, Optional, Tuple
 
 import torch
@@ -41,6 +41,9 @@ class MHDSRA2Config:
     conf_decay: float = 0.999
     usage_prior: float = 0.25
     retrieval_tau: float = 8.0
+    retrieval_query_pooling: str = "mean"
+    retrieval_quality_gate_bias: float = 0.0
+    retrieval_quality_gate_adapter: bool = False
     age_write_bias: float = 0.02
     conf_read_bias: float = 0.50
     age_read_penalty: float = 0.005
@@ -49,6 +52,7 @@ class MHDSRA2Config:
     # CCFM: Context-Conditioned Feature Modulation
     use_context_film: bool = False
     max_contexts: int = 8
+    context_film_hidden: Optional[int] = None
     # Momentum-QKV: slow-moving QKV for stable slot reading
     momentum_qkv: bool = False
     momentum_decay: float = 0.9999
@@ -63,6 +67,12 @@ class MHDSRA2Config:
             raise ValueError("top-k values must be positive")
         if self.slots < 1:
             raise ValueError("slots must be positive")
+        if self.context_film_hidden is not None and self.context_film_hidden < 1:
+            raise ValueError("context_film_hidden must be positive or None")
+        if self.retrieval_query_pooling not in {"mean", "max_token"}:
+            raise ValueError("retrieval_query_pooling must be 'mean' or 'max_token'")
+        if not isinstance(self.retrieval_quality_gate_adapter, bool):
+            raise ValueError("retrieval_quality_gate_adapter must be a bool")
 
 
 @dataclass
@@ -147,16 +157,23 @@ class MultiHeadDSRA2(nn.Module):
 
         self.token_write_gate = nn.Linear(self.d_head, 1)
         self.fuse_gate = nn.Linear(self.d_head, 3)
+        if cfg.retrieval_quality_gate_adapter:
+            self.retrieval_quality_adapter = nn.Linear(4, 1)
+            nn.init.zeros_(self.retrieval_quality_adapter.weight)
+            nn.init.zeros_(self.retrieval_quality_adapter.bias)
+        else:
+            self.retrieval_quality_adapter = None
 
         # CCFM: Context-Conditioned Feature Modulation (per-feature FiLM)
         if cfg.use_context_film:
             self.context_embed = nn.Embedding(cfg.max_contexts, cfg.dim)
+            film_hidden = self._resolve_context_film_hidden(cfg)
             # FiLM network outputs 6*dim values: scale_q, bias_q, scale_k, bias_k, scale_v, bias_v
             # Each is a per-feature vector (not scalar), applied as: q_i * (1+tanh(s_i)) + b_i
             self.film_net = nn.Sequential(
-                nn.Linear(cfg.dim, 8),
+                nn.Linear(cfg.dim, film_hidden),
                 nn.ReLU(),
-                nn.Linear(8, 6 * cfg.dim),
+                nn.Linear(film_hidden, 6 * cfg.dim),
             )
             self._active_context_id = 0
         else:
@@ -179,6 +196,34 @@ class MultiHeadDSRA2(nn.Module):
 
         self.log_tau_read = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_init))))
         self.log_tau_write = nn.Parameter(torch.log(torch.tensor(float(cfg.tau_write_init))))
+        self._local_mask_cache_key: Optional[tuple[int, int, int, str, int | None, torch.dtype]] = None
+        self._local_mask_cache: Optional[torch.Tensor] = None
+
+    @staticmethod
+    def _resolve_context_film_hidden(cfg: MHDSRA2Config) -> int:
+        """Resolve the CCFM FiLM hidden width from explicit or scaled config.
+
+        中文说明:
+        - 调用方 / Called by: `__init__`
+        - 调用对象 / Calls: 内置 `min`, `max`
+        - 作用 / Purpose: 让 CCFM 的 FiLM 网络宽度随模型维度缩放，避免固定 hidden=8
+          成为大维度模型的表达瓶颈；旧 checkpoint 可显式传 `context_film_hidden=8`
+        - 参数 / Parameters: `cfg` 是当前 MHDSRA2 配置
+        - 返回 / Returns: 正整数 hidden width
+        - 错误处理 / Error handling: 非法显式值由 `MHDSRA2Config.__post_init__` 拦截
+        - 关键词 / Keywords:
+          ccfm|film|hidden|context|scale|mhdsra2|config|modulation|上下文
+
+        English documentation:
+        Function name:
+            _resolve_context_film_hidden
+        Purpose:
+            Use an explicit FiLM hidden size when provided, otherwise scale it
+            with model dimension using a bounded rule.
+        """
+        if cfg.context_film_hidden is not None:
+            return int(cfg.context_film_hidden)
+        return min(max(cfg.dim // 4, 8), 128)
 
     def set_context(self, context_id: int) -> None:
         """Set active context ID for CCFM modulation. Context IDs range from 0 to max_contexts-1.
@@ -297,15 +342,21 @@ class MultiHeadDSRA2(nn.Module):
         mass.scatter_add_(1, idx_flat.unsqueeze(-1), mass_src)
         return out.view(b, h, slots, d), mass.view(b, h, slots, 1)
 
-    @staticmethod
     def _causal_prefix_mask(
-        t_q: int, t_k: int, prefix_len: int, device, dtype
+        self, t_q: int, t_k: int, prefix_len: int, device, dtype
     ) -> torch.Tensor:
+        device_index = getattr(device, "index", None)
+        cache_key = (int(t_q), int(t_k), int(prefix_len), str(device), device_index, dtype)
+        if self._local_mask_cache_key == cache_key and self._local_mask_cache is not None:
+            return self._local_mask_cache
         q_pos = torch.arange(t_q, device=device).unsqueeze(1) + prefix_len
         k_pos = torch.arange(t_k, device=device).unsqueeze(0)
         mask = torch.zeros(t_q, t_k, device=device, dtype=dtype)
         mask = mask.masked_fill(k_pos > q_pos, float("-inf"))
-        return mask.unsqueeze(0).unsqueeze(0)
+        mask = mask.unsqueeze(0).unsqueeze(0)
+        self._local_mask_cache_key = cache_key
+        self._local_mask_cache = mask
+        return mask
 
     def _slot_read(
         self, q: torch.Tensor, state: MHDSRA2State
@@ -386,7 +437,9 @@ class MultiHeadDSRA2(nn.Module):
         q: torch.Tensor,
         retrieved_k: Optional[torch.Tensor],
         retrieved_v: Optional[torch.Tensor],
-    ) -> torch.Tensor:
+        retrieved_mask: Optional[torch.Tensor] = None,
+        return_weights: bool = False,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
         """Read exact external K/V memory with sharp score-normalized attention.
 
         中文说明:
@@ -396,6 +449,7 @@ class MultiHeadDSRA2(nn.Module):
           使用带温度的 softmax 让最高相似 token 胜出，避免多个相近 distractor 用数量压过 exact match
         - 变量 / Variables:
           `q` 为当前 query heads, `retrieved_k/retrieved_v` 为外部记忆召回的键和值,
+          `retrieved_mask` 标记 batch padding 后仍有效的召回 token,
           `logits` 为缩放点积分数, `tau` 为 retrieval softmax 温度, `weights` 为 token 权重
         - 接入 / Integration: 调用 `forward(..., retrieved_k=..., retrieved_v=...)` 时自动启用；
           可通过 `MHDSRA2Config.retrieval_tau` 调整 retrieval 分支锐度
@@ -405,17 +459,41 @@ class MultiHeadDSRA2(nn.Module):
         """
         cfg = self.cfg
         if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
-            return torch.zeros_like(q)
+            output = torch.zeros_like(q)
+            return (output, None) if return_weights else output
         scale = self.d_head**-0.5
         tau = torch.tensor(float(cfg.retrieval_tau), device=q.device, dtype=q.dtype)
         if retrieved_k.dim() == 4:
             logits = torch.einsum("bhtd,bhrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
-            weights = F.softmax(tau * logits, dim=-1)
-            return torch.einsum("bhtr,bhrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask).to(device=q.device)
+            valid_view = valid.view(valid.shape[0], 1, 1, valid.shape[1])
+            scaled_logits = (tau * logits).masked_fill(
+                ~valid_view,
+                torch.finfo(logits.dtype).min,
+            )
+            weights = F.softmax(scaled_logits, dim=-1)
+            weights = weights * valid_view.to(dtype=q.dtype)
+            denom = weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
+            weights = weights / denom
+            output = torch.einsum("bhtr,bhrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            return (output, weights) if return_weights else output
         if retrieved_k.dim() == 5:
             logits = torch.einsum("bhtd,bhtrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
-            weights = F.softmax(tau * logits, dim=-1)
-            return torch.einsum("bhtr,bhtrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask).to(device=q.device)
+            if valid.dim() == 2:
+                valid_view = valid.view(valid.shape[0], 1, 1, valid.shape[1])
+            else:
+                valid_view = valid.unsqueeze(1)
+            scaled_logits = (tau * logits).masked_fill(
+                ~valid_view,
+                torch.finfo(logits.dtype).min,
+            )
+            weights = F.softmax(scaled_logits, dim=-1)
+            weights = weights * valid_view.to(dtype=q.dtype)
+            denom = weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
+            weights = weights / denom
+            output = torch.einsum("bhtr,bhtrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            return (output, weights) if return_weights else output
         raise ValueError("retrieved_k/v must be [B,H,R,d] or [B,H,T,R,d]")
 
     def _slot_write(
@@ -428,7 +506,8 @@ class MultiHeadDSRA2(nn.Module):
         - 调用方 / Called by: `forward`
         - 调用对象 / Calls: `F.normalize`, `_scatter_values`, `F.cosine_similarity`, `torch.maximum`
         - 作用 / Purpose: 根据当前 chunk 的 K/V、读出质量和新旧冲突强度更新 slot；
-          当 correction token 先读到旧槽位时，用 `read_mass` 强化同槽写回并遗忘旧值
+          当 correction token 先读到旧槽位时，用 `read_mass` 强化同槽写回并遗忘旧值。
+          当前实现是带门控的 blended update，不是严格正交投影更新。
         - 变量 / Variables:
           `k/v` 是当前 chunk 的 head-space token 表示, `state` 是写入前状态,
           `read_mass` 是本 chunk 对旧 slot 的读出分布, `read_hint` 是写路由的同槽提示,
@@ -465,8 +544,13 @@ class MultiHeadDSRA2(nn.Module):
         w_top = min(cfg.write_topk, cfg.slots)
         top_logits, top_idx = torch.topk(write_logits, w_top, dim=-1)
         route = F.softmax(top_logits, dim=-1)
-        token_gate = torch.sigmoid(self.token_write_gate(k)).squeeze(-1) * novelty
-        weights = route * token_gate.unsqueeze(-1)
+        base_token_gate = torch.sigmoid(self.token_write_gate(k)).squeeze(-1)
+        selected_sim = sim.gather(3, top_idx).clamp(0.0, 1.0)
+        selected_read_hint = read_hint.expand(-1, -1, seq_len, -1).gather(3, top_idx)
+        overwrite_gate = torch.maximum(selected_sim, selected_read_hint)
+        write_drive = torch.maximum(novelty.unsqueeze(-1), overwrite_gate)
+        token_gate = base_token_gate
+        weights = route * token_gate.unsqueeze(-1) * write_drive
 
         # Apply write protection: prevent writing to slots that are still protected
         if cfg.write_protection > 0 and state.protected_until is not None:
@@ -474,16 +558,11 @@ class MultiHeadDSRA2(nn.Module):
             batch_size, heads, seq_len, write_topk = top_idx.shape
             token_positions = torch.arange(state.position, state.position + seq_len, 
                                             device=k.device, dtype=torch.long)
-            # Shape: (seq_len,)
-            
-            # Expand protected_until to (batch_size, heads, seq_len, slots)
-            protected_expanded = state.protected_until.unsqueeze(2).expand(-1, -1, seq_len, -1)
-            # Expand token_positions to (batch_size, heads, seq_len, slots)
-            token_pos_expanded = token_positions.view(1, 1, seq_len, 1).expand_as(protected_expanded)
-            # Check which slots are protected for each token position
-            protected_mask = (protected_expanded > token_pos_expanded).to(dtype=k.dtype)
-            # Gather protection status for each selected slot
-            selected_protected = protected_mask.gather(3, top_idx)
+            protected_topk = state.protected_until.unsqueeze(2).expand(
+                -1, -1, seq_len, -1
+            ).gather(3, top_idx)
+            token_pos_topk = token_positions.view(1, 1, seq_len, 1).expand_as(protected_topk)
+            selected_protected = (protected_topk > token_pos_topk).to(dtype=k.dtype)
             # Zero out weights for protected slots
             weights = weights * (1.0 - selected_protected)
 
@@ -559,6 +638,8 @@ class MultiHeadDSRA2(nn.Module):
             "forget_gate_max": forget.detach().max().to(dtype=torch.float32),
             "conflict_mean": conflict.detach().mean().to(dtype=torch.float32),
             "novelty_mean": novelty.detach().mean().to(dtype=torch.float32),
+            "overwrite_gate_mean": overwrite_gate.detach().mean().to(dtype=torch.float32),
+            "write_drive_mean": write_drive.detach().mean().to(dtype=torch.float32),
             "write_mass": write_mass.detach(),
             "write_gate": write_gate.detach().squeeze(-1).to(dtype=torch.float32),
             "forget_gate": forget.detach().squeeze(-1).to(dtype=torch.float32),
@@ -586,16 +667,196 @@ class MultiHeadDSRA2(nn.Module):
             protected_until=protected_until_next,
         )
 
-    def forward(
+    def _retrieval_valid_mask(
+        self,
+        retrieved_k: Optional[torch.Tensor],
+        retrieved_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Return a batch-aware boolean validity mask for retrieved tokens.
+
+        中文说明:
+        - 调用方 / Called by: `_retrieval_attention`, `_forward_from_projected`
+        - 调用对象 / Calls: shape inspection and tensor allocation
+        - 作用 / Purpose: 把外部分页记忆返回的 mask 统一成可广播格式，防止 batch 对齐
+          padding token 进入 retrieval softmax 或 fusion gate
+        - 返回 / Returns: `[B,R]` 或 `[B,T,R]` bool mask；无召回时返回空 mask
+        - 错误处理 / Error handling: 非法 rank 由调用方维度校验继续暴露
+        - 关键词 / Keywords:
+          retrieval|mask|padding|batch|softmax|gate|paged_memory|mhdsra2|掩码
+        """
+        if retrieved_k is None:
+            return torch.zeros(0, 0, dtype=torch.bool)
+        if retrieved_mask is not None:
+            valid = retrieved_mask.to(device=retrieved_k.device, dtype=torch.bool)
+            if retrieved_k.dim() == 4 and valid.dim() == 1:
+                return valid.unsqueeze(0)
+            if retrieved_k.dim() == 5 and valid.dim() == 1:
+                return valid.view(1, 1, -1)
+            if retrieved_k.dim() == 5 and valid.dim() == 2:
+                if valid.shape[0] == retrieved_k.shape[0] and valid.shape[1] == retrieved_k.shape[3]:
+                    return valid
+                return valid.unsqueeze(0)
+            return valid
+        if retrieved_k.dim() == 4:
+            return torch.ones(
+                retrieved_k.shape[0],
+                retrieved_k.shape[2],
+                device=retrieved_k.device,
+                dtype=torch.bool,
+            )
+        if retrieved_k.dim() == 5:
+            return torch.ones(
+                retrieved_k.shape[0],
+                retrieved_k.shape[2],
+                retrieved_k.shape[3],
+                device=retrieved_k.device,
+                dtype=torch.bool,
+            )
+        return torch.zeros(0, 0, dtype=torch.bool)
+
+    def _retrieval_token_count(
+        self,
+        retrieved_k: Optional[torch.Tensor],
+        retrieved_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Return per-sample retrieved token counts.
+
+        中文说明:
+        - 调用方 / Called by: `_forward_from_projected`
+        - 调用对象 / Calls: 张量 shape 读取
+        - 作用 / Purpose: 为 fusion gate 诊断和可选 retrieval 质量偏置提供 batch-aware 信号
+        - 参数 / Parameters: `retrieved_k` 是外部分页记忆返回的 K 张量或 None,
+          `retrieved_mask` 是有效 token mask
+        - 返回 / Returns: `[B]` float32 tensor；无召回时为长度 0
+        - 错误处理 / Error handling: 未知 rank 返回 0，实际 attention 维度校验仍由 `_retrieval_attention` 负责
+        - 关键词 / Keywords:
+          retrieval|token_count|gate|diagnostic|quality|paged_memory|mhdsra2|召回
+
+        English documentation:
+        Function name:
+            _retrieval_token_count
+        Purpose:
+            Provide a small retrieval-availability signal for diagnostics and
+            optional gate biasing without changing the retrieval attention API.
+        """
+        valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask)
+        if valid.numel() == 0:
+            return torch.zeros(0, dtype=torch.float32)
+        if valid.dim() == 2:
+            return valid.to(dtype=torch.float32).sum(dim=1)
+        if valid.dim() == 3:
+            return valid.to(dtype=torch.float32).any(dim=1).sum(dim=1)
+        return torch.zeros(0, dtype=torch.float32)
+
+    def _retrieval_quality_features(
+        self,
+        q: torch.Tensor,
+        retrieved_k: Optional[torch.Tensor],
+        retrieved_mask: Optional[torch.Tensor],
+    ) -> torch.Tensor | None:
+        """Build small per-sample quality features for the optional gate adapter.
+
+        中文说明:
+        - 调用方 / Called by: `_forward_from_projected`
+        - 调用对象 / Calls: `_retrieval_valid_mask`, `F.normalize`, `torch.einsum`
+        - 作用 / Purpose: 把 external retrieval 的可用性、最高分、分数差距和召回数量压缩成
+          `[B,4]` 特征，供零初始化的轻量 gate adapter 学习何时信任 retrieval 分支。
+        - 返回 / Returns: `[B,4]` float tensor；没有有效召回时返回 None。
+        - 错误处理 / Error handling: 非法 retrieval rank 继续由 `_retrieval_attention` 暴露。
+        - 关键词 / Keywords:
+          retrieval|quality|features|gate_adapter|max_score|score_margin|mhdsra2|检索质量
+
+        English documentation:
+        Function name:
+            _retrieval_quality_features
+        Purpose:
+            Convert retrieval candidates into compact per-sample quality features
+            for an optional zero-initialized retrieval gate adapter.
+        """
+        if retrieved_k is None:
+            return None
+        valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask).to(device=q.device)
+        if valid.numel() == 0:
+            return None
+        if valid.shape[-1] == 0:
+            return None
+
+        scale = self.d_head**-0.5
+        if retrieved_k.dim() == 4:
+            logits = torch.einsum("bhtd,bhrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
+            token_scores = logits.mean(dim=(1, 2))
+            valid_tokens = valid
+        elif retrieved_k.dim() == 5:
+            logits = torch.einsum("bhtd,bhtrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
+            token_scores = logits.mean(dim=1).amax(dim=1)
+            valid_tokens = valid if valid.dim() == 2 else valid.any(dim=1)
+        else:
+            return None
+
+        if valid_tokens.dim() != 2:
+            return None
+        valid_float = valid_tokens.to(dtype=torch.float32)
+        available = (valid_float.sum(dim=1) > 0).to(dtype=torch.float32)
+        safe_scores = token_scores.to(dtype=torch.float32).masked_fill(
+            ~valid_tokens,
+            torch.finfo(torch.float32).min,
+        )
+        top_values = torch.topk(
+            safe_scores,
+            k=min(2, safe_scores.shape[1]),
+            dim=1,
+        ).values
+        max_score = torch.where(
+            available > 0,
+            top_values[:, 0],
+            torch.zeros_like(available),
+        )
+        if top_values.shape[1] > 1:
+            second_score = top_values[:, 1]
+        else:
+            second_score = torch.zeros_like(max_score)
+        margin = torch.where(available > 0, max_score - second_score, torch.zeros_like(max_score))
+        count_feature = torch.log1p(valid_float.sum(dim=1))
+        return torch.stack((available, max_score, margin, count_feature), dim=1).to(
+            device=q.device,
+            dtype=q.dtype,
+        )
+
+    def _forward_from_projected(
         self,
         x: torch.Tensor,
+        q_proj: torch.Tensor,
+        k_proj: torch.Tensor,
+        v_proj: torch.Tensor,
+        *,
         state: Optional[MHDSRA2State] = None,
         retrieved_k: Optional[torch.Tensor] = None,
         retrieved_v: Optional[torch.Tensor] = None,
+        retrieved_mask: Optional[torch.Tensor] = None,
         return_aux: bool = False,
         stage_id: int | None = None,
         context_id: int | None = None,
     ):
+        """Run forward after the caller has already computed fast Q/K/V.
+
+        中文说明:
+        - 调用方 / Called by: `forward`, `DSRA_Chunk_Layer.forward_step`.
+        - 调用对象 / Calls: `_to_heads`, `_slot_read`, `_local_attention`,
+          `_retrieval_attention`, `_slot_write`.
+        - 作用 / Purpose: 复用已计算的 fast Q/K/V，避免逐 token 解码路径重复调用
+          `self.qkv(x)`；保持门控融合和 slot 写入逻辑集中在一个实现里。
+        - 参数 / Parameters: `q_proj/k_proj/v_proj` 是 `self.qkv(x)` 拆分后的
+          token-space 投影；其余参数与 `forward` 一致。
+        - 返回 / Returns: 与 `forward` 相同，按 `return_aux` 返回二元组或三元组。
+        - 错误处理 / Error handling: 维度错误由上游 `forward` 或 PyTorch 操作抛出。
+
+        English documentation:
+        Function name:
+            _forward_from_projected
+        Purpose:
+            Share the projected-QKV execution path between full forward and
+            autoregressive compatibility code without changing the public API.
+        """
         cfg = self.cfg
         b, t, d = x.shape
         if d != self.dim:
@@ -607,8 +868,7 @@ class MultiHeadDSRA2(nn.Module):
         if state is None:
             state = self.init_state(b, device=x.device, dtype=x.dtype)
 
-        qkv = self.qkv(x)
-        q, k, v = qkv.chunk(3, dim=-1)
+        q, k, v = q_proj, k_proj, v_proj
 
         # CCFM: Context-Conditioned Feature Modulation (per-feature FiLM)
         if cfg.use_context_film and self.film_net is not None:
@@ -630,15 +890,60 @@ class MultiHeadDSRA2(nn.Module):
         else:
             slot_out, aux_read = self._slot_read(q, state)
         local_out, new_local_k, new_local_v = self._local_attention(q, k, v, state)
-        retrieval_out = self._retrieval_attention(q, retrieved_k, retrieved_v)
+        if return_aux:
+            retrieval_out, retrieval_weights = self._retrieval_attention(
+                q,
+                retrieved_k,
+                retrieved_v,
+                retrieved_mask,
+                return_weights=True,
+            )
+        else:
+            retrieval_out = self._retrieval_attention(q, retrieved_k, retrieved_v, retrieved_mask)
+            retrieval_weights = None
 
         gate_logits = self.fuse_gate(q)
+        retrieved_counts = self._retrieval_token_count(retrieved_k, retrieved_mask).to(device=q.device)
+        retrieval_available_by_sample = (
+            cfg.use_retrieval
+            and retrieved_v is not None
+            and retrieved_counts.numel() > 0
+            and bool((retrieved_counts > 0).any().item())
+        )
+        if cfg.retrieval_quality_gate_bias != 0.0 and retrieval_available_by_sample:
+            gate_logits = gate_logits.clone()
+            gate_logits[..., 2] = gate_logits[..., 2] + (
+                (retrieved_counts > 0)
+                .to(device=q.device, dtype=gate_logits.dtype)
+                .view(-1, 1, 1)
+                * float(cfg.retrieval_quality_gate_bias)
+            )
+        retrieval_quality_features = self._retrieval_quality_features(q, retrieved_k, retrieved_mask)
+        retrieval_quality_delta = None
+        if (
+            self.retrieval_quality_adapter is not None
+            and retrieval_available_by_sample
+            and retrieval_quality_features is not None
+        ):
+            gate_logits = gate_logits.clone()
+            retrieval_quality_delta = self.retrieval_quality_adapter(
+                retrieval_quality_features
+            ).view(-1, 1, 1)
+            gate_logits[..., 2] = gate_logits[..., 2] + retrieval_quality_delta.to(
+                dtype=gate_logits.dtype
+            )
         gates = torch.sigmoid(gate_logits)
         gate_mask = torch.ones_like(gates)
         if not cfg.use_local or cfg.local_window <= 0:
             gate_mask[..., 1] = 0.0
-        if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
+        if not retrieval_available_by_sample:
             gate_mask[..., 2] = 0.0
+        else:
+            retrieval_sample_mask = (retrieved_counts > 0).to(
+                device=q.device,
+                dtype=gates.dtype,
+            )
+            gate_mask[..., 2] = gate_mask[..., 2] * retrieval_sample_mask.view(-1, 1, 1)
         gates = gates * gate_mask
         gates = gates / gates.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
 
@@ -650,12 +955,67 @@ class MultiHeadDSRA2(nn.Module):
         y = self.out_proj(self._from_heads(y_heads))
 
         next_state = self._slot_write(k, v, state, aux_read["read_mass"], stage_id=stage_id)
-        next_state.local_k = new_local_k
-        next_state.local_v = new_local_v
+        next_state = replace(next_state, local_k=new_local_k, local_v=new_local_v)
 
         if return_aux:
             aux = {
                 "gates_mean": gates.detach().mean(dim=(0, 2)),
+                "gate_slot_mean": gates[..., 0].detach().mean().to(dtype=torch.float32),
+                "gate_local_mean": gates[..., 1].detach().mean().to(dtype=torch.float32),
+                "gate_retrieval_mean": gates[..., 2].detach().mean().to(dtype=torch.float32),
+                "retrieval_available": retrieval_available_by_sample,
+                "retrieval_available_ratio": (
+                    (retrieved_counts > 0).detach().to(dtype=torch.float32).mean()
+                    if retrieved_counts.numel() > 0
+                    else torch.tensor(0.0)
+                ),
+                "retrieved_token_count": int(retrieved_counts.max().item())
+                if retrieved_counts.numel() > 0
+                else 0,
+                "retrieved_token_count_mean": retrieved_counts.detach().mean().to(dtype=torch.float32)
+                if retrieved_counts.numel() > 0
+                else torch.tensor(0.0),
+                "retrieved_token_count_max": retrieved_counts.detach().max().to(dtype=torch.float32)
+                if retrieved_counts.numel() > 0
+                else torch.tensor(0.0),
+                "retrieval_quality_features": retrieval_quality_features.detach()
+                if retrieval_quality_features is not None
+                else None,
+                "retrieval_quality_adapter_delta": retrieval_quality_delta.detach()
+                .squeeze(-1)
+                .squeeze(-1)
+                .to(dtype=torch.float32)
+                if retrieval_quality_delta is not None
+                else None,
+                "retrieval_token_weight_by_sample": retrieval_weights.detach()
+                .mean(dim=(1, 2))
+                .to(dtype=torch.float32)
+                if retrieval_weights is not None
+                else None,
+                "retrieval_token_weight_by_sample_for_loss": retrieval_weights.mean(dim=(1, 2))
+                if retrieval_weights is not None
+                else None,
+                "retrieval_token_weight_by_token": retrieval_weights.detach()
+                .mean(dim=1)
+                .to(dtype=torch.float32)
+                if retrieval_weights is not None
+                else None,
+                "retrieval_token_weight_by_token_for_loss": retrieval_weights.mean(dim=1)
+                if retrieval_weights is not None
+                else None,
+                "gate_retrieval_by_sample": gates[..., 2]
+                .detach()
+                .mean(dim=(1, 2))
+                .to(dtype=torch.float32),
+                # Training-only callers can opt into this non-detached view for auxiliary
+                # supervision; report writers should continue using the detached metric above.
+                "gate_retrieval_by_sample_for_loss": gates[..., 2].mean(dim=(1, 2)),
+                "gate_retrieval_by_token": gates[..., 2]
+                .detach()
+                .mean(dim=1)
+                .to(dtype=torch.float32),
+                "gate_retrieval_by_token_for_loss": gates[..., 2].mean(dim=1),
+                "slot_confidence_mean": next_state.confidence.detach().mean().to(dtype=torch.float32),
                 "read_mass": aux_read["read_mass"].detach(),
                 "slot_usage": next_state.usage.detach(),
                 "slot_confidence": next_state.confidence.detach(),
@@ -664,6 +1024,33 @@ class MultiHeadDSRA2(nn.Module):
             return y, next_state, aux
         return y, next_state
 
+    def forward(
+        self,
+        x: torch.Tensor,
+        state: Optional[MHDSRA2State] = None,
+        retrieved_k: Optional[torch.Tensor] = None,
+        retrieved_v: Optional[torch.Tensor] = None,
+        retrieved_mask: Optional[torch.Tensor] = None,
+        return_aux: bool = False,
+        stage_id: int | None = None,
+        context_id: int | None = None,
+    ):
+        qkv = self.qkv(x)
+        q, k, v = qkv.chunk(3, dim=-1)
+        return self._forward_from_projected(
+            x,
+            q,
+            k,
+            v,
+            state=state,
+            retrieved_k=retrieved_k,
+            retrieved_v=retrieved_v,
+            retrieved_mask=retrieved_mask,
+            return_aux=return_aux,
+            stage_id=stage_id,
+            context_id=context_id,
+        )
+
     def forward_step(
         self,
         x_t: torch.Tensor,
@@ -671,6 +1058,7 @@ class MultiHeadDSRA2(nn.Module):
         kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         retrieved_k: Optional[torch.Tensor] = None,
         retrieved_v: Optional[torch.Tensor] = None,
+        retrieved_mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, MHDSRA2State, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]]:
         """Run one autoregressive decoding step with DSRA-compatible outputs.
 
@@ -707,14 +1095,14 @@ class MultiHeadDSRA2(nn.Module):
             and state.local_v is None
         ):
             cached_k, cached_v = kv_cache
-            state.local_k = cached_k
-            state.local_v = cached_v
+            state = replace(state, local_k=cached_k, local_v=cached_v)
 
         out_t, next_state = self.forward(
             x_t,
             state=state,
             retrieved_k=retrieved_k,
             retrieved_v=retrieved_v,
+            retrieved_mask=retrieved_mask,
             return_aux=False,
         )
         next_kv_cache = (next_state.local_k, next_state.local_v)

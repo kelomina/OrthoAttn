@@ -396,7 +396,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
             "replay_ratio": args.replay_ratio,
             "two_digit_replay_ratios": list(args.two_digit_replay_ratios),
         },
-        mode="cloud",
+        mode="disabled",
         tags=["two_digit_diagnostic", "grid"],
     )
     reports_dir = ensure_reports_dir(args.reports_dir)

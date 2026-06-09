@@ -1074,7 +1074,7 @@ def main(argv: list[str] | None = None) -> dict:
             "diagnostic_override_seq_len": args.diagnostic_override_seq_len,
             "diagnostic_fixation_seq_len": args.diagnostic_fixation_seq_len,
         },
-        mode="cloud",
+        mode="disabled",
         tags=["diagnostic_memory", "benchmark"],
     )
     sections = run_diagnostic_benchmarks(args)

@@ -343,7 +343,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
             "replay_ratio": args.replay_ratio,
             "carry_replay_ratio": args.carry_replay_ratio,
         },
-        mode="cloud",
+        mode="disabled",
         tags=["carry_diagnostic", "grid"],
     )
     reports_dir = ensure_reports_dir(args.reports_dir)

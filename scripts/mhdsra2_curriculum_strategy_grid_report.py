@@ -184,7 +184,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, object]:
             "stage_threshold": args.stage_threshold,
             "target_stage_count": args.target_stage_count,
         },
-        mode="cloud",
+        mode="disabled",
         tags=["curriculum_strategy", "grid"],
     )
     payload = build_curriculum_strategy_grid_payload(

@@ -2,12 +2,6 @@
 ==================================================
 Running MHDSRA2 Verification
 ==================================================
-swanlab: The environment variable SWANLAB_MODE will be overwritten by the
-parameter mode
-swanlab: Tracking run with swanlab version 0.7.19
-swanlab: Run data will be saved locally in
-E:\Project\python\DSRA\swanlog\run-20260529_202920-p9aj3esxvbbs7i82w24bl
-swanlab: Syncing run verify_mhdsra2 to the cloud
 [OK] smoke test passed
 gates_mean_after_retrieval [slot, local, retrieval] per head:
 tensor([[0.3488, 0.3095, 0.3417],

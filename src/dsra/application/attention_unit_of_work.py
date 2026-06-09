@@ -92,8 +92,18 @@ class StreamingAttentionUnitOfWork:
         self,
         query: torch.Tensor,
         device: torch.device,
-        max_position: Optional[int] = None,
-    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        max_position: Optional[int | torch.Tensor | list[int] | tuple[int, ...]] = None,
+        *,
+        return_mask: bool = False,
+        profile: bool = False,
+    ) -> tuple[
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ] | tuple[
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
         """Retrieve external memory candidates through the repository.
 
         中文说明:
@@ -103,11 +113,18 @@ class StreamingAttentionUnitOfWork:
         - 变量 / Variables:
           `query` 是 head-space query, `device` 是召回张量目标设备
         - 接入 / Integration: 返回值直接传给 MHDSRA2 retrieval 分支
-        - 错误处理 / Error handling: 仓储会把禁用、空记忆和不支持批大小映射为空召回
+        - 错误处理 / Error handling: 仓储会把禁用或空记忆映射为空召回；
+          同一 stream 内 batch size 变化由仓储显式抛出 `ValueError`
         - 关键词 / Keywords:
           retrieve|unit_of_work|repository|query|device|external_memory|kv|application|recall|检索
         """
-        return self.memory_repository.retrieve(query, device, max_position=max_position)
+        return self.memory_repository.retrieve(
+            query,
+            device,
+            max_position=max_position,
+            return_mask=return_mask,
+            profile=profile,
+        )
 
     def commit_forward(
         self,

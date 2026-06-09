@@ -437,7 +437,7 @@ def run_attention_family_benchmark_suite(
             "task_variants": list(task_variants or TASK_VARIANTS.keys()),
             "task_seed_roots": list(task_seed_roots or DEFAULT_TASK_SEED_ROOTS),
         },
-        mode="cloud",
+        mode="disabled",
         tags=["attention_family", "benchmark"],
     )
     reports_dir = ensure_reports_dir(

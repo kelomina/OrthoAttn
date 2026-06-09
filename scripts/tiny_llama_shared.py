@@ -1,7 +1,8 @@
 """Shared tokenizer, data loading and config for tiny LLaMA comparison."""
 from __future__ import annotations
 
-import urllib.request
+import hashlib
+import shutil
 import zipfile
 from pathlib import Path
 from typing import Sequence
@@ -16,6 +17,12 @@ BOS_ID = 1
 EOS_ID = 2
 UNK_ID = 3
 SPECIAL_TOKENS = 4  # pad, bos, eos, unk
+WIKITEXT2_MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
+WIKITEXT2_MAX_EXTRACTED_BYTES = 128 * 1024 * 1024
+WIKITEXT2_MAX_MEMBER_BYTES = 64 * 1024 * 1024
+WIKITEXT2_MAX_ZIP_MEMBERS = 32
+WIKITEXT_HF_REVISION = "b08601e04326c79dfdd32d625aee71d232d685c3"
+WIKITEXT103_REVISION = WIKITEXT_HF_REVISION
 
 LMConfig = {
     "dim": 256,
@@ -63,24 +70,290 @@ class CharTokenizer:
         return "".join(chars)
 
 
+def file_sha256(file_path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+    """Return the SHA256 digest for a local file.
+
+    中文说明:
+    - 调用方 / Called by: `validate_downloaded_archive` and tests.
+    - 调用对象 / Calls: `hashlib.sha256`, `Path.open`.
+    - 作用 / Purpose: 下载后用固定摘要校验数据包，防止静默篡改或错误 XML 被当作数据。
+    - 参数 / Parameters: `file_path` 是本地文件；`chunk_size` 控制流式读取块大小。
+    - 返回 / Returns: 小写十六进制 SHA256 摘要。
+    - 错误处理 / Error handling: 文件读取错误直接向上抛出。
+    - 副作用 / Side effects: 只读文件。
+
+    English documentation:
+    Function name:
+        file_sha256
+    Purpose:
+        Compute a streaming SHA256 digest for a local file.
+    Called by:
+        Download validation helpers and tests.
+    Calls:
+        `hashlib.sha256` and file reads.
+    Parameters:
+        - file_path: file to hash.
+        - chunk_size: bytes read per iteration.
+    Returns:
+        Lowercase hexadecimal SHA256 digest.
+    Error handling:
+        Propagates filesystem read errors.
+    Side effects:
+        Reads the file only.
+    """
+    digest = hashlib.sha256()
+    with Path(file_path).open("rb") as file_obj:
+        for chunk in iter(lambda: file_obj.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_downloaded_archive(
+    archive_path: Path,
+    *,
+    expected_sha256: str,
+    max_archive_bytes: int,
+    label: str,
+) -> None:
+    """Validate archive size, SHA256 and ZIP structure before extraction.
+
+    中文说明:
+    - 调用方 / Called by: future ZIP dataset loaders and tests.
+    - 调用对象 / Calls: `Path.stat`, `file_sha256`, `zipfile.is_zipfile`.
+    - 作用 / Purpose: 把下载文件当作“封条包裹”检查，确认大小合理、摘要匹配且确实是 ZIP。
+    - 参数 / Parameters: `archive_path` 是下载文件；`expected_sha256` 是固定摘要；
+      `max_archive_bytes` 是下载包大小上限；`label` 用于错误信息。
+    - 返回 / Returns: None.
+    - 错误处理 / Error handling: 缺失、超限、摘要不符或非 ZIP 时抛 `RuntimeError`。
+    - 副作用 / Side effects: 只读文件，不解压。
+
+    English documentation:
+    Function name:
+        validate_downloaded_archive
+    Purpose:
+        Check archive size, hash and ZIP magic before extraction.
+    Called by:
+        Future ZIP dataset loaders and tests.
+    Calls:
+        `Path.stat`, `file_sha256`, and `zipfile.is_zipfile`.
+    Parameters:
+        Download path, expected digest, size limit and diagnostic label.
+    Returns:
+        None.
+    Error handling:
+        Raises `RuntimeError` when the downloaded archive is unsafe or unexpected.
+    Side effects:
+        Reads the downloaded file only.
+    """
+    archive_path = Path(archive_path)
+    if not archive_path.exists():
+        raise RuntimeError(f"{label} archive was not created: {archive_path}")
+    archive_size = archive_path.stat().st_size
+    if archive_size <= 0:
+        raise RuntimeError(f"{label} archive is empty: {archive_path}")
+    if archive_size > max_archive_bytes:
+        raise RuntimeError(
+            f"{label} archive exceeds size limit: {archive_size} > {max_archive_bytes} bytes"
+        )
+    actual_sha256 = file_sha256(archive_path)
+    if actual_sha256.lower() != expected_sha256.lower():
+        raise RuntimeError(
+            f"{label} archive SHA256 mismatch: expected {expected_sha256}, got {actual_sha256}"
+        )
+    if not zipfile.is_zipfile(archive_path):
+        raise RuntimeError(f"{label} archive is not a valid ZIP file: {archive_path}")
+
+
+def _resolve_zip_member_path(destination: Path, member_name: str) -> Path:
+    """Resolve one ZIP member path and reject traversal attempts.
+
+    中文说明:
+    - 调用方 / Called by: `safe_extract_zip`.
+    - 调用对象 / Calls: `Path.resolve`, `Path.is_relative_to`.
+    - 作用 / Purpose: 防止 ZIP 条目名通过 `../`、绝对路径或 Windows 盘符写到目标目录外。
+    - 参数 / Parameters: `destination` 是解压根目录；`member_name` 是 ZIP 条目名。
+    - 返回 / Returns: 安全的目标文件路径。
+    - 错误处理 / Error handling: 路径逃逸时抛 `ValueError`。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        _resolve_zip_member_path
+    Purpose:
+        Resolve a ZIP member under the destination directory.
+    Called by:
+        `safe_extract_zip`.
+    Calls:
+        `Path.resolve` and `Path.is_relative_to`.
+    Parameters:
+        Extraction root and member name.
+    Returns:
+        Safe target path.
+    Error handling:
+        Raises `ValueError` for path traversal or absolute paths.
+    Side effects:
+        None.
+    """
+    raw_name = Path(member_name)
+    if raw_name.is_absolute() or raw_name.drive or raw_name.root:
+        raise ValueError(f"ZIP member uses an absolute path: {member_name!r}")
+    target_path = (destination / raw_name).resolve()
+    if not target_path.is_relative_to(destination.resolve()):
+        raise ValueError(f"ZIP member escapes extraction directory: {member_name!r}")
+    return target_path
+
+
+def safe_extract_zip(
+    archive_path: Path,
+    destination: Path,
+    *,
+    max_total_bytes: int,
+    max_member_bytes: int,
+    max_members: int = WIKITEXT2_MAX_ZIP_MEMBERS,
+    max_compression_ratio: int = 100,
+) -> None:
+    """Extract a ZIP archive after path and resource-limit validation.
+
+    中文说明:
+    - 调用方 / Called by: future ZIP dataset loaders; tests use it to cover hostile ZIP files.
+    - 调用对象 / Calls: `zipfile.ZipFile`, `_resolve_zip_member_path`, `shutil.copyfileobj`.
+    - 作用 / Purpose: 替代裸 `extractall`，避免 Zip Slip、超大文件和压缩炸弹风险。
+    - 参数 / Parameters: `archive_path` 是 ZIP 文件；`destination` 是目标目录；
+      `max_total_bytes` 是所有文件解压后总大小上限；`max_member_bytes` 是单文件上限；
+      `max_members` 限制条目数量；`max_compression_ratio` 限制单条目膨胀倍率。
+    - 返回 / Returns: None.
+    - 错误处理 / Error handling: 路径逃逸、文件超限、疑似压缩炸弹或坏 ZIP 抛异常。
+    - 副作用 / Side effects: 校验通过后写入目标目录。
+
+    English documentation:
+    Function name:
+        safe_extract_zip
+    Purpose:
+        Safely extract a ZIP archive with path and resource checks.
+    Called by:
+        Future ZIP dataset loaders and tests.
+    Calls:
+        ZIP metadata APIs, path resolver, and streaming copy.
+    Parameters:
+        Archive path, destination, total/member byte/member count limits and compression ratio limit.
+    Returns:
+        None.
+    Error handling:
+        Raises on traversal, size limit breaches, suspicious compression ratios or bad ZIPs.
+    Side effects:
+        Writes extracted files only after metadata validation succeeds.
+    """
+    archive_path = Path(archive_path)
+    destination = Path(destination).resolve()
+    destination.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(archive_path, "r") as zip_file:
+        members = zip_file.infolist()
+        if len(members) > max_members:
+            raise ValueError(f"ZIP member count exceeds limit: {len(members)} > {max_members}")
+        total_size = 0
+        safe_members = []
+        for member in members:
+            target_path = _resolve_zip_member_path(destination, member.filename)
+            if member.is_dir():
+                safe_members.append((member, target_path))
+                continue
+            if member.file_size < 0:
+                raise ValueError(f"ZIP member has invalid size: {member.filename!r}")
+            if member.file_size > max_member_bytes:
+                raise ValueError(
+                    f"ZIP member exceeds size limit: {member.filename!r} "
+                    f"{member.file_size} > {max_member_bytes} bytes"
+                )
+            total_size += member.file_size
+            if total_size > max_total_bytes:
+                raise ValueError(
+                    f"ZIP extracted size exceeds limit: {total_size} > {max_total_bytes} bytes"
+                )
+            if member.compress_size > 0:
+                ratio = member.file_size / member.compress_size
+                if ratio > max_compression_ratio:
+                    raise ValueError(
+                        f"ZIP member compression ratio is too high: {member.filename!r}"
+                    )
+            safe_members.append((member, target_path))
+
+        for member, target_path in safe_members:
+            if member.is_dir():
+                target_path.mkdir(parents=True, exist_ok=True)
+                continue
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with zip_file.open(member, "r") as source, target_path.open("wb") as target:
+                shutil.copyfileobj(source, target)
+
+
 def download_wikitext2(data_dir: str) -> Path:
-    """Download WikiText-2 if not present. Returns path to raw text file."""
+    """Download WikiText-2 from a pinned HuggingFace dataset revision.
+
+    中文说明:
+    - 调用方 / Called by: `load_wikitext2_splits`.
+    - 调用对象 / Calls: `datasets.load_dataset`, `Path.write_text`.
+    - 作用 / Purpose: 首次运行 tiny LLaMA 对比时从固定 commit 下载 WikiText-2；
+      旧 S3 ZIP 源已返回重定向/证书错误，因此不再默认依赖裸 ZIP 解压路径。
+    - 参数 / Parameters: `data_dir` 是缓存目录。
+    - 返回 / Returns: `wiki.train.tokens` 路径。
+    - 错误处理 / Error handling: `datasets` 缺失、下载失败或文件写出失败时抛 `RuntimeError`。
+    - 副作用 / Side effects: 首次运行会写出 train/valid/test `.tokens` 文件。
+
+    English documentation:
+    Function name:
+        download_wikitext2
+    Purpose:
+        Download WikiText-2 from a pinned HuggingFace dataset revision.
+    Called by:
+        `load_wikitext2_splits`.
+    Calls:
+        `datasets.load_dataset` and text file writes.
+    Parameters:
+        - data_dir: cache directory.
+    Returns:
+        Path to `wiki.train.tokens`.
+    Error handling:
+        Raises when the datasets package, download or file writing fails.
+    Side effects:
+        Writes train/valid/test split files.
+    """
     data_path = Path(data_dir)
-    raw_path = data_path / "wiki.train.tokens"
-    if raw_path.exists():
-        return raw_path
+    legacy_raw_path = data_path / "wiki.train.tokens"
+    extracted_raw_path = data_path / "wikitext-2" / "wiki.train.tokens"
+    if legacy_raw_path.exists():
+        return legacy_raw_path
+    if extracted_raw_path.exists():
+        return extracted_raw_path
 
     data_path.mkdir(parents=True, exist_ok=True)
-    url = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-2-v1.zip"
-    zip_path = data_path / "wikitext-2-v1.zip"
+    extracted_raw_path.parent.mkdir(parents=True, exist_ok=True)
+    print("Loading WikiText-2 via HuggingFace datasets...")
+    try:
+        from datasets import load_dataset
+        dataset = load_dataset(
+            "Salesforce/wikitext",
+            "wikitext-2-raw-v1",
+            revision=WIKITEXT_HF_REVISION,
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to download WikiText-2 via datasets: {e}") from e
 
-    print(f"Downloading WikiText-2 from {url}...")
-    urllib.request.urlretrieve(url, zip_path)
+    split_paths = {
+        "train": extracted_raw_path.parent / "wiki.train.tokens",
+        "validation": extracted_raw_path.parent / "wiki.valid.tokens",
+        "test": extracted_raw_path.parent / "wiki.test.tokens",
+    }
+    for split_name, output_path in split_paths.items():
+        try:
+            text = "\n".join(dataset[split_name]["text"])
+            output_path.write_text(text, encoding="utf-8")
+        except Exception as e:
+            raise RuntimeError(f"Failed to write WikiText-2 {split_name} split: {e}") from e
 
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(data_path)
-
-    return data_path / "wikitext-2" / "wiki.train.tokens"
+    if not extracted_raw_path.exists():
+        raise RuntimeError(f"WikiText-2 train file missing after download: {extracted_raw_path}")
+    return extracted_raw_path
 
 
 def load_wikitext2_splits(data_dir: str) -> dict[str, Path | None]:
@@ -206,7 +479,11 @@ def download_wikitext103(data_dir: str) -> dict[str, Path]:
     print("Loading WikiText-103 via HuggingFace datasets...")
     try:
         from datasets import load_dataset
-        dataset = load_dataset("Salesforce/wikitext", "wikitext-103-raw-v1")
+        dataset = load_dataset(
+            "Salesforce/wikitext",
+            "wikitext-103-raw-v1",
+            revision=WIKITEXT_HF_REVISION,
+        )
     except Exception as e:
         raise RuntimeError(f"Failed to download WikiText-103 via datasets: {e}") from e
 
@@ -319,5 +596,10 @@ def create_eval_loader(
 
 def resolve_device(device_str: str) -> torch.device:
     if device_str == "auto":
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    return torch.device(device_str)
+        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if device_str == "cuda":
+        return torch.device("cuda:0")
+    device = torch.device(device_str)
+    if device.type == "cuda" and device.index not in (0, None):
+        raise ValueError("Only cuda:0 is supported by this project.")
+    return torch.device("cuda:0") if device.type == "cuda" else device
