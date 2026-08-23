@@ -1,0 +1,155 @@
+{
+  "baseline": {
+    "seed_roots": [
+      7,
+      11,
+      19,
+      23,
+      29,
+      31
+    ],
+    "row_count": 6,
+    "validation_generation_exact_match_rate": {
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std_population": 0.0
+    },
+    "validation_generation_mean_sequence_accuracy": {
+      "values": [
+        0.07032414307004471,
+        0.06861688124417915,
+        0.07412999712395743,
+        0.11429477118190023,
+        0.09245881227755373,
+        0.07341558714509534
+      ],
+      "mean": 0.08220669867378844,
+      "std_population": 0.016345974254188125
+    },
+    "test_generation_exact_match_rate": {
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std_population": 0.0
+    },
+    "test_generation_mean_sequence_accuracy": {
+      "values": [
+        0.04866599112568015,
+        0.09101850671877433,
+        0.07272213190075634,
+        0.06855066637649514,
+        0.06345256073121082,
+        0.09008179995912252
+      ],
+      "mean": 0.07241527613533988,
+      "std_population": 0.014818763033685248
+    },
+    "all_completed": true,
+    "generation_readout_modes": [
+      "model"
+    ],
+    "score_modes": [
+      "generation"
+    ],
+    "baseline_extract_then_compose_metrics_all_null": true
+  },
+  "extract_compose_readout": {
+    "seed_roots": [
+      7,
+      11,
+      19,
+      23,
+      29,
+      31
+    ],
+    "row_count": 6,
+    "validation_generation_exact_match_rate": {
+      "values": [
+        1.0,
+        1.0,
+        0.75,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 0.9583333333333334,
+      "std_population": 0.09316949906249124
+    },
+    "validation_generation_mean_sequence_accuracy": {
+      "values": [
+        1.0,
+        1.0,
+        0.75,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 0.9583333333333334,
+      "std_population": 0.09316949906249124
+    },
+    "test_generation_exact_match_rate": {
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 1.0,
+      "std_population": 0.0
+    },
+    "test_generation_mean_sequence_accuracy": {
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 1.0,
+      "std_population": 0.0
+    },
+    "all_completed": true,
+    "generation_readout_modes": [
+      "extract_then_compose"
+    ],
+    "score_modes": [
+      "generation"
+    ],
+    "baseline_extract_then_compose_metrics_all_null": null
+  },
+  "comparison": {
+    "validation_exact_absolute_delta": 0.9583333333333334,
+    "validation_exact_relative_to_baseline": null,
+    "phase3_seed_count": 6,
+    "phase3_passed_validation_first": true
+  },
+  "two_digit_retention": {
+    "source_report": "reports/mhdsra2_readout_adapter_two_digit_retention_cuda.json",
+    "row_count": 24,
+    "seeds": [
+      101,
+      202,
+      303
+    ],
+    "min_exact_match": 1.0,
+    "mean_exact_match": 1.0,
+    "std_population": 0.0,
+    "all_completed": true
+  }
+}

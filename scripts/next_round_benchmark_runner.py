@@ -385,7 +385,7 @@ def build_parser() -> argparse.ArgumentParser:
       parser|cli|runner|benchmark|needle|json|reports|config|args|命令行
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--task-seed-roots", nargs="+", type=int, default=list(DEFAULT_TASK_SEED_ROOTS))
 

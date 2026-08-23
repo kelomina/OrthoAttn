@@ -1,0 +1,1 @@
+{"config": {"batch_sizes": [1, 2], "max_tokens": 4, "page_size": 8, "tokens": [32], "top_pages": 2}, "elapsed_sec": 1.506612099998165, "group": "shared", "seed": 20260602, "status": "passed", "task": "smoke", "test_metrics": {}, "validation_metrics": {"all_batch_loop_positions_match": true, "no_cross_sample_leak": true, "no_future_leak": true, "passed": true}}

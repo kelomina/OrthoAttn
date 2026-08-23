@@ -72,7 +72,7 @@ def test_niah_report_name_rejects_path_traversal(tmp_path) -> None:
     - 错误处理 / Error handling: 断言 `ValueError`，并确认逃逸文件没有被创建。
     - 副作用 / Side effects: 只在 pytest 临时目录内尝试写文件。
     """
-    reports_dir = tmp_path / "reports"
+    reports_dir = tmp_path / "docs" / "reports"
     escape_name = "../reports_path_escape_probe"
 
     with pytest.raises(ValueError):
@@ -98,7 +98,7 @@ def test_niah_report_name_allows_plain_filename(tmp_path) -> None:
     assert sanitize_report_name(report_name) == report_name
     paths = save_niah_verification_report(
         _minimal_niah_report_result(),
-        tmp_path / "reports",
+        tmp_path / "docs" / "reports",
         report_name,
         "Probe",
         project_root=tmp_path,
@@ -150,10 +150,10 @@ def test_niah_reports_dir_accepts_project_reports(tmp_path) -> None:
     - 副作用 / Side effects: 在 pytest 临时目录创建 project/reports。
     """
     project_root = tmp_path / "project"
-    expected_reports = (project_root / "reports").resolve()
+    expected_reports = (project_root / "docs" / "reports").resolve()
 
-    assert resolve_niah_reports_dir("reports", project_root=project_root) == expected_reports
-    assert resolve_niah_reports_dir(project_root, project_root=project_root) == expected_reports
+    assert resolve_niah_reports_dir("docs/reports", project_root=project_root) == expected_reports
+    assert resolve_niah_reports_dir(project_root / "docs", project_root=project_root) == expected_reports
 
 
 def test_niah_checkpoint_path_stays_under_project_reports(tmp_path) -> None:
@@ -168,7 +168,7 @@ def test_niah_checkpoint_path_stays_under_project_reports(tmp_path) -> None:
     - 副作用 / Side effects: 可创建 pytest 临时目录下的 checkpoints 目录。
     """
     project_root = tmp_path / "project"
-    checkpoint_dir = project_root / "reports" / "checkpoints"
+    checkpoint_dir = project_root / "docs" / "reports" / "checkpoints"
 
     resolved = resolve_niah_checkpoint_path(
         "best.pt",

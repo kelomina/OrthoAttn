@@ -23,6 +23,9 @@ from scripts.next_round_benchmark_runner import (  # noqa: E402
     seed_everything,
 )
 from scripts.needle_in_haystack_test import (  # noqa: E402
+    DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+    DEFAULT_NIAH_SPAN_LOSS_MODE,
+    DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH,
     cleanup_after_oom,
     is_oom_error,
     run_niah_verification_case,
@@ -45,8 +48,43 @@ from src.dsra.report_utils import ensure_reports_dir, write_json, write_markdown
 
 
 DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA = 0.25
+DEFAULT_NIAH_RETRIEVAL_EVIDENCE_RANK_MARGIN = 0.15
+DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN = 0.50
+DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN = 1
+DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION = "right"
+BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION = "both"
+DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER = 4
+COMPACT_NIAH_RETRIEVAL_MAX_TOKENS = 32
+PAIR_AWARE_NIAH_RETRIEVAL_NEIGHBOR_BUDGET_MODE = "pair_aware"
+DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET = 1
+NIAH_RETRIEVAL_EVIDENCE_KEY_OFFSET = 0
+DEFAULT_NIAH_QUERY_EVIDENCE_ALIGNMENT_ALPHA = 0.20
+DEFAULT_NIAH_RETRIEVAL_PROJECTION_CONTRASTIVE_ALPHA = 0.20
+DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE = 0.10
+DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA = 0.35
+STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER = "key_value_pair"
+PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER = "prefer_key_value_pair"
+MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE = "multi_positive"
 DEFAULT_JSON_EVIDENCE_LOSS_WEIGHT = 0.20
+DEFAULT_JSON_SLOT_DECODER_LOSS_WEIGHT = 0.35
+DEFAULT_JSON_SLOT_DECODER_LOGIT_BIAS = 4.0
+DEFAULT_JSON_EVIDENCE_HINT_WEIGHT = 0.0
 DEFAULT_REPORT_NAME = "mhdsra2_evidence_retrieval_ablation"
+NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS = (
+    "mean_span_valid_candidate_count",
+    "mean_span_raw_candidate_count",
+    "mean_span_pair_candidate_count",
+    "span_pair_available_rate",
+    "span_filter_fallback_rate",
+    "span_selected_pair_rate",
+    "span_target_pair_candidate_rate",
+    "span_target_value_page_candidate_rate",
+    "span_target_pair_page_candidate_rate",
+    "span_target_value_top_token_rate",
+    "span_target_pair_top_token_rate",
+    "span_target_value_seed_token_rate",
+    "span_target_pair_seed_token_rate",
+)
 
 
 GROUP_CONFIGS: dict[str, dict[str, Any]] = {
@@ -55,10 +93,26 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {},
         "capabilities": {
             "query_pooling": "mean",
+            "retrieval_max_tokens": 128,
+            "neighbor_span": 0,
             "gate_quality_bias": 0.0,
             "learned_retrieval_gate": False,
             "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": 0.0,
+            "retrieval_span_structure_features": False,
+            "niah_span_candidate_filter": DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": DEFAULT_NIAH_SPAN_LOSS_MODE,
             "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "evidence_hit_supervision": {
@@ -66,10 +120,23 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {},
         "capabilities": {
             "query_pooling": "mean",
+            "retrieval_max_tokens": 128,
+            "neighbor_span": 0,
             "gate_quality_bias": 0.0,
             "learned_retrieval_gate": False,
             "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_structure_features": False,
             "json_evidence_loss_weight": DEFAULT_JSON_EVIDENCE_LOSS_WEIGHT,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "learned_retrieval_gate": {
@@ -77,10 +144,23 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {"retrieval_quality_gate_adapter": True},
         "capabilities": {
             "query_pooling": "mean",
+            "retrieval_max_tokens": 128,
+            "neighbor_span": 0,
             "gate_quality_bias": 0.0,
             "learned_retrieval_gate": True,
             "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_structure_features": False,
             "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "evidence_plus_gate": {
@@ -88,10 +168,741 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {"retrieval_quality_gate_adapter": True},
         "capabilities": {
             "query_pooling": "mean",
+            "neighbor_span": 0,
             "gate_quality_bias": 0.0,
             "learned_retrieval_gate": True,
             "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
             "json_evidence_loss_weight": DEFAULT_JSON_EVIDENCE_LOSS_WEIGHT,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_rank_margin": {
+        "description": (
+            "Train NIAH evidence retrieval with an extra margin objective so the "
+            "known evidence candidate must outrank the strongest negative candidate."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_RANK_MARGIN,
+            "retrieval_evidence_score_margin": 0.0,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_rank_margin_needle_copy": {
+        "description": (
+            "Train the NIAH evidence rank-margin objective, then evaluate with "
+            "retrieval-candidate needle copy readout."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_RANK_MARGIN,
+            "retrieval_evidence_score_margin": 0.0,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_score_margin": {
+        "description": (
+            "Train NIAH evidence retrieval with a margin objective on retrieval raw "
+            "scores before softmax, so the known evidence key must score above "
+            "the strongest valid negative candidate."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_score_margin_needle_copy": {
+        "description": (
+            "Train the NIAH raw-score evidence margin objective, then evaluate with "
+            "retrieval-candidate needle copy readout."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_neighbor_span": {
+        "description": (
+            "Expand each retrieved token with its right neighbor so key-value "
+            "patterns can return the value next to a matched key."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_neighbor_span_needle_copy": {
+        "description": (
+            "Enable right-neighbor retrieval candidates and evaluate NIAH with "
+            "retrieval-candidate needle copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_score_margin_neighbor_span_needle_copy": {
+        "description": (
+            "Combine raw-score evidence supervision with right-neighbor retrieval "
+            "candidate expansion, then evaluate with needle copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_neighbor_span_pair_copy": {
+        "description": (
+            "Enable right-neighbor retrieval candidates and evaluate NIAH with "
+            "a key/value pair-aware needle copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "niah_readout_mode": "needle_pair_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_score_margin_neighbor_span_pair_copy": {
+        "description": (
+            "Combine raw-score evidence supervision with right-neighbor retrieval "
+            "candidate expansion, then evaluate with key/value pair-aware copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN,
+            "niah_readout_mode": "needle_pair_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_key_score_margin_neighbor_span_pair_copy": {
+        "description": (
+            "Train NIAH raw-score evidence supervision against the needle key, "
+            "expand right-neighbor candidates, then evaluate with key/value pair-aware "
+            "copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_SCORE_MARGIN,
+            "retrieval_evidence_target_offset": NIAH_RETRIEVAL_EVIDENCE_KEY_OFFSET,
+            "niah_readout_mode": "needle_pair_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "query_evidence_alignment_pair_copy": {
+        "description": (
+            "Add an opt-in query/evidence representation alignment loss, keep "
+            "right-neighbor retrieval candidates, then evaluate with key/value "
+            "pair-aware copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": DEFAULT_NIAH_QUERY_EVIDENCE_ALIGNMENT_ALPHA,
+            "niah_readout_mode": "needle_pair_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_projection_contrastive": {
+        "description": (
+            "Train an opt-in contrastive loss directly on selected retrieval q/k "
+            "projections so the known evidence key outranks retrieved negatives."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": (
+                DEFAULT_NIAH_RETRIEVAL_PROJECTION_CONTRASTIVE_ALPHA
+            ),
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "niah_readout_mode": "model",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_projection_pair_copy": {
+        "description": (
+            "Train direct retrieval q/k projection supervision, expand right-neighbor "
+            "candidates, then evaluate with key/value pair-aware copy readout."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": (
+                DEFAULT_NIAH_RETRIEVAL_PROJECTION_CONTRASTIVE_ALPHA
+            ),
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "niah_readout_mode": "needle_pair_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_span_predictor": {
+        "description": (
+            "Train a default-off NIAH span predictor that scores selected retrieval "
+            "candidates and evaluates by copying from the predicted source span."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": DEFAULT_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_structured_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor, but restrict its candidate "
+            "pool to selected retrieval key/value pairs that were both recalled."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": DEFAULT_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_prefer_structured_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor, prefer selected retrieval "
+            "key/value pairs when available, and fall back to the original selected "
+            "candidate pool otherwise."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": DEFAULT_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_multi_positive_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with a multi-positive loss "
+            "so every selected candidate that copies the right answer shares "
+            "positive probability mass."
+        ),
+        "override": {"retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_bidirectional_structured_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with bidirectional neighbor "
+            "candidate expansion so selected values can bring their left-side key "
+            "into the eval candidate set."
+        ),
+        "override": {
+            "retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "retrieval_neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+        },
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_page_local_neighbor_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with page-local neighbor "
+            "materialization: retrieve extra in-page seed tokens before neighbor "
+            "expansion so adjacent key/value evidence can survive token top-k."
+        ),
+        "override": {
+            "retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "retrieval_neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "retrieval_neighbor_seed_multiplier": (
+                DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER
+            ),
+        },
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "neighbor_seed_multiplier": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_structured_feature_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with page-local neighbor "
+            "materialization plus explicit pair/source structure features, so the "
+            "readout head can distinguish complete key/value candidates from "
+            "loose high-score retrieval hits."
+        ),
+        "override": {
+            "retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "retrieval_neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "retrieval_neighbor_seed_multiplier": (
+                DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER
+            ),
+        },
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "neighbor_seed_multiplier": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "retrieval_span_structure_features": True,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_compact_page_local_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with page-local neighbor "
+            "materialization but a smaller external retrieval token budget, so "
+            "the selected candidate table is less noisy."
+        ),
+        "override": {
+            "retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "retrieval_neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "retrieval_neighbor_seed_multiplier": (
+                DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER
+            ),
+            "retrieval_max_tokens": COMPACT_NIAH_RETRIEVAL_MAX_TOKENS,
+        },
+        "capabilities": {
+            "query_pooling": "mean",
+            "retrieval_max_tokens": COMPACT_NIAH_RETRIEVAL_MAX_TOKENS,
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "neighbor_seed_multiplier": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "retrieval_pair_aware_page_local_span_predictor": {
+        "description": (
+            "Train the default-off NIAH span predictor with page-local neighbor "
+            "materialization and a pair-aware neighbor budget, so adjacent "
+            "key/value candidates are materialized without unbounded noise."
+        ),
+        "override": {
+            "retrieval_neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "retrieval_neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "retrieval_neighbor_seed_multiplier": (
+                DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER
+            ),
+            "retrieval_neighbor_budget_mode": (
+                PAIR_AWARE_NIAH_RETRIEVAL_NEIGHBOR_BUDGET_MODE
+            ),
+        },
+        "capabilities": {
+            "query_pooling": "mean",
+            "retrieval_max_tokens": 128,
+            "neighbor_span": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SPAN,
+            "neighbor_direction": BIDIRECTIONAL_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+            "neighbor_seed_multiplier": DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_SEED_MULTIPLIER,
+            "neighbor_budget_mode": PAIR_AWARE_NIAH_RETRIEVAL_NEIGHBOR_BUDGET_MODE,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "retrieval_evidence_target_offset": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+            "query_evidence_alignment_alpha": 0.0,
+            "retrieval_projection_contrastive_alpha": 0.0,
+            "retrieval_projection_temperature": DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+            "retrieval_span_predictor_alpha": DEFAULT_NIAH_RETRIEVAL_SPAN_PREDICTOR_ALPHA,
+            "niah_readout_mode": "span_predictor",
+            "niah_span_candidate_filter": PREFERRED_STRUCTURED_NIAH_SPAN_CANDIDATE_FILTER,
+            "niah_span_loss_mode": MULTI_POSITIVE_NIAH_SPAN_LOSS_MODE,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "slot_readout_bias": {
+        "description": (
+            "Train the existing JSON slot decoder and apply its generation-time "
+            "byte-level readout bias."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": DEFAULT_JSON_SLOT_DECODER_LOSS_WEIGHT,
+            "json_slot_decoder_logit_bias": DEFAULT_JSON_SLOT_DECODER_LOGIT_BIAS,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_slot_readout": {
+        "description": (
+            "Train evidence-window supervision plus the existing JSON slot decoder, "
+            "then use the slot readout bias during generation."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "json_evidence_loss_weight": DEFAULT_JSON_EVIDENCE_LOSS_WEIGHT,
+            "json_slot_decoder_loss_weight": DEFAULT_JSON_SLOT_DECODER_LOSS_WEIGHT,
+            "json_slot_decoder_logit_bias": DEFAULT_JSON_SLOT_DECODER_LOGIT_BIAS,
+            "json_evidence_hint_weight": DEFAULT_JSON_EVIDENCE_HINT_WEIGHT,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "extract_compose_readout": {
+        "description": (
+            "Use the existing evidence-window decoder plus deterministic "
+            "extract-then-compose answer readout for JSON generation metrics."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "json_evidence_loss_weight": DEFAULT_JSON_EVIDENCE_LOSS_WEIGHT,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "extract_then_compose",
+        },
+    },
+    "needle_copy_readout": {
+        "description": (
+            "Evaluate NIAH with an explicit retrieval-candidate needle copy readout."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
+        },
+    },
+    "evidence_needle_copy_readout": {
+        "description": (
+            "Train NIAH evidence-hit supervision, then evaluate with retrieval-candidate "
+            "needle copy readout."
+        ),
+        "override": {},
+        "capabilities": {
+            "query_pooling": "mean",
+            "neighbor_span": 0,
+            "gate_quality_bias": 0.0,
+            "learned_retrieval_gate": False,
+            "retrieval_evidence_loss_alpha": DEFAULT_NIAH_RETRIEVAL_EVIDENCE_LOSS_ALPHA,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
+            "niah_readout_mode": "needle_copy",
+            "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "retrieval_query_pooling": {
@@ -99,10 +910,17 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {"retrieval_query_pooling": "max_token"},
         "capabilities": {
             "query_pooling": "max_token",
+            "neighbor_span": 0,
             "gate_quality_bias": 0.0,
             "learned_retrieval_gate": False,
             "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
             "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "retrieval_gate_quality": {
@@ -110,10 +928,17 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         "override": {"retrieval_quality_gate_bias": 2.0},
         "capabilities": {
             "query_pooling": "mean",
+            "neighbor_span": 0,
             "gate_quality_bias": 2.0,
             "learned_retrieval_gate": False,
             "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
             "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
     "combined": {
@@ -124,10 +949,17 @@ GROUP_CONFIGS: dict[str, dict[str, Any]] = {
         },
         "capabilities": {
             "query_pooling": "max_token",
+            "neighbor_span": 0,
             "gate_quality_bias": 2.0,
             "learned_retrieval_gate": False,
             "retrieval_evidence_loss_alpha": 0.0,
+            "retrieval_evidence_rank_margin": 0.0,
+            "retrieval_evidence_score_margin": 0.0,
             "json_evidence_loss_weight": 0.0,
+            "json_slot_decoder_loss_weight": 0.0,
+            "json_slot_decoder_logit_bias": 0.0,
+            "json_evidence_hint_weight": 0.0,
+            "json_generation_readout_mode": "model",
         },
     },
 }
@@ -204,6 +1036,91 @@ def group_capability(group_name: str, key: str, default: Any = None) -> Any:
     if not isinstance(capabilities, Mapping):
         return default
     return capabilities.get(key, default)
+
+
+def group_uses_niah_retrieval(group_name: str) -> bool:
+    """Return whether this NIAH group should enable external paged retrieval.
+
+    中文说明:
+    - 调用方 / Called by: `build_run_rows`, `run_niah_rows`, `run_niah_row`
+    - 调用对象 / Calls: `group_capability`, `group_override`
+    - 作用 / Purpose: baseline 保持旧 NIAH 行为；只有 evidence、learned gate 或显式
+      retrieval override 组打开外部分页召回，避免报告里看似测 retrieval、实际未启用。
+    - 返回 / Returns: bool，是否给 `run_niah_verification_case(use_retrieval=...)` 传 True。
+    - 错误处理 / Error handling: 未知 group 由现有 helper 抛 `ValueError`。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        group_uses_niah_retrieval
+    Purpose:
+        Keep the baseline NIAH path unchanged while ensuring retrieval ablation
+        groups actually exercise external paged retrieval.
+    """
+    if float(group_capability(group_name, "retrieval_evidence_loss_alpha", 0.0)) > 0.0:
+        return True
+    if str(group_capability(group_name, "niah_readout_mode", "model")) in {
+        "needle_copy",
+        "needle_pair_copy",
+    }:
+        return True
+    if bool(group_capability(group_name, "learned_retrieval_gate", False)):
+        return True
+    if float(group_capability(group_name, "retrieval_projection_contrastive_alpha", 0.0)) > 0.0:
+        return True
+    if float(group_capability(group_name, "retrieval_span_predictor_alpha", 0.0)) > 0.0:
+        return True
+    override = group_override(group_name)
+    retrieval_keys = {
+        "retrieval_query_pooling",
+        "retrieval_neighbor_span",
+        "retrieval_neighbor_direction",
+        "retrieval_neighbor_seed_multiplier",
+        "retrieval_neighbor_budget_mode",
+        "retrieval_max_tokens",
+        "retrieval_quality_gate_bias",
+        "retrieval_quality_gate_adapter",
+    }
+    return any(key in override for key in retrieval_keys)
+
+
+def json_group_capabilities(group_name: str) -> dict[str, Any]:
+    """Return JSON-only readout and evidence switches for one ablation group.
+
+    中文说明:
+    - 调用方 / Called by: `build_run_rows`, `run_json_section`, `run_json_row`
+    - 调用对象 / Calls: `group_capability`
+    - 作用 / Purpose: 把 JSON 任务里的证据窗口监督、slot decoder 训练、
+      生成期 slot logit bias 和 evidence hint 参数集中展开，避免在多个调用点漏传。
+    - 返回 / Returns: 可直接写入 row config 并传给
+      `run_json_retrieval_generalization_test()` 的 float 参数。
+    - 错误处理 / Error handling: 未知 group 由 `group_capability()` 抛 `ValueError`。
+    - 副作用 / Side effects: 无，不读取 validation/test 信号。
+
+    English documentation:
+    Function name:
+        json_group_capabilities
+    Purpose:
+        Centralize JSON retrieval readout/evidence capability expansion so the
+        ablation runner records and passes the same train-time switches.
+    """
+    return {
+        "evidence_loss_weight": float(
+            group_capability(group_name, "json_evidence_loss_weight", 0.0)
+        ),
+        "slot_decoder_loss_weight": float(
+            group_capability(group_name, "json_slot_decoder_loss_weight", 0.0)
+        ),
+        "slot_decoder_logit_bias": float(
+            group_capability(group_name, "json_slot_decoder_logit_bias", 0.0)
+        ),
+        "evidence_hint_weight": float(
+            group_capability(group_name, "json_evidence_hint_weight", 0.0)
+        ),
+        "generation_readout_mode": str(
+            group_capability(group_name, "json_generation_readout_mode", "model")
+        ),
+    }
 
 
 def _optional_float(value: Any) -> float | None:
@@ -349,6 +1266,9 @@ def build_run_rows(
                                 "eval_batches_per_depth": int(
                                     args.niah_eval_batches_per_depth
                                 ),
+                                "test_batches_per_depth": int(
+                                    args.niah_test_batches_per_depth
+                                ),
                                 "retrieval_evidence_loss_alpha": float(
                                     group_capability(
                                         group_name,
@@ -356,6 +1276,115 @@ def build_run_rows(
                                         0.0,
                                     )
                                 ),
+                                "retrieval_evidence_rank_margin": float(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_evidence_rank_margin",
+                                        0.0,
+                                    )
+                                ),
+                                "retrieval_evidence_score_margin": float(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_evidence_score_margin",
+                                        0.0,
+                                    )
+                                ),
+                                "retrieval_evidence_target_offset": int(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_evidence_target_offset",
+                                        DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+                                    )
+                                ),
+                                "query_evidence_alignment_alpha": float(
+                                    group_capability(
+                                        group_name,
+                                        "query_evidence_alignment_alpha",
+                                        0.0,
+                                    )
+                                ),
+                                "retrieval_projection_contrastive_alpha": float(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_projection_contrastive_alpha",
+                                        0.0,
+                                    )
+                                ),
+                                "retrieval_projection_temperature": float(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_projection_temperature",
+                                        DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+                                    )
+                                ),
+                                "retrieval_span_predictor_alpha": float(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_span_predictor_alpha",
+                                        0.0,
+                                    )
+                                ),
+                                "retrieval_span_structure_features": bool(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_span_structure_features",
+                                        False,
+                                    )
+                                ),
+                                "niah_span_candidate_filter": str(
+                                    group_capability(
+                                        group_name,
+                                        "niah_span_candidate_filter",
+                                        DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+                                    )
+                                ),
+                                "niah_span_loss_mode": str(
+                                    group_capability(
+                                        group_name,
+                                        "niah_span_loss_mode",
+                                        DEFAULT_NIAH_SPAN_LOSS_MODE,
+                                    )
+                                ),
+                                "retrieval_neighbor_span": int(
+                                    group_capability(group_name, "neighbor_span", 0)
+                                ),
+                                "retrieval_neighbor_direction": str(
+                                    group_capability(
+                                        group_name,
+                                        "neighbor_direction",
+                                        DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+                                    )
+                                ),
+                                "retrieval_neighbor_seed_multiplier": int(
+                                    group_capability(
+                                        group_name,
+                                        "neighbor_seed_multiplier",
+                                        1,
+                                    )
+                                ),
+                                "retrieval_neighbor_budget_mode": str(
+                                    group_capability(
+                                        group_name,
+                                        "neighbor_budget_mode",
+                                        "unbounded",
+                                    )
+                                ),
+                                "retrieval_max_tokens": int(
+                                    group_capability(
+                                        group_name,
+                                        "retrieval_max_tokens",
+                                        128,
+                                    )
+                                ),
+                                "niah_readout_mode": str(
+                                    group_capability(
+                                        group_name,
+                                        "niah_readout_mode",
+                                        "model",
+                                    )
+                                ),
+                                "use_retrieval": group_uses_niah_retrieval(group_name),
                                 "mhdsra2_config_override": group_override(group_name),
                             },
                             "validation_metrics": {},
@@ -366,6 +1395,7 @@ def build_run_rows(
         for group_name in groups:
             for seed_root in args.json_task_seed_roots:
                 seed_bundle = build_task_seed_bundle(seed_root)
+                json_capabilities = json_group_capabilities(group_name)
                 rows.append(
                     {
                         "group": group_name,
@@ -383,14 +1413,12 @@ def build_run_rows(
                                 args.json_validation_dataset_size
                             ),
                             "test_dataset_size": int(args.json_test_dataset_size),
-                            "generalization_score_mode": "generation",
-                            "evidence_loss_weight": float(
-                                group_capability(
-                                    group_name,
-                                    "json_evidence_loss_weight",
-                                    0.0,
-                                )
+                            "distractor_records_per_case": int(
+                                args.json_distractor_records_per_case
                             ),
+                            "answer_template_mode": str(args.json_answer_template_mode),
+                            "generalization_score_mode": "generation",
+                            **json_capabilities,
                             "seed_bundle": seed_bundle,
                             "mhdsra2_config_override": group_override(group_name),
                         },
@@ -469,6 +1497,99 @@ def run_smoke_section(args: argparse.Namespace, device: torch.device) -> dict[st
     }
 
 
+def split_niah_span_candidate_diagnostics(
+    metrics: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Extract final span-candidate diagnostics without making them selectors.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_section`, `run_niah_row`
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 将 span predictor 的 eval 候选池结构指标统一放到
+      diagnostic_metrics；这些字段解释为什么答错，但不能进入 validation/test
+      主指标，也不能用来选择实验组。
+    - 返回 / Returns: dict，缺字段时值为 None。
+    - 错误处理 / Error handling: 输入为空或字段缺失时返回 None 值。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        split_niah_span_candidate_diagnostics
+    Purpose:
+        Keep final span-candidate diagnostics in the diagnostic report block only.
+    """
+    source = metrics.get("final_span_candidate_diagnostics", {})
+    if not isinstance(source, Mapping):
+        source = {}
+    return {
+        field: source.get(field, metrics.get(field))
+        for field in NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS
+    }
+
+
+def split_niah_test_metrics(metrics: Mapping[str, Any]) -> dict[str, Any]:
+    """Extract held-out NIAH test metrics without touching validation selection.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_section`, `run_niah_row`
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 只把最终 held-out test 的主指标放入 `test_metrics`；
+      这些字段在训练与 best-state 选择之后产生，不得参与组选择。
+    - 返回 / Returns: 未启用 test eval 时返回空 dict。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        split_niah_test_metrics
+    Purpose:
+        Keep held-out NIAH test headline metrics separate from validation metrics.
+    """
+    if metrics.get("test_accuracy") is None:
+        return {}
+    return {
+        "test_eval_mean_accuracy": metrics.get("test_accuracy"),
+        "test_eval_min_depth_accuracy": metrics.get("test_min_depth_accuracy"),
+        "test_eval_loss": metrics.get("test_eval_loss"),
+        "test_readout_available_rate": metrics.get("test_readout_available_rate"),
+        "test_target_candidate_hit_rate": metrics.get(
+            "test_target_candidate_hit_rate"
+        ),
+    }
+
+
+def prefix_niah_test_diagnostics(metrics: Mapping[str, Any]) -> dict[str, Any]:
+    """Extract held-out NIAH test diagnostics for explanation only.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_section`, `run_niah_row`
+    - 作用 / Purpose: 将 test 候选 rank/pair 等解释性字段放入 diagnostics，
+      不进入 validation/test 主指标，避免被误用作选择依据。
+    - 返回 / Returns: 带 `test_` 前缀的诊断字段。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        prefix_niah_test_diagnostics
+    Purpose:
+        Prefix held-out NIAH test diagnostics so they remain explanatory only.
+    """
+    source = metrics.get("test_span_candidate_diagnostics", {})
+    if not isinstance(source, Mapping):
+        source = {}
+    diagnostics = {
+        "test_mean_target_candidate_rank": metrics.get(
+            "test_mean_target_candidate_rank"
+        )
+    }
+    diagnostics.update(
+        {
+            f"test_{field}": source.get(field)
+            for field in NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS
+        }
+    )
+    return diagnostics
+
+
 def run_niah_section(
     args: argparse.Namespace,
     device: torch.device,
@@ -502,6 +1623,104 @@ def run_niah_section(
                                 0.0,
                             )
                         ),
+                        "retrieval_evidence_rank_margin": float(
+                            group_capability(
+                                group_name,
+                                "retrieval_evidence_rank_margin",
+                                0.0,
+                            )
+                        ),
+                        "retrieval_evidence_score_margin": float(
+                            group_capability(
+                                group_name,
+                                "retrieval_evidence_score_margin",
+                                0.0,
+                            )
+                        ),
+                        "retrieval_evidence_target_offset": int(
+                            group_capability(
+                                group_name,
+                                "retrieval_evidence_target_offset",
+                                DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+                            )
+                        ),
+                        "query_evidence_alignment_alpha": float(
+                            group_capability(
+                                group_name,
+                                "query_evidence_alignment_alpha",
+                                0.0,
+                            )
+                        ),
+                        "retrieval_projection_contrastive_alpha": float(
+                            group_capability(
+                                group_name,
+                                "retrieval_projection_contrastive_alpha",
+                                0.0,
+                            )
+                        ),
+                        "retrieval_projection_temperature": float(
+                            group_capability(
+                                group_name,
+                                "retrieval_projection_temperature",
+                                DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+                            )
+                        ),
+                        "retrieval_span_predictor_alpha": float(
+                            group_capability(
+                                group_name,
+                                "retrieval_span_predictor_alpha",
+                                0.0,
+                            )
+                        ),
+                        "niah_span_candidate_filter": str(
+                            group_capability(
+                                group_name,
+                                "niah_span_candidate_filter",
+                                DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+                            )
+                        ),
+                        "niah_span_loss_mode": str(
+                            group_capability(
+                                group_name,
+                                "niah_span_loss_mode",
+                                DEFAULT_NIAH_SPAN_LOSS_MODE,
+                            )
+                        ),
+                        "retrieval_neighbor_span": int(
+                            group_capability(group_name, "neighbor_span", 0)
+                        ),
+                        "retrieval_neighbor_direction": str(
+                            group_capability(
+                                group_name,
+                                "neighbor_direction",
+                                DEFAULT_NIAH_RETRIEVAL_NEIGHBOR_DIRECTION,
+                            )
+                        ),
+                        "retrieval_neighbor_seed_multiplier": int(
+                            group_capability(
+                                group_name,
+                                "neighbor_seed_multiplier",
+                                1,
+                            )
+                        ),
+                        "retrieval_neighbor_budget_mode": str(
+                            group_capability(
+                                group_name,
+                                "neighbor_budget_mode",
+                                "unbounded",
+                            )
+                        ),
+                        "retrieval_max_tokens": int(
+                            group_capability(
+                                group_name,
+                                "retrieval_max_tokens",
+                                128,
+                            )
+                        ),
+                        "niah_readout_mode": str(
+                            group_capability(group_name, "niah_readout_mode", "model")
+                        ),
+                        "use_retrieval": group_uses_niah_retrieval(group_name),
                         "mhdsra2_config_override": override,
                     },
                 }
@@ -525,13 +1744,77 @@ def run_niah_section(
                         eval_batches_per_depth=args.niah_eval_batches_per_depth,
                         robust_eval_interval=args.niah_robust_eval_interval,
                         robust_eval_batches_per_depth=args.niah_eval_batches_per_depth,
+                        niah_test_batches_per_depth=int(
+                            row["config"].get(
+                                "test_batches_per_depth",
+                                DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH,
+                            )
+                        ),
                         swanlab_mode="disabled",
                         needle_loss_alpha=args.niah_needle_loss_alpha,
                         hidden_mse_alpha=args.niah_hidden_mse_alpha,
                         retrieval_evidence_loss_alpha=float(
                             row["config"]["retrieval_evidence_loss_alpha"]
                         ),
+                        retrieval_evidence_rank_margin=float(
+                            row["config"].get("retrieval_evidence_rank_margin", 0.0)
+                        ),
+                        retrieval_evidence_score_margin=float(
+                            row["config"].get("retrieval_evidence_score_margin", 0.0)
+                        ),
+                        retrieval_evidence_target_offset=int(
+                            row["config"].get(
+                                "retrieval_evidence_target_offset",
+                                DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+                            )
+                        ),
+                        query_evidence_alignment_alpha=float(
+                            row["config"].get("query_evidence_alignment_alpha", 0.0)
+                        ),
+                        retrieval_projection_contrastive_alpha=float(
+                            row["config"].get(
+                                "retrieval_projection_contrastive_alpha",
+                                0.0,
+                            )
+                        ),
+                        retrieval_projection_temperature=float(
+                            row["config"].get(
+                                "retrieval_projection_temperature",
+                                DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+                            )
+                        ),
+                        retrieval_span_predictor_alpha=float(
+                            row["config"].get("retrieval_span_predictor_alpha", 0.0)
+                        ),
+                        retrieval_span_structure_features=bool(
+                            row["config"].get("retrieval_span_structure_features", False)
+                        ),
+                        niah_span_candidate_filter=str(
+                            row["config"].get(
+                                "niah_span_candidate_filter",
+                                DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+                            )
+                        ),
+                        niah_span_loss_mode=str(
+                            row["config"].get(
+                                "niah_span_loss_mode",
+                                DEFAULT_NIAH_SPAN_LOSS_MODE,
+                            )
+                        ),
+                        use_retrieval=bool(row["config"]["use_retrieval"]),
+                        niah_readout_mode=str(
+                            row["config"].get("niah_readout_mode", "model")
+                        ),
                     )
+                    span_candidate_diagnostics = split_niah_span_candidate_diagnostics(
+                        metrics
+                    )
+                    test_metrics = split_niah_test_metrics(metrics)
+                    test_diagnostics = prefix_niah_test_diagnostics(metrics)
+                    final_span_candidate_diagnostics = {
+                        f"final_{key}": value
+                        for key, value in span_candidate_diagnostics.items()
+                    }
                     row.update(
                         {
                             "status": "completed",
@@ -546,8 +1829,14 @@ def run_niah_section(
                                     "best_accuracy"
                                 ),
                                 "final_eval_loss": metrics.get("final_eval_loss"),
+                                "final_readout_available_rate": metrics.get(
+                                    "final_readout_available_rate"
+                                ),
+                                "final_target_candidate_hit_rate": metrics.get(
+                                    "final_target_candidate_hit_rate"
+                                ),
                             },
-                            "test_metrics": {},
+                            "test_metrics": test_metrics,
                             "diagnostic_metrics": {
                                 "final_train_loss": metrics.get("final_train_loss"),
                                 "peak_memory_allocated_mb": metrics.get(
@@ -556,9 +1845,114 @@ def run_niah_section(
                                 "peak_memory_reserved_mb": metrics.get(
                                     "peak_memory_reserved_mb"
                                 ),
+                                "final_readout_mode": metrics.get(
+                                    "final_readout_mode"
+                                ),
+                                "final_readout_available_rate": metrics.get(
+                                    "final_readout_available_rate"
+                                ),
+                                "final_target_candidate_hit_rate": metrics.get(
+                                    "final_target_candidate_hit_rate"
+                                ),
+                                "final_mean_target_candidate_rank": metrics.get(
+                                    "final_mean_target_candidate_rank"
+                                ),
+                                "final_span_candidate_diagnostics": (
+                                    span_candidate_diagnostics
+                                ),
+                                **final_span_candidate_diagnostics,
+                                **test_diagnostics,
                                 "retrieval_evidence": metrics.get(
                                     "final_retrieval_evidence_metrics"
                                 ),
+                                "train_retrieval_evidence_summary": metrics.get(
+                                    "train_retrieval_evidence_summary"
+                                ),
+                                "train_query_evidence_alignment_summary": metrics.get(
+                                    "train_query_evidence_alignment_summary"
+                                ),
+                                "train_retrieval_projection_summary": metrics.get(
+                                    "train_retrieval_projection_summary"
+                                ),
+                                "retrieval_projection_mean_loss": (
+                                    metrics.get(
+                                        "train_retrieval_projection_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_loss"),
+                                "retrieval_projection_mean_target_rank": (
+                                    metrics.get(
+                                        "train_retrieval_projection_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_target_rank"),
+                                "retrieval_projection_mean_top1_rate": (
+                                    metrics.get(
+                                        "train_retrieval_projection_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_top1_rate"),
+                                "final_retrieval_projection": metrics.get(
+                                    "final_retrieval_projection_metrics"
+                                ),
+                                "train_retrieval_span_predictor_summary": metrics.get(
+                                    "train_retrieval_span_predictor_summary"
+                                ),
+                                "retrieval_span_predictor_mean_loss": (
+                                    metrics.get(
+                                        "train_retrieval_span_predictor_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_loss"),
+                                "retrieval_span_predictor_mean_target_rank": (
+                                    metrics.get(
+                                        "train_retrieval_span_predictor_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_target_rank"),
+                                "retrieval_span_predictor_mean_top1_rate": (
+                                    metrics.get(
+                                        "train_retrieval_span_predictor_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_top1_rate"),
+                                "retrieval_span_predictor_mean_logit_margin": (
+                                    metrics.get(
+                                        "train_retrieval_span_predictor_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_logit_margin"),
+                                "final_retrieval_span_predictor": metrics.get(
+                                    "final_retrieval_span_predictor_metrics"
+                                ),
+                                "query_evidence_alignment_mean_loss": (
+                                    metrics.get(
+                                        "train_query_evidence_alignment_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_loss"),
+                                "query_evidence_alignment_mean_cosine": (
+                                    metrics.get(
+                                        "train_query_evidence_alignment_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_cosine"),
+                                "query_evidence_alignment_mean_mse": (
+                                    metrics.get(
+                                        "train_query_evidence_alignment_summary",
+                                        {},
+                                    )
+                                    or {}
+                                ).get("mean_mse"),
                                 "retrieval_evidence_available": (
                                     metrics.get("final_retrieval_evidence_metrics", {}) or {}
                                 ).get("available"),
@@ -571,6 +1965,36 @@ def run_niah_section(
                                 "retrieval_evidence_weight_mean": (
                                     metrics.get("final_retrieval_evidence_metrics", {}) or {}
                                 ).get("evidence_weight_mean"),
+                                "retrieval_evidence_best_negative_weight_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("best_negative_weight_mean"),
+                                "retrieval_evidence_margin_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("evidence_margin_mean"),
+                                "retrieval_evidence_target_rank_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("target_rank_mean"),
+                                "retrieval_evidence_top1_rate": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("top1_rate"),
+                                "retrieval_evidence_score_margin_loss": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("score_margin_loss"),
+                                "retrieval_evidence_score_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("evidence_score_mean"),
+                                "retrieval_evidence_best_negative_score_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("best_negative_score_mean"),
+                                "retrieval_evidence_score_margin_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("evidence_score_margin_mean"),
+                                "retrieval_evidence_score_target_rank_mean": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("score_target_rank_mean"),
+                                "retrieval_evidence_score_top1_rate": (
+                                    metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                                ).get("score_top1_rate"),
                                 "slot_collision": summarize_slot_collision_diagnostics(
                                     (
                                         metrics.get("final_aux_diagnostics", {})
@@ -596,8 +2020,41 @@ def run_niah_section(
                                     "best_min_depth_accuracy"
                                 ),
                                 "best_accuracy_loss": metrics.get("best_accuracy_loss"),
+                                "final_readout_mode": metrics.get(
+                                    "final_readout_mode"
+                                ),
+                                "final_readout_available_rate": metrics.get(
+                                    "final_readout_available_rate"
+                                ),
+                                "final_target_candidate_hit_rate": metrics.get(
+                                    "final_target_candidate_hit_rate"
+                                ),
+                                "final_mean_target_candidate_rank": metrics.get(
+                                    "final_mean_target_candidate_rank"
+                                ),
                                 "final_retrieval_evidence_metrics": metrics.get(
                                     "final_retrieval_evidence_metrics"
+                                ),
+                                "train_retrieval_evidence_summary": metrics.get(
+                                    "train_retrieval_evidence_summary"
+                                ),
+                                "train_query_evidence_alignment_summary": metrics.get(
+                                    "train_query_evidence_alignment_summary"
+                                ),
+                                "train_retrieval_projection_summary": metrics.get(
+                                    "train_retrieval_projection_summary"
+                                ),
+                                "final_retrieval_projection_metrics": metrics.get(
+                                    "final_retrieval_projection_metrics"
+                                ),
+                                "final_retrieval_span_predictor_metrics": metrics.get(
+                                    "final_retrieval_span_predictor_metrics"
+                                ),
+                                "final_span_candidate_diagnostics": metrics.get(
+                                    "final_span_candidate_diagnostics"
+                                ),
+                                "train_retrieval_span_predictor_summary": metrics.get(
+                                    "train_retrieval_span_predictor_summary"
                                 ),
                                 "peak_memory_allocated_mb": metrics.get(
                                     "peak_memory_allocated_mb"
@@ -661,13 +2118,70 @@ def run_niah_row(
             eval_batches_per_depth=int(config["eval_batches_per_depth"]),
             robust_eval_interval=args.niah_robust_eval_interval,
             robust_eval_batches_per_depth=int(config["eval_batches_per_depth"]),
+            niah_test_batches_per_depth=int(
+                config.get(
+                    "test_batches_per_depth",
+                    DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH,
+                )
+            ),
             swanlab_mode="disabled",
             needle_loss_alpha=args.niah_needle_loss_alpha,
             hidden_mse_alpha=args.niah_hidden_mse_alpha,
             retrieval_evidence_loss_alpha=float(
                 config.get("retrieval_evidence_loss_alpha", 0.0)
             ),
+            retrieval_evidence_rank_margin=float(
+                config.get("retrieval_evidence_rank_margin", 0.0)
+            ),
+            retrieval_evidence_score_margin=float(
+                config.get("retrieval_evidence_score_margin", 0.0)
+            ),
+            retrieval_evidence_target_offset=int(
+                config.get(
+                    "retrieval_evidence_target_offset",
+                    DEFAULT_NIAH_RETRIEVAL_EVIDENCE_TARGET_OFFSET,
+                )
+            ),
+            query_evidence_alignment_alpha=float(
+                config.get("query_evidence_alignment_alpha", 0.0)
+            ),
+            retrieval_projection_contrastive_alpha=float(
+                config.get("retrieval_projection_contrastive_alpha", 0.0)
+            ),
+            retrieval_projection_temperature=float(
+                config.get(
+                    "retrieval_projection_temperature",
+                    DEFAULT_NIAH_RETRIEVAL_PROJECTION_TEMPERATURE,
+                )
+            ),
+            retrieval_span_predictor_alpha=float(
+                config.get("retrieval_span_predictor_alpha", 0.0)
+            ),
+            retrieval_span_structure_features=bool(
+                config.get("retrieval_span_structure_features", False)
+            ),
+            niah_span_candidate_filter=str(
+                config.get(
+                    "niah_span_candidate_filter",
+                    DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+                )
+            ),
+            niah_span_loss_mode=str(
+                config.get(
+                    "niah_span_loss_mode",
+                    DEFAULT_NIAH_SPAN_LOSS_MODE,
+                )
+            ),
+            use_retrieval=bool(config.get("use_retrieval", group_uses_niah_retrieval(group_name))),
+            niah_readout_mode=str(config.get("niah_readout_mode", "model")),
         )
+        span_candidate_diagnostics = split_niah_span_candidate_diagnostics(metrics)
+        test_metrics = split_niah_test_metrics(metrics)
+        test_diagnostics = prefix_niah_test_diagnostics(metrics)
+        final_span_candidate_diagnostics = {
+            f"final_{key}": value
+            for key, value in span_candidate_diagnostics.items()
+        }
         row.update(
             {
                 "status": "completed",
@@ -678,8 +2192,14 @@ def run_niah_row(
                     ),
                     "best_eval_mean_accuracy": metrics.get("best_accuracy"),
                     "final_eval_loss": metrics.get("final_eval_loss"),
+                    "final_readout_available_rate": metrics.get(
+                        "final_readout_available_rate"
+                    ),
+                    "final_target_candidate_hit_rate": metrics.get(
+                        "final_target_candidate_hit_rate"
+                    ),
                 },
-                "test_metrics": {},
+                "test_metrics": test_metrics,
                 "diagnostic_metrics": {
                     "final_train_loss": metrics.get("final_train_loss"),
                     "peak_memory_allocated_mb": metrics.get(
@@ -688,9 +2208,70 @@ def run_niah_row(
                     "peak_memory_reserved_mb": metrics.get(
                         "peak_memory_reserved_mb"
                     ),
+                    "final_readout_mode": metrics.get("final_readout_mode"),
+                    "final_readout_available_rate": metrics.get(
+                        "final_readout_available_rate"
+                    ),
+                    "final_target_candidate_hit_rate": metrics.get(
+                        "final_target_candidate_hit_rate"
+                    ),
+                    "final_mean_target_candidate_rank": metrics.get(
+                        "final_mean_target_candidate_rank"
+                    ),
+                    "final_span_candidate_diagnostics": span_candidate_diagnostics,
+                    **final_span_candidate_diagnostics,
+                    **test_diagnostics,
                     "retrieval_evidence": metrics.get(
                         "final_retrieval_evidence_metrics"
                     ),
+                    "train_retrieval_evidence_summary": metrics.get(
+                        "train_retrieval_evidence_summary"
+                    ),
+                    "train_query_evidence_alignment_summary": metrics.get(
+                        "train_query_evidence_alignment_summary"
+                    ),
+                    "train_retrieval_projection_summary": metrics.get(
+                        "train_retrieval_projection_summary"
+                    ),
+                    "retrieval_projection_mean_loss": (
+                        metrics.get("train_retrieval_projection_summary", {}) or {}
+                    ).get("mean_loss"),
+                    "retrieval_projection_mean_target_rank": (
+                        metrics.get("train_retrieval_projection_summary", {}) or {}
+                    ).get("mean_target_rank"),
+                    "retrieval_projection_mean_top1_rate": (
+                        metrics.get("train_retrieval_projection_summary", {}) or {}
+                    ).get("mean_top1_rate"),
+                    "final_retrieval_projection": metrics.get(
+                        "final_retrieval_projection_metrics"
+                    ),
+                    "train_retrieval_span_predictor_summary": metrics.get(
+                        "train_retrieval_span_predictor_summary"
+                    ),
+                    "retrieval_span_predictor_mean_loss": (
+                        metrics.get("train_retrieval_span_predictor_summary", {}) or {}
+                    ).get("mean_loss"),
+                    "retrieval_span_predictor_mean_target_rank": (
+                        metrics.get("train_retrieval_span_predictor_summary", {}) or {}
+                    ).get("mean_target_rank"),
+                    "retrieval_span_predictor_mean_top1_rate": (
+                        metrics.get("train_retrieval_span_predictor_summary", {}) or {}
+                    ).get("mean_top1_rate"),
+                    "retrieval_span_predictor_mean_logit_margin": (
+                        metrics.get("train_retrieval_span_predictor_summary", {}) or {}
+                    ).get("mean_logit_margin"),
+                    "final_retrieval_span_predictor": metrics.get(
+                        "final_retrieval_span_predictor_metrics"
+                    ),
+                    "query_evidence_alignment_mean_loss": (
+                        metrics.get("train_query_evidence_alignment_summary", {}) or {}
+                    ).get("mean_loss"),
+                    "query_evidence_alignment_mean_cosine": (
+                        metrics.get("train_query_evidence_alignment_summary", {}) or {}
+                    ).get("mean_cosine"),
+                    "query_evidence_alignment_mean_mse": (
+                        metrics.get("train_query_evidence_alignment_summary", {}) or {}
+                    ).get("mean_mse"),
                     "retrieval_evidence_available": (
                         metrics.get("final_retrieval_evidence_metrics", {}) or {}
                     ).get("available"),
@@ -703,6 +2284,36 @@ def run_niah_row(
                     "retrieval_evidence_weight_mean": (
                         metrics.get("final_retrieval_evidence_metrics", {}) or {}
                     ).get("evidence_weight_mean"),
+                    "retrieval_evidence_best_negative_weight_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("best_negative_weight_mean"),
+                    "retrieval_evidence_margin_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("evidence_margin_mean"),
+                    "retrieval_evidence_target_rank_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("target_rank_mean"),
+                    "retrieval_evidence_top1_rate": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("top1_rate"),
+                    "retrieval_evidence_score_margin_loss": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("score_margin_loss"),
+                    "retrieval_evidence_score_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("evidence_score_mean"),
+                    "retrieval_evidence_best_negative_score_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("best_negative_score_mean"),
+                    "retrieval_evidence_score_margin_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("evidence_score_margin_mean"),
+                    "retrieval_evidence_score_target_rank_mean": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("score_target_rank_mean"),
+                    "retrieval_evidence_score_top1_rate": (
+                        metrics.get("final_retrieval_evidence_metrics", {}) or {}
+                    ).get("score_top1_rate"),
                     "slot_collision": summarize_slot_collision_diagnostics(
                         (
                             metrics.get("final_aux_diagnostics", {}).get("last_layer")
@@ -720,8 +2331,47 @@ def run_niah_row(
                     "best_accuracy": metrics.get("best_accuracy"),
                     "best_min_depth_accuracy": metrics.get("best_min_depth_accuracy"),
                     "best_accuracy_loss": metrics.get("best_accuracy_loss"),
+                    "final_readout_mode": metrics.get("final_readout_mode"),
+                    "final_readout_available_rate": metrics.get(
+                        "final_readout_available_rate"
+                    ),
+                    "final_target_candidate_hit_rate": metrics.get(
+                        "final_target_candidate_hit_rate"
+                    ),
+                    "final_mean_target_candidate_rank": metrics.get(
+                        "final_mean_target_candidate_rank"
+                    ),
                     "final_retrieval_evidence_metrics": metrics.get(
                         "final_retrieval_evidence_metrics"
+                    ),
+                    "train_retrieval_evidence_summary": metrics.get(
+                        "train_retrieval_evidence_summary"
+                    ),
+                    "train_query_evidence_alignment_summary": metrics.get(
+                        "train_query_evidence_alignment_summary"
+                    ),
+                    "train_retrieval_projection_summary": metrics.get(
+                        "train_retrieval_projection_summary"
+                    ),
+                    "final_retrieval_projection_metrics": metrics.get(
+                        "final_retrieval_projection_metrics"
+                    ),
+                    "final_retrieval_span_predictor_metrics": metrics.get(
+                        "final_retrieval_span_predictor_metrics"
+                    ),
+                    "final_span_candidate_diagnostics": metrics.get(
+                        "final_span_candidate_diagnostics"
+                    ),
+                    "test_span_candidate_diagnostics": metrics.get(
+                        "test_span_candidate_diagnostics"
+                    ),
+                    "test_accuracy": metrics.get("test_accuracy"),
+                    "test_min_depth_accuracy": metrics.get(
+                        "test_min_depth_accuracy"
+                    ),
+                    "test_eval_loss": metrics.get("test_eval_loss"),
+                    "train_retrieval_span_predictor_summary": metrics.get(
+                        "train_retrieval_span_predictor_summary"
                     ),
                     "peak_memory_allocated_mb": metrics.get(
                         "peak_memory_allocated_mb"
@@ -761,8 +2411,25 @@ def run_niah_row(
     return row
 
 
-def summarize_json_seed_result(result: Mapping[str, Any]) -> dict[str, float]:
-    """Extract JSON validation/test metrics for one seed run."""
+def summarize_json_seed_result(result: Mapping[str, Any]) -> dict[str, float | None]:
+    """Extract JSON validation/test metrics for one seed run.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_section`, `run_json_row`
+    - 调用对象 / Calls: 无，只读取 `run_json_retrieval_generalization_test()` 的结果字典。
+    - 作用 / Purpose: 汇总 generation 主指标，同时保留 teacher-forced、slot decoder、
+      evidence decoder 的诊断指标；selection 仍只看 validation generation 指标。
+    - 返回 / Returns: 扁平 metrics 字典，值可能为 float 或 None。
+    - 错误处理 / Error handling: 缺少必需 pool evaluation 时沿用 KeyError 暴露调用错误。
+    - 副作用 / Side effects: 无，不访问 test 选择逻辑。
+
+    English documentation:
+    Function name:
+        summarize_json_seed_result
+    Purpose:
+        Flatten generation metrics and readout diagnostics from one JSON
+        generalization run without changing validation-only selection policy.
+    """
     validation = result["validation_pool_evaluation"]
     test = result["test_pool_evaluation"]
     return {
@@ -788,12 +2455,100 @@ def summarize_json_seed_result(result: Mapping[str, Any]) -> dict[str, float]:
         "test_teacher_forced_mean_sequence_accuracy": test[
             "teacher_forced_mean_sequence_accuracy"
         ],
+        "validation_slot_decoder_full_answer_accuracy": validation.get(
+            "slot_decoder_full_answer_accuracy"
+        ),
+        "validation_slot_decoder_museum_accuracy": validation.get(
+            "slot_decoder_museum_accuracy"
+        ),
+        "validation_slot_decoder_artifact_accuracy": validation.get(
+            "slot_decoder_artifact_accuracy"
+        ),
+        "validation_slot_decoder_artist_accuracy": validation.get(
+            "slot_decoder_artist_accuracy"
+        ),
+        "validation_slot_decoder_dynasty_accuracy": validation.get(
+            "slot_decoder_dynasty_accuracy"
+        ),
+        "test_slot_decoder_full_answer_accuracy": test.get(
+            "slot_decoder_full_answer_accuracy"
+        ),
+        "test_slot_decoder_museum_accuracy": test.get("slot_decoder_museum_accuracy"),
+        "test_slot_decoder_artifact_accuracy": test.get(
+            "slot_decoder_artifact_accuracy"
+        ),
+        "test_slot_decoder_artist_accuracy": test.get("slot_decoder_artist_accuracy"),
+        "test_slot_decoder_dynasty_accuracy": test.get("slot_decoder_dynasty_accuracy"),
+        "validation_evidence_window_accuracy": validation.get("evidence_window_accuracy"),
+        "validation_evidence_window_mean_distance": validation.get(
+            "evidence_window_mean_distance"
+        ),
+        "test_evidence_window_accuracy": test.get("evidence_window_accuracy"),
+        "test_evidence_window_mean_distance": test.get("evidence_window_mean_distance"),
+        "validation_extract_then_compose_exact_match_rate": validation.get(
+            "extract_then_compose_exact_match_rate"
+        ),
+        "validation_extract_then_compose_mean_sequence_accuracy": validation.get(
+            "extract_then_compose_mean_sequence_accuracy"
+        ),
+        "test_extract_then_compose_exact_match_rate": test.get(
+            "extract_then_compose_exact_match_rate"
+        ),
+        "test_extract_then_compose_mean_sequence_accuracy": test.get(
+            "extract_then_compose_mean_sequence_accuracy"
+        ),
     }
+
+
+def split_json_row_metrics(
+    metrics: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Split flattened JSON metrics into report validation/test/diagnostic blocks.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_section`, `run_json_row`
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: generation 指标放入 validation/test 主栏；teacher-forced、
+      slot decoder 和 evidence decoder 留作诊断，避免 test 诊断被误用作组选择。
+    - 返回 / Returns: `(validation_metrics, test_metrics, diagnostic_metrics)`。
+    - 错误处理 / Error handling: 输入为空时返回三个空字典。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        split_json_row_metrics
+    Purpose:
+        Keep report field selection consistent between non-resumable and
+        resumable JSON ablation paths.
+    """
+    validation_metrics = {
+        key: value
+        for key, value in metrics.items()
+        if key.startswith("validation_generation_")
+    }
+    test_metrics = {
+        key: value
+        for key, value in metrics.items()
+        if key.startswith("test_generation_")
+    }
+    diagnostic_metric_markers = (
+        "_teacher_forced_",
+        "_slot_decoder_",
+        "_evidence_",
+        "_extract_then_compose_",
+    )
+    diagnostic_metrics = {
+        key: value
+        for key, value in metrics.items()
+        if any(marker in key for marker in diagnostic_metric_markers)
+    }
+    return validation_metrics, test_metrics, diagnostic_metrics
 
 
 def run_json_section(
     args: argparse.Namespace,
     groups: Sequence[str],
+    device: torch.device,
 ) -> dict[str, Any]:
     """Run JSON retrieval generalization rows for all ablation groups."""
     group_results: dict[str, Any] = {}
@@ -805,6 +2560,7 @@ def run_json_section(
             seed_bundle = build_task_seed_bundle(seed_root)
             seed_everything(seed_bundle["model_seed"])
             started_at = time.perf_counter()
+            json_capabilities = json_group_capabilities(group_name)
             row = {
                 "group": group_name,
                 "task": "json",
@@ -819,14 +2575,12 @@ def run_json_section(
                     "train_dataset_size": int(args.json_train_dataset_size),
                     "validation_dataset_size": int(args.json_validation_dataset_size),
                     "test_dataset_size": int(args.json_test_dataset_size),
-                    "generalization_score_mode": "generation",
-                    "evidence_loss_weight": float(
-                        group_capability(
-                            group_name,
-                            "json_evidence_loss_weight",
-                            0.0,
-                        )
+                    "distractor_records_per_case": int(
+                        args.json_distractor_records_per_case
                     ),
+                    "answer_template_mode": str(args.json_answer_template_mode),
+                    "generalization_score_mode": "generation",
+                    **json_capabilities,
                     "mhdsra2_config_override": override,
                 },
             }
@@ -848,6 +2602,12 @@ def run_json_section(
                     train_dataset_size=args.json_train_dataset_size,
                     validation_dataset_size=args.json_validation_dataset_size,
                     test_dataset_size=args.json_test_dataset_size,
+                    distractor_records_per_case=int(
+                        row["config"].get("distractor_records_per_case", 0)
+                    ),
+                    answer_template_mode=str(
+                        row["config"].get("answer_template_mode", "canonical")
+                    ),
                     train_dataset_seed=seed_bundle["train_dataset_seed"],
                     validation_dataset_seed=seed_bundle["validation_dataset_seed"],
                     test_dataset_seed=seed_bundle["test_dataset_seed"],
@@ -859,9 +2619,23 @@ def run_json_section(
                     final_polish_epochs=0,
                     final_generation_polish_epochs=0,
                     evidence_loss_weight=float(row["config"]["evidence_loss_weight"]),
+                    slot_decoder_loss_weight=float(
+                        row["config"]["slot_decoder_loss_weight"]
+                    ),
+                    slot_decoder_logit_bias=float(
+                        row["config"]["slot_decoder_logit_bias"]
+                    ),
+                    evidence_hint_weight=float(row["config"]["evidence_hint_weight"]),
                     mhdsra2_config_override=override,
+                    generation_readout_mode=str(
+                        row["config"].get("generation_readout_mode", "model")
+                    ),
+                    device=device,
                 )
                 metrics = summarize_json_seed_result(result)
+                validation_metrics, test_metrics, diagnostic_metrics = split_json_row_metrics(
+                    metrics
+                )
                 seed_runs.append(
                     {
                         "seed_root": int(seed_root),
@@ -872,21 +2646,9 @@ def run_json_section(
                 row.update(
                     {
                         "status": "completed",
-                        "validation_metrics": {
-                            key: value
-                            for key, value in metrics.items()
-                            if key.startswith("validation_generation_")
-                        },
-                        "test_metrics": {
-                            key: value
-                            for key, value in metrics.items()
-                            if key.startswith("test_generation_")
-                        },
-                        "diagnostic_metrics": {
-                            key: value
-                            for key, value in metrics.items()
-                            if "_teacher_forced_" in key
-                        },
+                        "validation_metrics": validation_metrics,
+                        "test_metrics": test_metrics,
+                        "diagnostic_metrics": diagnostic_metrics,
                     }
                 )
             except torch.cuda.OutOfMemoryError as exc:
@@ -907,7 +2669,11 @@ def run_json_section(
     return {"task": "json", "rows": rows, "group_results": group_results}
 
 
-def run_json_row(args: argparse.Namespace, planned_row: Mapping[str, Any]) -> dict[str, Any]:
+def run_json_row(
+    args: argparse.Namespace,
+    planned_row: Mapping[str, Any],
+    device: torch.device,
+) -> dict[str, Any]:
     """Run one JSON retrieval generalization row for resumable execution."""
     group_name = str(planned_row["group"])
     seed_root = int(planned_row["seed"])
@@ -941,6 +2707,10 @@ def run_json_row(args: argparse.Namespace, planned_row: Mapping[str, Any]) -> di
             train_dataset_size=int(config["train_dataset_size"]),
             validation_dataset_size=int(config["validation_dataset_size"]),
             test_dataset_size=int(config["test_dataset_size"]),
+            distractor_records_per_case=int(
+                config.get("distractor_records_per_case", 0)
+            ),
+            answer_template_mode=str(config.get("answer_template_mode", "canonical")),
             train_dataset_seed=seed_bundle["train_dataset_seed"],
             validation_dataset_seed=seed_bundle["validation_dataset_seed"],
             test_dataset_seed=seed_bundle["test_dataset_seed"],
@@ -952,27 +2722,25 @@ def run_json_row(args: argparse.Namespace, planned_row: Mapping[str, Any]) -> di
             final_polish_epochs=0,
             final_generation_polish_epochs=0,
             evidence_loss_weight=float(config.get("evidence_loss_weight", 0.0)),
+            slot_decoder_loss_weight=float(
+                config.get("slot_decoder_loss_weight", 0.0)
+            ),
+            slot_decoder_logit_bias=float(config.get("slot_decoder_logit_bias", 0.0)),
+            evidence_hint_weight=float(config.get("evidence_hint_weight", 0.0)),
             mhdsra2_config_override=override,
+            generation_readout_mode=str(config.get("generation_readout_mode", "model")),
+            device=device,
         )
         metrics = summarize_json_seed_result(result)
+        validation_metrics, test_metrics, diagnostic_metrics = split_json_row_metrics(
+            metrics
+        )
         row.update(
             {
                 "status": "completed",
-                "validation_metrics": {
-                    key: value
-                    for key, value in metrics.items()
-                    if key.startswith("validation_generation_")
-                },
-                "test_metrics": {
-                    key: value
-                    for key, value in metrics.items()
-                    if key.startswith("test_generation_")
-                },
-                "diagnostic_metrics": {
-                    key: value
-                    for key, value in metrics.items()
-                    if "_teacher_forced_" in key
-                },
+                "validation_metrics": validation_metrics,
+                "test_metrics": test_metrics,
+                "diagnostic_metrics": diagnostic_metrics,
             }
         )
     except torch.cuda.OutOfMemoryError as exc:
@@ -1227,7 +2995,7 @@ def build_sections_from_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, dic
 def build_parser() -> argparse.ArgumentParser:
     """Build CLI parser for the unified quality-improvement ablation."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     parser.add_argument("--report-name", default=DEFAULT_REPORT_NAME)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--groups", type=parse_csv_strings, default=DEFAULT_GROUPS)
@@ -1267,6 +3035,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--niah-needle-loss-alpha", type=float, default=0.5)
     parser.add_argument("--niah-hidden-mse-alpha", type=float, default=0.0)
     parser.add_argument("--niah-eval-batches-per-depth", type=int, default=2)
+    parser.add_argument(
+        "--niah-test-batches-per-depth",
+        type=int,
+        default=DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH,
+        help=(
+            "Held-out NIAH test batches per depth. Default 0 keeps historical "
+            "reports unchanged; set >0 to report test metrics after validation."
+        ),
+    )
 
     parser.add_argument("--json-task-seed-roots", type=parse_csv_ints, default=(7, 11, 19))
     parser.add_argument("--json-epochs", type=int, default=80)
@@ -1281,6 +3058,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json-train-dataset-size", type=int, default=12)
     parser.add_argument("--json-validation-dataset-size", type=int, default=4)
     parser.add_argument("--json-test-dataset-size", type=int, default=4)
+    parser.add_argument("--json-distractor-records-per-case", type=int, default=0)
+    parser.add_argument(
+        "--json-answer-template-mode",
+        choices=("canonical", "mixed"),
+        default="canonical",
+    )
 
     parser.add_argument("--two-digit-layers", type=parse_csv_ints, default=(4, 8))
     parser.add_argument("--two-digit-steps", type=parse_csv_ints, default=(512,))
@@ -1343,7 +3126,7 @@ def run_ablation(args: argparse.Namespace) -> dict[str, Any]:
         elif task_name == "niah":
             row = run_niah_row(args, device, planned_row)
         elif task_name == "json":
-            row = run_json_row(args, planned_row)
+            row = run_json_row(args, planned_row, device)
         elif task_name == "two_digit":
             row = run_two_digit_row(args, device, planned_row)
         else:

@@ -1,0 +1,403 @@
+{
+  "name": "mhdsra2_needle_copy_readout_cpu_smoke",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "baseline",
+      "needle_copy_readout"
+    ],
+    "tasks": [
+      "niah"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_needle_copy_readout_cpu_smoke.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline",
+      "task": "niah",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "niah_readout_mode": "model",
+        "use_retrieval": false,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "needle_copy_readout",
+      "task": "niah",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "niah_readout_mode": "needle_copy",
+        "use_retrieval": true,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "baseline",
+      "task": "niah",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "niah_readout_mode": "model",
+        "use_retrieval": false,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "final_eval_mean_accuracy": 0.0,
+        "final_eval_min_depth_accuracy": 0.0,
+        "best_eval_mean_accuracy": 0.0,
+        "final_eval_loss": 3.1126839319864907,
+        "final_readout_available_rate": null
+      },
+      "test_metrics": {},
+      "diagnostic_metrics": {
+        "final_train_loss": 4.583413124084473,
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0,
+        "final_readout_mode": "model",
+        "final_readout_available_rate": null,
+        "retrieval_evidence": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "retrieval_evidence_available": false,
+        "retrieval_evidence_unavailable_reason": null,
+        "retrieval_evidence_hit_rate": null,
+        "retrieval_evidence_weight_mean": null,
+        "slot_collision": {
+          "available": true,
+          "slot_count": 8,
+          "slot_usage_sum": 346.65203857421875,
+          "effective_slot_count": 7.91750553414808,
+          "top1_usage_share": 0.1395936757326126,
+          "slot_confidence_mean": 0.8460391163825989,
+          "collision_risk": "low"
+        }
+      },
+      "metrics": {
+        "status": "completed",
+        "final_accuracy": 0.0,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 3.1126839319864907,
+        "final_train_loss": 4.583413124084473,
+        "best_accuracy": 0.0,
+        "best_min_depth_accuracy": 0.0,
+        "best_accuracy_loss": 4.206953605016072,
+        "final_readout_mode": "model",
+        "final_readout_available_rate": null,
+        "final_retrieval_evidence_metrics": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0
+      },
+      "elapsed_sec": 6.2147122000023955
+    },
+    {
+      "group": "needle_copy_readout",
+      "task": "niah",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "niah_readout_mode": "needle_copy",
+        "use_retrieval": true,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "final_eval_mean_accuracy": 0.0,
+        "final_eval_min_depth_accuracy": 0.0,
+        "best_eval_mean_accuracy": 0.0,
+        "final_eval_loss": 1.0,
+        "final_readout_available_rate": 1.0
+      },
+      "test_metrics": {},
+      "diagnostic_metrics": {
+        "final_train_loss": 4.580101013183594,
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0,
+        "final_readout_mode": "needle_copy",
+        "final_readout_available_rate": 1.0,
+        "retrieval_evidence": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "retrieval_evidence_available": false,
+        "retrieval_evidence_unavailable_reason": null,
+        "retrieval_evidence_hit_rate": null,
+        "retrieval_evidence_weight_mean": null,
+        "slot_collision": {
+          "available": true,
+          "slot_count": 8,
+          "slot_usage_sum": 347.0931701660156,
+          "effective_slot_count": 7.9383835682260075,
+          "top1_usage_share": 0.13863791525363922,
+          "slot_confidence_mean": 0.8442502021789551,
+          "collision_risk": "low"
+        }
+      },
+      "metrics": {
+        "status": "completed",
+        "final_accuracy": 0.0,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 1.0,
+        "final_train_loss": 4.580101013183594,
+        "best_accuracy": 0.0,
+        "best_min_depth_accuracy": 0.0,
+        "best_accuracy_loss": 1.0,
+        "final_readout_mode": "needle_copy",
+        "final_readout_available_rate": 1.0,
+        "final_retrieval_evidence_metrics": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0
+      },
+      "elapsed_sec": 5.5925190999987535
+    }
+  ],
+  "sections": {
+    "niah": {
+      "task": "niah",
+      "rows": [
+        {
+          "group": "baseline",
+          "task": "niah",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "seq_len": 256,
+            "dim": 16,
+            "num_layers": 1,
+            "slots": 8,
+            "read_topk": 4,
+            "epochs": 2,
+            "eval_batches_per_depth": 1,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "niah_readout_mode": "model",
+            "use_retrieval": false,
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "final_eval_mean_accuracy": 0.0,
+            "final_eval_min_depth_accuracy": 0.0,
+            "best_eval_mean_accuracy": 0.0,
+            "final_eval_loss": 3.1126839319864907,
+            "final_readout_available_rate": null
+          },
+          "test_metrics": {},
+          "diagnostic_metrics": {
+            "final_train_loss": 4.583413124084473,
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0,
+            "final_readout_mode": "model",
+            "final_readout_available_rate": null,
+            "retrieval_evidence": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "retrieval_evidence_available": false,
+            "retrieval_evidence_unavailable_reason": null,
+            "retrieval_evidence_hit_rate": null,
+            "retrieval_evidence_weight_mean": null,
+            "slot_collision": {
+              "available": true,
+              "slot_count": 8,
+              "slot_usage_sum": 346.65203857421875,
+              "effective_slot_count": 7.91750553414808,
+              "top1_usage_share": 0.1395936757326126,
+              "slot_confidence_mean": 0.8460391163825989,
+              "collision_risk": "low"
+            }
+          },
+          "metrics": {
+            "status": "completed",
+            "final_accuracy": 0.0,
+            "final_min_depth_accuracy": 0.0,
+            "final_eval_loss": 3.1126839319864907,
+            "final_train_loss": 4.583413124084473,
+            "best_accuracy": 0.0,
+            "best_min_depth_accuracy": 0.0,
+            "best_accuracy_loss": 4.206953605016072,
+            "final_readout_mode": "model",
+            "final_readout_available_rate": null,
+            "final_retrieval_evidence_metrics": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0
+          },
+          "elapsed_sec": 6.2147122000023955
+        },
+        {
+          "group": "needle_copy_readout",
+          "task": "niah",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "seq_len": 256,
+            "dim": 16,
+            "num_layers": 1,
+            "slots": 8,
+            "read_topk": 4,
+            "epochs": 2,
+            "eval_batches_per_depth": 1,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "niah_readout_mode": "needle_copy",
+            "use_retrieval": true,
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "final_eval_mean_accuracy": 0.0,
+            "final_eval_min_depth_accuracy": 0.0,
+            "best_eval_mean_accuracy": 0.0,
+            "final_eval_loss": 1.0,
+            "final_readout_available_rate": 1.0
+          },
+          "test_metrics": {},
+          "diagnostic_metrics": {
+            "final_train_loss": 4.580101013183594,
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0,
+            "final_readout_mode": "needle_copy",
+            "final_readout_available_rate": 1.0,
+            "retrieval_evidence": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "retrieval_evidence_available": false,
+            "retrieval_evidence_unavailable_reason": null,
+            "retrieval_evidence_hit_rate": null,
+            "retrieval_evidence_weight_mean": null,
+            "slot_collision": {
+              "available": true,
+              "slot_count": 8,
+              "slot_usage_sum": 347.0931701660156,
+              "effective_slot_count": 7.9383835682260075,
+              "top1_usage_share": 0.13863791525363922,
+              "slot_confidence_mean": 0.8442502021789551,
+              "collision_risk": "low"
+            }
+          },
+          "metrics": {
+            "status": "completed",
+            "final_accuracy": 0.0,
+            "final_min_depth_accuracy": 0.0,
+            "final_eval_loss": 1.0,
+            "final_train_loss": 4.580101013183594,
+            "best_accuracy": 0.0,
+            "best_min_depth_accuracy": 0.0,
+            "best_accuracy_loss": 1.0,
+            "final_readout_mode": "needle_copy",
+            "final_readout_available_rate": 1.0,
+            "final_retrieval_evidence_metrics": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0
+          },
+          "elapsed_sec": 5.5925190999987535
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 2,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

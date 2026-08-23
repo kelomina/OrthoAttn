@@ -1,0 +1,3369 @@
+{
+  "name": "mhdsra2_readout_adapter_two_digit_retention_cuda",
+  "config": {
+    "device": "cuda:0",
+    "groups": [
+      "baseline",
+      "extract_compose_readout"
+    ],
+    "tasks": [
+      "two_digit"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_readout_adapter_two_digit_retention_cuda.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "planned",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12774790823459625,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 32.3009893999988
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12774790823459625,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 34.22105219999867
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.26112231612205505,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 37.068192000002455
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.26112231612205505,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.91265949999797
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.127439945936203,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.12520279999808
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.127439945936203,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.332887200002
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.25650501251220703,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 72.23370059999797
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 101,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 101,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.25650501251220703,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.16448490000039
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12776562571525574,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.77255510000032
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12776562571525574,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.698599999999715
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2664494216442108,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.96647970000049
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2664494216442108,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.716065000000526
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12793178856372833,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.07852970000022
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12793178856372833,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.03402970000025
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2661477327346802,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 70.87954929999978
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 202,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 202,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 202,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2661477327346802,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.12995039999805
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12815630435943604,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.71030270000119
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12815630435943604,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.93792229999963
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.26839855313301086,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 37.106177800000296
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 4,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 4,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.26839855313301086,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 36.864426700001786
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "baseline",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "baseline",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12751658260822296,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.25182900000073
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_replay",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_replay",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.12751658260822296,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.6603627000004
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "two_digit_weighted_loss",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "two_digit_weighted_loss",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2620075047016144,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.61951659999977
+    },
+    {
+      "group": "baseline_holdout",
+      "task": "two_digit",
+      "seed": 303,
+      "status": "completed",
+      "config": {
+        "dataset": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8
+      },
+      "validation_metrics": {},
+      "test_metrics": {
+        "two_digit_exact_match": 1.0
+      },
+      "diagnostic_metrics": {
+        "slot_collision": {
+          "available": false,
+          "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+        }
+      },
+      "metrics": {
+        "dataset_name": "two_digit_only",
+        "training_strategy": "combined",
+        "learning_rate": 0.01,
+        "max_steps_per_stage": 512,
+        "num_layers": 8,
+        "seed": 303,
+        "replay_ratio": 0.75,
+        "stage_patience": 3,
+        "two_digit_replay_ratio": 0.75,
+        "run": {
+          "dataset_name": "two_digit_only",
+          "model_name": "mhdsra2",
+          "seed": 303,
+          "num_layers": 8,
+          "learning_rate": 0.01,
+          "training_strategy": "combined",
+          "carry_replay_ratio": 0.75,
+          "train_exact_match": 1.0,
+          "headline_exact_match": 0.0,
+          "ood_exact_match": 0.0,
+          "final_loss": 0.2620075047016144,
+          "headline_prediction": "20",
+          "headline_stopped_on_eos": true,
+          "completed_curriculum_stages": 1,
+          "ever_passed_stage_count": 0,
+          "retained_stage_count": 1,
+          "training_steps_executed": 512,
+          "stopped_reason": "max_steps_exhausted",
+          "stage_exact_matches": [
+            {
+              "stage_name": "two_digit_rules",
+              "exact_match": 1.0
+            }
+          ],
+          "curriculum_snapshots": []
+        }
+      },
+      "elapsed_sec": 71.61381529999926
+    }
+  ],
+  "sections": {
+    "two_digit": {
+      "task": "two_digit",
+      "rows": [
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12774790823459625,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 32.3009893999988
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12774790823459625,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 34.22105219999867
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.26112231612205505,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 37.068192000002455
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.26112231612205505,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.91265949999797
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.127439945936203,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.12520279999808
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.127439945936203,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.332887200002
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.25650501251220703,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 72.23370059999797
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 101,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 101,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.25650501251220703,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.16448490000039
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12776562571525574,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.77255510000032
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12776562571525574,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.698599999999715
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2664494216442108,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.96647970000049
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2664494216442108,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.716065000000526
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12793178856372833,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.07852970000022
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12793178856372833,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.03402970000025
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2661477327346802,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 70.87954929999978
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 202,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 202,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 202,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2661477327346802,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.12995039999805
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12815630435943604,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.71030270000119
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12815630435943604,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.93792229999963
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.26839855313301086,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 37.106177800000296
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 4,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 4,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.26839855313301086,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 36.864426700001786
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "baseline",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "baseline",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12751658260822296,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.25182900000073
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_replay",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_replay",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.12751658260822296,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.6603627000004
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "two_digit_weighted_loss",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "two_digit_weighted_loss",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2620075047016144,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.61951659999977
+        },
+        {
+          "group": "baseline_holdout",
+          "task": "two_digit",
+          "seed": 303,
+          "status": "completed",
+          "config": {
+            "dataset": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8
+          },
+          "validation_metrics": {},
+          "test_metrics": {
+            "two_digit_exact_match": 1.0
+          },
+          "diagnostic_metrics": {
+            "slot_collision": {
+              "available": false,
+              "reason": "arithmetic_factory_does_not_expose_mhdsra2_aux"
+            }
+          },
+          "metrics": {
+            "dataset_name": "two_digit_only",
+            "training_strategy": "combined",
+            "learning_rate": 0.01,
+            "max_steps_per_stage": 512,
+            "num_layers": 8,
+            "seed": 303,
+            "replay_ratio": 0.75,
+            "stage_patience": 3,
+            "two_digit_replay_ratio": 0.75,
+            "run": {
+              "dataset_name": "two_digit_only",
+              "model_name": "mhdsra2",
+              "seed": 303,
+              "num_layers": 8,
+              "learning_rate": 0.01,
+              "training_strategy": "combined",
+              "carry_replay_ratio": 0.75,
+              "train_exact_match": 1.0,
+              "headline_exact_match": 0.0,
+              "ood_exact_match": 0.0,
+              "final_loss": 0.2620075047016144,
+              "headline_prediction": "20",
+              "headline_stopped_on_eos": true,
+              "completed_curriculum_stages": 1,
+              "ever_passed_stage_count": 0,
+              "retained_stage_count": 1,
+              "training_steps_executed": 512,
+              "stopped_reason": "max_steps_exhausted",
+              "stage_exact_matches": [
+                {
+                  "stage_name": "two_digit_rules",
+                  "exact_match": 1.0
+                }
+              ],
+              "curriculum_snapshots": []
+            }
+          },
+          "elapsed_sec": 71.61381529999926
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 24,
+    "two_digit_min_exact_match": 1.0,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

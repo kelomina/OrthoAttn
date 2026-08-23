@@ -52,10 +52,43 @@ NIAH_EVAL_INTERVAL = 20
 DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH = 32
 DEFAULT_NIAH_LIGHT_EVAL_BATCHES_PER_DEPTH = 1
 DEFAULT_NIAH_ROBUST_EVAL_BATCHES_PER_DEPTH = 32
+DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH = 0
 DEFAULT_NIAH_CAPACITY_BATCHES_PER_DEPTH = 3
 NIAH_MIN_EVAL_SAMPLES_FOR_EARLY_STOP = 24
+NIAH_TEST_SEED_OFFSET = 1_000_003
 INVALID_REPORT_NAME_CHARS = set('/\\:<>"|?*')
 NIAH_CHECKPOINT_SUFFIXES = {".pt", ".pth", ".ckpt"}
+DEFAULT_NIAH_READOUT_MODE = "model"
+ALLOWED_NIAH_READOUT_MODES = (
+    "model",
+    "needle_copy",
+    "needle_pair_copy",
+    "span_predictor",
+)
+DEFAULT_NIAH_SPAN_CANDIDATE_FILTER = "all"
+ALLOWED_NIAH_SPAN_CANDIDATE_FILTERS = (
+    "all",
+    "key_value_pair",
+    "prefer_key_value_pair",
+)
+DEFAULT_NIAH_SPAN_LOSS_MODE = "single_positive"
+ALLOWED_NIAH_SPAN_LOSS_MODES = ("single_positive", "multi_positive")
+NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS = (
+    "mean_span_valid_candidate_count",
+    "mean_span_raw_candidate_count",
+    "mean_span_pair_candidate_count",
+    "span_pair_available_rate",
+    "span_filter_fallback_rate",
+    "span_selected_pair_rate",
+    "span_target_pair_candidate_rate",
+    "span_target_value_page_candidate_rate",
+    "span_target_pair_page_candidate_rate",
+    "span_target_value_top_token_rate",
+    "span_target_pair_top_token_rate",
+    "span_target_value_seed_token_rate",
+    "span_target_pair_seed_token_rate",
+)
+DEFAULT_RETRIEVAL_PROJECTION_CONTRASTIVE_TEMPERATURE = 0.10
 
 
 def resolve_device(device_name):
@@ -162,6 +195,47 @@ def seed_all(seed, *, cudnn_benchmark=False):
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 
+def capture_niah_rng_state(device):
+    """Capture RNG state before temporary held-out NIAH evaluation.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 作用 / Purpose: 在独立 test eval 临时重置随机种子前保存 Python、CPU torch
+      和 CUDA RNG 状态，避免 held-out 评分污染后续诊断随机流。
+    - 返回 / Returns: 可传给 `restore_niah_rng_state()` 的状态字典。
+
+    English documentation:
+    Capture Python, CPU torch, and optional CUDA RNG state before held-out test eval.
+    """
+    return {
+        "python": random.getstate(),
+        "torch": torch.random.get_rng_state(),
+        "cuda": (
+            torch.cuda.get_rng_state_all()
+            if device.type == "cuda" and torch.cuda.is_available()
+            else None
+        ),
+    }
+
+
+def restore_niah_rng_state(state):
+    """Restore RNG state after temporary held-out NIAH evaluation.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 作用 / Purpose: 恢复 `capture_niah_rng_state()` 保存的随机状态，让 test eval
+      只影响 test 指标，不影响后续 final diagnostics 或其它随机流程。
+    - 返回 / Returns: None。
+
+    English documentation:
+    Restore Python, CPU torch, and optional CUDA RNG state after held-out test eval.
+    """
+    random.setstate(state["python"])
+    torch.random.set_rng_state(state["torch"])
+    if state.get("cuda") is not None and torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(state["cuda"])
+
+
 def is_oom_error(exc):
     """Return whether an exception message is likely a CUDA/accelerator OOM.
 
@@ -266,6 +340,88 @@ def resolve_niah_run_seed(seed):
         seed, time, traceable, niah, sweep, capacity, reproducible, rng, legacy, random
     """
     return int(time.time()) if seed is None else int(seed)
+
+
+def normalize_niah_readout_mode(value=DEFAULT_NIAH_READOUT_MODE):
+    """Normalize the optional NIAH evaluation readout mode.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_niah_depths`, `run_niah_verification_case`
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 默认保留原始 query logits 分类评估；显式选择
+      `needle_copy` 时，评估会从模型预测召回候选中复制 needle value；显式选择
+      `needle_pair_copy` 时，评估会优先寻找候选里的 needle key/right-neighbor value 成对结构；
+      `span_predictor` 则只在实验模型创建候选 span 小头时可用，用模型打分选择候选。
+    - 参数 / Parameters: `value` 是 readout 模式字符串或 None。
+    - 返回 / Returns: 规范化后的模式名。
+    - 错误处理 / Error handling: 非法模式抛 `ValueError`，避免静默跑错实验。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|readout|needle_copy|default|validation|mode|copy|评估
+
+    English documentation:
+    Function name:
+        normalize_niah_readout_mode
+    Purpose:
+        Keep the default query-logit evaluation unchanged while making the
+        experimental needle-copy and pair-copy readouts explicit and validated.
+    """
+    mode = str(value or DEFAULT_NIAH_READOUT_MODE).strip()
+    if mode not in ALLOWED_NIAH_READOUT_MODES:
+        allowed = ", ".join(ALLOWED_NIAH_READOUT_MODES)
+        raise ValueError(f"Unsupported niah_readout_mode: {mode!r}; allowed: {allowed}")
+    return mode
+
+
+def normalize_niah_span_candidate_filter(value=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER):
+    """Normalize the opt-in span predictor candidate filter.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`, `evaluate_niah_depths`,
+      span predictor loss/readout helpers.
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 默认 `all` 保持旧 span predictor 候选行为；显式
+      `key_value_pair` 时，只允许模型已经召回到 needle key 与右侧 value 成对结构的候选
+      进入 span predictor 训练和读出；显式 `prefer_key_value_pair` 时优先使用成对候选，
+      没有成对候选则回退到旧候选池，减少宽候选池噪声但避免 readout 可用率直接归零。
+    - 参数 / Parameters: `value` 是候选过滤模式字符串或 None。
+    - 返回 / Returns: 规范化后的过滤模式名。
+    - 错误处理 / Error handling: 非法模式抛 `ValueError`，避免静默跑错实验。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|span_predictor|candidate_filter|key_value_pair|retrieval|候选过滤
+    """
+    mode = str(value or DEFAULT_NIAH_SPAN_CANDIDATE_FILTER).strip()
+    if mode not in ALLOWED_NIAH_SPAN_CANDIDATE_FILTERS:
+        allowed = ", ".join(ALLOWED_NIAH_SPAN_CANDIDATE_FILTERS)
+        raise ValueError(
+            f"Unsupported niah_span_candidate_filter: {mode!r}; allowed: {allowed}"
+        )
+    return mode
+
+
+def normalize_niah_span_loss_mode(value=DEFAULT_NIAH_SPAN_LOSS_MODE):
+    """Normalize the opt-in span predictor loss mode.
+
+    中文说明:
+    - 调用方 / Called by: `compute_retrieval_span_predictor_loss`,
+      `run_niah_verification_case`。
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 默认 `single_positive` 保持旧行为，只奖励第一个正例；
+      显式 `multi_positive` 时把所有能复制正确 token 的候选都视为正例，避免把其它
+      正确候选当成 softmax 负例。
+    - 参数 / Parameters: `value` 是 loss 模式字符串或 None。
+    - 返回 / Returns: 规范化后的 loss 模式名。
+    - 错误处理 / Error handling: 非法模式抛 `ValueError`，避免静默跑错实验。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|span_predictor|loss_mode|multi_positive|retrieval|多正例
+    """
+    mode = str(value or DEFAULT_NIAH_SPAN_LOSS_MODE).strip()
+    if mode not in ALLOWED_NIAH_SPAN_LOSS_MODES:
+        allowed = ", ".join(ALLOWED_NIAH_SPAN_LOSS_MODES)
+        raise ValueError(f"Unsupported niah_span_loss_mode: {mode!r}; allowed: {allowed}")
+    return mode
 
 
 def cleanup_after_oom():
@@ -762,6 +918,8 @@ def compute_retrieval_evidence_gate_loss(
     evidence_positions,
     *,
     device,
+    rank_margin: float = 0.0,
+    score_margin: float = 0.0,
 ):
     """Train retrieval gate confidence against known synthetic evidence positions.
 
@@ -772,7 +930,11 @@ def compute_retrieval_evidence_gate_loss(
       retrieval 的候选位置是否包含该证据，并用这个命中标签监督 retrieval gate。
     - 参数 / Parameters:
       `aux` 来自 `forward_selected_logits(..., return_aux=True)`;
-      `evidence_positions` 是每个样本的 needle value 全局位置。
+      `evidence_positions` 是每个样本的 needle value 全局位置；
+      `rank_margin` 默认 0.0，显式大于 0 时增加“正确证据权重要超过最强错误候选”
+      的 margin 排名约束；
+      `score_margin` 默认 0.0，显式大于 0 时对 softmax 前 retrieval raw score 做同类
+      margin 约束，避免只在后验权重上间接推动候选排序。
     - 返回 / Returns: `(loss, metrics)`；aux 不可用时返回 0 loss 和 unavailable 指标。
     - 错误处理 / Error handling: 缺少 metadata/gate 时不抛错，返回 unavailable，避免默认训练路径受影响。
     - 副作用 / Side effects: 无；不修改模型状态。
@@ -793,7 +955,18 @@ def compute_retrieval_evidence_gate_loss(
         "hit_rate": 0.0,
         "gate_mean": 0.0,
         "evidence_weight_mean": 0.0,
+        "best_negative_weight_mean": 0.0,
+        "evidence_margin_mean": 0.0,
+        "target_rank_mean": None,
+        "top1_rate": None,
         "ranking_loss": 0.0,
+        "margin_loss": 0.0,
+        "score_margin_loss": 0.0,
+        "evidence_score_mean": 0.0,
+        "best_negative_score_mean": 0.0,
+        "evidence_score_margin_mean": 0.0,
+        "score_target_rank_mean": None,
+        "score_top1_rate": None,
         "gate_loss": 0.0,
         "positive_count": 0,
     }
@@ -865,7 +1038,18 @@ def compute_retrieval_evidence_gate_loss(
         return zero, metrics
     gate_loss = F.binary_cross_entropy(gate_prob.clamp(1e-6, 1.0 - 1e-6), target)
     ranking_loss = torch.tensor(0.0, device=device)
+    margin_loss = torch.tensor(0.0, device=device)
+    score_margin_loss = torch.tensor(0.0, device=device)
     evidence_weight_mean = torch.tensor(0.0, device=device)
+    best_negative_weight_mean = torch.tensor(0.0, device=device)
+    evidence_margin_mean = torch.tensor(0.0, device=device)
+    evidence_score_mean = torch.tensor(0.0, device=device)
+    best_negative_score_mean = torch.tensor(0.0, device=device)
+    evidence_score_margin_mean = torch.tensor(0.0, device=device)
+    target_rank_mean = None
+    top1_rate = None
+    score_target_rank_mean = None
+    score_top1_rate = None
     token_weights = last_layer.get(
         "selected_retrieval_token_weight_by_sample_for_loss",
         last_layer.get(
@@ -894,12 +1078,144 @@ def compute_retrieval_evidence_gate_loss(
                 ) & mask.to(device=weights.device, dtype=torch.bool)
             positive_rows = evidence_mask.any(dim=1)
             if bool(positive_rows.any().item()):
-                evidence_weights = (
-                    weights.masked_fill(~evidence_mask, 0.0).sum(dim=1).clamp_min(1e-6)
+                valid_mask = mask.to(device=weights.device, dtype=torch.bool)
+                evidence_weights_raw = weights.masked_fill(~evidence_mask, 0.0).sum(dim=1)
+                evidence_weights = evidence_weights_raw.clamp_min(1e-6)
+                negative_mask = valid_mask & ~evidence_mask
+                has_negative = negative_mask.any(dim=1)
+                negative_weights = weights.masked_fill(
+                    ~negative_mask,
+                    torch.finfo(weights.dtype).min,
                 )
+                best_negative_weights = torch.where(
+                    has_negative,
+                    negative_weights.max(dim=1).values,
+                    torch.zeros_like(evidence_weights_raw),
+                )
+                evidence_margins = evidence_weights_raw - best_negative_weights
+                target_ranks = (
+                    (
+                        negative_mask
+                        & (weights > evidence_weights_raw.unsqueeze(1))
+                    )
+                    .to(dtype=torch.long)
+                    .sum(dim=1)
+                    + 1
+                )
+                top1_rows = evidence_weights_raw >= best_negative_weights
+
                 evidence_weight_mean = evidence_weights[positive_rows].mean()
                 ranking_loss = -torch.log(evidence_weights[positive_rows]).mean()
-    loss = gate_loss + ranking_loss
+                best_negative_weight_mean = best_negative_weights[positive_rows].mean()
+                evidence_margin_mean = evidence_margins[positive_rows].mean()
+                target_rank_mean = float(
+                    target_ranks[positive_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+                )
+                top1_rate = float(
+                    top1_rows[positive_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+                )
+                margin_rows = positive_rows & has_negative
+                if rank_margin > 0.0 and bool(margin_rows.any().item()):
+                    margin_target = torch.tensor(
+                        float(rank_margin),
+                        device=weights.device,
+                        dtype=weights.dtype,
+                    )
+                    margin_loss = F.relu(
+                        best_negative_weights[margin_rows]
+                        + margin_target
+                        - evidence_weights_raw[margin_rows]
+                    ).mean()
+    token_scores = last_layer.get(
+        "selected_retrieval_token_score_by_sample_for_loss",
+        last_layer.get(
+            "selected_retrieval_token_score_by_sample",
+            None,
+        ),
+    )
+    if score_margin > 0.0 and isinstance(token_scores, torch.Tensor) and bool(hit.any().item()):
+        scores = token_scores.to(device=device, dtype=torch.float32)
+        if scores.dim() == 1:
+            scores = scores.view(1, -1)
+        if (
+            scores.dim() == 2
+            and scores.shape[0] == selected_batch_size
+            and scores.shape[0] == target.numel()
+        ):
+            if positions.dim() == 1:
+                evidence_mask = (
+                    positions.to(device=scores.device).view(1, -1)
+                    == evidence.to(device=scores.device).view(-1, 1)
+                ) & mask.to(device=scores.device, dtype=torch.bool).view(1, -1)
+                valid_mask = mask.to(device=scores.device, dtype=torch.bool).view(1, -1).expand_as(
+                    scores
+                )
+            else:
+                evidence_mask = (
+                    positions.to(device=scores.device)
+                    == evidence.to(device=scores.device).view(-1, 1)
+                ) & mask.to(device=scores.device, dtype=torch.bool)
+                valid_mask = mask.to(device=scores.device, dtype=torch.bool)
+            positive_rows = evidence_mask.any(dim=1)
+            if bool(positive_rows.any().item()):
+                evidence_scores = scores.masked_fill(
+                    ~evidence_mask,
+                    torch.finfo(scores.dtype).min,
+                ).max(dim=1).values
+                negative_mask = valid_mask & ~evidence_mask
+                has_negative = negative_mask.any(dim=1)
+                negative_scores = scores.masked_fill(
+                    ~negative_mask,
+                    torch.finfo(scores.dtype).min,
+                )
+                best_negative_scores = torch.where(
+                    has_negative,
+                    negative_scores.max(dim=1).values,
+                    torch.zeros_like(evidence_scores),
+                )
+                evidence_score_margins = evidence_scores - best_negative_scores
+                score_target_ranks = (
+                    (
+                        negative_mask
+                        & (scores > evidence_scores.unsqueeze(1))
+                    )
+                    .to(dtype=torch.long)
+                    .sum(dim=1)
+                    + 1
+                )
+                score_top1_rows = evidence_scores >= best_negative_scores
+                evidence_score_mean = evidence_scores[positive_rows].mean()
+                best_negative_score_mean = best_negative_scores[positive_rows].mean()
+                evidence_score_margin_mean = evidence_score_margins[positive_rows].mean()
+                score_target_rank_mean = float(
+                    score_target_ranks[positive_rows]
+                    .to(dtype=torch.float32)
+                    .mean()
+                    .detach()
+                    .cpu()
+                    .item()
+                )
+                score_top1_rate = float(
+                    score_top1_rows[positive_rows]
+                    .to(dtype=torch.float32)
+                    .mean()
+                    .detach()
+                    .cpu()
+                    .item()
+                )
+                score_margin_rows = positive_rows & has_negative
+                if bool(score_margin_rows.any().item()):
+                    score_margin_target = torch.tensor(
+                        float(score_margin),
+                        device=scores.device,
+                        dtype=scores.dtype,
+                    )
+                    score_margin_loss = F.relu(
+                        best_negative_scores[score_margin_rows]
+                        + score_margin_target
+                        - evidence_scores[score_margin_rows]
+                    ).mean()
+    loss = gate_loss + ranking_loss + margin_loss + score_margin_loss
     metrics.update(
         {
             "available": True,
@@ -907,12 +1223,1126 @@ def compute_retrieval_evidence_gate_loss(
             "hit_rate": float(target.mean().detach().cpu().item()) if target.numel() else 0.0,
             "gate_mean": float(gate_prob.mean().detach().cpu().item()) if gate_prob.numel() else 0.0,
             "evidence_weight_mean": float(evidence_weight_mean.detach().cpu().item()),
+            "best_negative_weight_mean": float(best_negative_weight_mean.detach().cpu().item()),
+            "evidence_margin_mean": float(evidence_margin_mean.detach().cpu().item()),
+            "target_rank_mean": target_rank_mean,
+            "top1_rate": top1_rate,
             "ranking_loss": float(ranking_loss.detach().cpu().item()),
+            "margin_loss": float(margin_loss.detach().cpu().item()),
+            "score_margin_loss": float(score_margin_loss.detach().cpu().item()),
+            "evidence_score_mean": float(evidence_score_mean.detach().cpu().item()),
+            "best_negative_score_mean": float(best_negative_score_mean.detach().cpu().item()),
+            "evidence_score_margin_mean": float(
+                evidence_score_margin_mean.detach().cpu().item()
+            ),
+            "score_target_rank_mean": score_target_rank_mean,
+            "score_top1_rate": score_top1_rate,
             "gate_loss": float(gate_loss.detach().cpu().item()),
             "positive_count": int(target.sum().detach().cpu().item()) if target.numel() else 0,
         }
     )
     return loss, metrics
+
+
+def compute_query_evidence_alignment_loss(
+    hidden_query,
+    evidence_tokens,
+    embedding,
+    *,
+    detach_evidence: bool = True,
+):
+    """Align query hidden states with known NIAH evidence token embeddings.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case` when the experimental
+      `query_evidence_alignment_alpha` switch is enabled; unit tests call it directly.
+    - 调用对象 / Calls: `embedding`, `F.normalize`, `F.mse_loss`
+    - 作用 / Purpose: 默认训练路径不使用本函数；显式打开时，把 query 位置的 hidden state
+      拉近已知 evidence token 的 embedding，用于验证“最终 query 表征是否能靠近证据 token”。
+    - 参数 / Parameters: `hidden_query` 是 `[B,D]` query hidden；`evidence_tokens` 是 `[B]`
+      证据 token id；`embedding` 是模型 embedding 模块；`detach_evidence` 默认 True，避免把
+      辅助目标退化成只移动 token embedding。
+    - 返回 / Returns: `(loss, metrics)`，metrics 包含 cosine、mse 和 available 状态。
+    - 错误处理 / Error handling: 形状不匹配时抛 `ValueError`，避免静默广播。
+    - 副作用 / Side effects: 无；不修改模型或输入。
+    - 关键词 / Keywords:
+      niah|query|evidence|alignment|hidden|embedding|auxiliary_loss|表征对齐
+
+    English documentation:
+    Function name:
+        compute_query_evidence_alignment_loss
+    Purpose:
+        Add an explicit, opt-in representation-alignment auxiliary loss between
+        selected query hidden states and known evidence token embeddings.
+    """
+    if hidden_query.dim() != 2:
+        raise ValueError(f"hidden_query must be [B,D], got {tuple(hidden_query.shape)}")
+    evidence_tokens = torch.as_tensor(
+        evidence_tokens,
+        dtype=torch.long,
+        device=hidden_query.device,
+    ).flatten()
+    if evidence_tokens.numel() != hidden_query.shape[0]:
+        raise ValueError(
+            "evidence token count must match hidden_query batch size "
+            f"({evidence_tokens.numel()} vs {hidden_query.shape[0]})"
+        )
+    evidence_embed = embedding(evidence_tokens)
+    if detach_evidence:
+        evidence_embed = evidence_embed.detach()
+    query_norm = F.normalize(hidden_query.to(dtype=torch.float32), dim=-1)
+    evidence_norm = F.normalize(evidence_embed.to(dtype=torch.float32), dim=-1)
+    cosine = (query_norm * evidence_norm).sum(dim=-1)
+    cosine_loss = (1.0 - cosine).mean()
+    mse_loss = F.mse_loss(query_norm, evidence_norm)
+    metrics = {
+        "available": True,
+        "loss": float(cosine_loss.detach().cpu().item()),
+        "mean_cosine": float(cosine.mean().detach().cpu().item()),
+        "mean_mse": float(mse_loss.detach().cpu().item()),
+        "detach_evidence": bool(detach_evidence),
+    }
+    return cosine_loss, metrics
+
+
+def compute_retrieval_projection_contrastive_loss(
+    aux,
+    evidence_positions,
+    *,
+    device,
+    temperature: float = 0.10,
+):
+    """Supervise selected retrieval query/key projections with known evidence positions.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case` when the experimental
+      `retrieval_projection_contrastive_alpha` switch is enabled.
+    - 调用对象 / Calls: `F.normalize`, `F.cross_entropy`, tensor indexing.
+    - 作用 / Purpose: 默认训练路径不使用本函数；显式打开时，只读取 selected query
+      位置对应的 retrieval query projection 和候选 key projection，让正确 evidence
+      位置在 query-key 相似度里排到前面。它不读取 validation/test 指标。
+    - 参数 / Parameters:
+      `aux` 来自 `forward_selected_logits(..., return_aux=True)`;
+      `evidence_positions` 是每个训练样本的 gold evidence 全局位置；
+      `temperature` 控制 contrastive softmax 锐度，必须为正数。
+    - 返回 / Returns: `(loss, metrics)`；aux 不完整或 evidence 未进入候选时返回 0 loss
+      和 unavailable/diagnostic 指标。
+    - 错误处理 / Error handling: 形状不匹配返回 unavailable，非法 temperature 抛 `ValueError`。
+    - 副作用 / Side effects: 无；只产生训练期辅助梯度。
+    - 关键词 / Keywords:
+      retrieval|projection|contrastive|query_key|niah|auxiliary_loss|表征
+
+    English documentation:
+    Function name:
+        compute_retrieval_projection_contrastive_loss
+    Purpose:
+        Add an opt-in contrastive loss directly on selected retrieval query/key
+        projections for train-only synthetic evidence.
+    """
+    if temperature <= 0.0:
+        raise ValueError("temperature must be positive")
+    zero = torch.tensor(0.0, device=device)
+    metrics = {
+        "available": False,
+        "unavailable_reason": None,
+        "hit_rate": 0.0,
+        "positive_count": 0,
+        "loss": 0.0,
+        "evidence_score_mean": 0.0,
+        "best_negative_score_mean": 0.0,
+        "score_margin_mean": 0.0,
+        "target_rank_mean": None,
+        "top1_rate": None,
+        "temperature": float(temperature),
+    }
+    if not isinstance(aux, dict):
+        metrics["unavailable_reason"] = "missing_aux"
+        return zero, metrics
+    last_layer = aux.get("last_layer")
+    if not isinstance(last_layer, dict):
+        metrics["unavailable_reason"] = "missing_last_layer_aux"
+        return zero, metrics
+    metadata = last_layer.get("selected_retrieval_metadata")
+    query_projection = last_layer.get(
+        "selected_retrieval_query_projection_for_loss",
+        last_layer.get("selected_retrieval_query_projection"),
+    )
+    key_projection = last_layer.get(
+        "selected_retrieval_key_projection_for_loss",
+        last_layer.get("selected_retrieval_key_projection"),
+    )
+    if (
+        not isinstance(metadata, dict)
+        or not isinstance(query_projection, torch.Tensor)
+        or not isinstance(key_projection, torch.Tensor)
+    ):
+        metrics["unavailable_reason"] = "missing_selected_projection_aux"
+        return zero, metrics
+
+    positions = metadata.get("positions")
+    mask = metadata.get("mask")
+    if not isinstance(positions, torch.Tensor) or not isinstance(mask, torch.Tensor):
+        metrics["unavailable_reason"] = "missing_selected_positions_or_mask"
+        return zero, metrics
+
+    evidence = torch.as_tensor(evidence_positions, dtype=torch.long, device=positions.device)
+    evidence = evidence.flatten()
+    selected_batch_size = 1 if positions.dim() == 1 else int(positions.shape[0])
+    selected_batch_indices = last_layer.get("selected_batch_indices")
+    if isinstance(selected_batch_indices, torch.Tensor) and evidence.numel() > selected_batch_size:
+        selected_indices = selected_batch_indices.to(device=evidence.device, dtype=torch.long).flatten()
+        if selected_indices.numel() != selected_batch_size:
+            metrics["unavailable_reason"] = "selected_index_count_mismatch"
+            return zero, metrics
+        if bool(((selected_indices < 0) | (selected_indices >= evidence.numel())).any().item()):
+            metrics["unavailable_reason"] = "selected_index_out_of_range"
+            return zero, metrics
+        evidence = evidence[selected_indices]
+    elif evidence.numel() == 1 and selected_batch_size > 1:
+        evidence = evidence.expand(selected_batch_size)
+
+    if mask.dim() != positions.dim():
+        metrics["unavailable_reason"] = "selected_mask_rank_mismatch"
+        return zero, metrics
+    if positions.dim() == 1:
+        positions_2d = positions.view(1, -1)
+        mask_2d = mask.view(1, -1)
+    elif positions.dim() == 2:
+        positions_2d = positions
+        mask_2d = mask
+    else:
+        metrics["unavailable_reason"] = "selected_positions_rank_unsupported"
+        return zero, metrics
+    if positions_2d.shape != mask_2d.shape:
+        metrics["unavailable_reason"] = "selected_positions_mask_shape_mismatch"
+        return zero, metrics
+    if positions_2d.shape[0] != selected_batch_size:
+        metrics["unavailable_reason"] = "selected_positions_batch_mismatch"
+        return zero, metrics
+    if evidence.numel() != selected_batch_size:
+        metrics["unavailable_reason"] = "evidence_batch_mismatch"
+        return zero, metrics
+
+    query = query_projection.to(device=device, dtype=torch.float32)
+    keys = key_projection.to(device=device, dtype=torch.float32)
+    if query.dim() != 3:
+        metrics["unavailable_reason"] = "query_projection_rank_mismatch"
+        return zero, metrics
+    if keys.dim() != 4:
+        metrics["unavailable_reason"] = "key_projection_rank_mismatch"
+        return zero, metrics
+    if query.shape[0] != selected_batch_size or keys.shape[0] != selected_batch_size:
+        metrics["unavailable_reason"] = "projection_batch_mismatch"
+        return zero, metrics
+    if query.shape[1] != keys.shape[1] or query.shape[2] != keys.shape[3]:
+        metrics["unavailable_reason"] = "projection_head_dim_mismatch"
+        return zero, metrics
+    if keys.shape[2] != positions_2d.shape[1]:
+        metrics["unavailable_reason"] = "projection_candidate_width_mismatch"
+        return zero, metrics
+
+    positions_2d = positions_2d.to(device=device, dtype=torch.long)
+    mask_2d = mask_2d.to(device=device, dtype=torch.bool)
+    evidence = evidence.to(device=device, dtype=torch.long)
+    evidence_mask = (positions_2d == evidence.view(-1, 1)) & mask_2d
+    hit = evidence_mask.any(dim=1)
+    valid_rows = hit & mask_2d.any(dim=1)
+    metrics["hit_rate"] = float(hit.to(dtype=torch.float32).mean().detach().cpu().item())
+    metrics["positive_count"] = int(hit.to(dtype=torch.long).sum().detach().cpu().item())
+    if not bool(valid_rows.any().item()):
+        metrics["unavailable_reason"] = "evidence_not_in_selected_candidates"
+        return zero, metrics
+
+    query_norm = F.normalize(query, dim=-1)
+    key_norm = F.normalize(keys, dim=-1)
+    scores = torch.einsum("bhd,bhrd->br", query_norm, key_norm) / query.shape[1]
+    scores = scores.masked_fill(~mask_2d, torch.finfo(scores.dtype).min)
+    positive_indices = evidence_mask.to(dtype=torch.long).argmax(dim=1)
+    row_indices = valid_rows.nonzero(as_tuple=True)[0]
+    logits = scores[row_indices] / float(temperature)
+    targets = positive_indices[row_indices]
+    loss = F.cross_entropy(logits, targets)
+
+    evidence_scores = scores.gather(1, positive_indices.view(-1, 1)).squeeze(1)
+    negative_mask = mask_2d & ~evidence_mask
+    has_negative = negative_mask.any(dim=1)
+    negative_scores = scores.masked_fill(
+        ~negative_mask,
+        torch.finfo(scores.dtype).min,
+    )
+    best_negative_scores = torch.where(
+        has_negative,
+        negative_scores.max(dim=1).values,
+        torch.zeros_like(evidence_scores),
+    )
+    score_margins = evidence_scores - best_negative_scores
+    target_ranks = (
+        (negative_mask & (scores > evidence_scores.unsqueeze(1)))
+        .to(dtype=torch.long)
+        .sum(dim=1)
+        + 1
+    )
+    top1_rows = evidence_scores >= best_negative_scores
+    metrics.update(
+        {
+            "available": True,
+            "unavailable_reason": None,
+            "loss": float(loss.detach().cpu().item()),
+            "evidence_score_mean": float(evidence_scores[valid_rows].mean().detach().cpu().item()),
+            "best_negative_score_mean": float(
+                best_negative_scores[valid_rows].mean().detach().cpu().item()
+            ),
+            "score_margin_mean": float(score_margins[valid_rows].mean().detach().cpu().item()),
+            "target_rank_mean": float(
+                target_ranks[valid_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+            ),
+            "top1_rate": float(
+                top1_rows[valid_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+            ),
+        }
+    )
+    return loss, metrics
+
+
+def _default_retrieval_span_metrics(device):
+    """Return a fresh unavailable metrics payload for span predictor diagnostics."""
+    return {
+        "available": False,
+        "unavailable_reason": None,
+        "loss": 0.0,
+        "hit_rate": 0.0,
+        "positive_count": 0,
+        "target_rank_mean": None,
+        "top1_rate": None,
+        "evidence_logit_mean": None,
+        "best_negative_logit_mean": None,
+        "logit_margin_mean": None,
+        "candidate_filter": DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+        "loss_mode": DEFAULT_NIAH_SPAN_LOSS_MODE,
+        "device": str(device),
+    }
+
+
+def _metadata_position_lists(
+    metadata,
+    *,
+    batch_size,
+    list_field,
+    tensor_field,
+):
+    """Extract per-sample retrieval locality positions from selected metadata.
+
+    中文说明:
+    - 调用方 / Called by: `_prepare_niah_span_candidate_tensors`。
+    - 调用对象 / Calls: `torch.empty`, tensor detach/cpu conversion。
+    - 作用 / Purpose: 将分页检索返回的 page-locality 诊断整理成每个样本一组
+      CPU position tensor。batch=1 时兼容旧式单 tensor 字段；batch>1 时优先读取
+      `*_by_sample` 列表，避免把不同样本的候选页混在一起。
+    - 参数 / Parameters: `metadata` 是 selected retrieval metadata；`list_field` 是
+      batch 隔离列表字段；`tensor_field` 是 batch=1 兼容字段。
+    - 返回 / Returns: 长度为 `batch_size` 的 CPU long tensor 列表。
+    - 错误处理 / Error handling: 字段缺失或形状不匹配时返回空 tensor，不抛错影响评估。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|retrieval_metadata|locality|page_candidate|top_token|diagnostics|位置
+
+    English documentation:
+    Function name:
+        _metadata_position_lists
+    Purpose:
+        Normalize optional retrieval locality metadata into per-sample CPU
+        position lists for diagnostic-only NIAH metrics.
+    """
+    empty = [torch.empty(0, dtype=torch.long) for _ in range(batch_size)]
+    if not isinstance(metadata, dict):
+        return empty
+    list_value = metadata.get(list_field)
+    if isinstance(list_value, list) and len(list_value) == batch_size:
+        rows = []
+        for value in list_value:
+            if isinstance(value, torch.Tensor):
+                rows.append(value.detach().cpu().long().flatten())
+            else:
+                rows.append(torch.empty(0, dtype=torch.long))
+        return rows
+    tensor_value = metadata.get(tensor_field)
+    if isinstance(tensor_value, torch.Tensor) and batch_size == 1:
+        return [tensor_value.detach().cpu().long().flatten()]
+    return empty
+
+
+def _prepare_niah_span_candidate_tensors(
+    X,
+    targets,
+    query_positions,
+    aux,
+    *,
+    device,
+    candidate_filter=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+    loss_mode=DEFAULT_NIAH_SPAN_LOSS_MODE,
+):
+    """Build candidate/source token tensors from selected retrieval metadata.
+
+    中文说明:
+    - 调用方 / Called by: span predictor loss/readout helpers.
+    - 调用对象 / Calls: tensor indexing only.
+    - 作用 / Purpose: 将 selected retrieval metadata 转成 `[B,R]` 候选位置、候选 token、
+      可复制来源 token、mask、检索权重和分数。默认不过滤旧候选；显式
+      `key_value_pair` 时只保留 selected retrieval 中 key/value 成对同时出现的候选；
+      `prefer_key_value_pair` 有成对候选时收窄，无成对候选时回退。
+      函数不读取 gold evidence 位置，只用 targets 在训练 loss 或评估指标里判断哪个候选预测正确。
+    - 参数 / Parameters: `X` 是 CPU NIAH token，`targets/query_positions` 是当前 batch 标签和查询位置，
+      `aux` 是 `forward_selected_logits(..., return_aux=True)` 返回的 selected 诊断；
+      `candidate_filter` 控制是否收窄候选池。
+    - 返回 / Returns: `(candidate_payload, unavailable_reason)`。
+    - 错误处理 / Error handling: metadata 缺失或形状不一致时返回 reason，不抛错影响默认路径。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|span_predictor|candidate|metadata|retrieval|readout|证据候选
+    """
+    candidate_filter = normalize_niah_span_candidate_filter(candidate_filter)
+    if X.dim() != 2:
+        return None, "tokens_rank_mismatch"
+    if targets.dim() != 1:
+        return None, "targets_rank_mismatch"
+    batch_size, sequence_width = X.shape
+    if targets.numel() != batch_size:
+        return None, "target_batch_mismatch"
+    last_layer = aux.get("last_layer") if isinstance(aux, dict) else None
+    if not isinstance(last_layer, dict):
+        return None, "missing_last_layer_aux"
+    metadata = last_layer.get("selected_retrieval_metadata")
+    if not isinstance(metadata, dict):
+        return None, "missing_selected_retrieval_metadata"
+    positions = metadata.get("positions")
+    mask = metadata.get("mask")
+    if not isinstance(positions, torch.Tensor) or not isinstance(mask, torch.Tensor):
+        return None, "missing_selected_positions_or_mask"
+
+    positions_cpu = positions.detach().cpu().long()
+    mask_cpu = mask.detach().cpu().bool()
+    if positions_cpu.dim() == 1:
+        positions_cpu = positions_cpu.view(1, -1)
+        mask_cpu = mask_cpu.view(1, -1)
+    if positions_cpu.dim() != 2 or mask_cpu.dim() != 2:
+        return None, "selected_positions_rank_unsupported"
+    if positions_cpu.shape != mask_cpu.shape:
+        return None, "selected_positions_mask_shape_mismatch"
+    if positions_cpu.shape[0] != batch_size:
+        return None, "selected_retrieval_batch_mismatch"
+
+    candidate_count = int(positions_cpu.shape[1])
+    source_positions = positions_cpu.clone()
+    candidate_tokens = torch.zeros(batch_size, candidate_count, dtype=torch.long)
+    source_tokens = torch.zeros(batch_size, candidate_count, dtype=torch.long)
+    copyable_mask = mask_cpu.clone()
+    pair_mask = torch.zeros_like(copyable_mask)
+    query_positions_cpu = query_positions.detach().cpu().long().flatten()
+    if query_positions_cpu.numel() == 1 and batch_size > 1:
+        query_positions_cpu = query_positions_cpu.expand(batch_size)
+    if query_positions_cpu.numel() != batch_size:
+        return None, "query_position_batch_mismatch"
+    page_candidate_positions_by_sample = _metadata_position_lists(
+        metadata,
+        batch_size=batch_size,
+        list_field="page_candidate_positions_by_sample",
+        tensor_field="page_candidate_positions",
+    )
+    top_token_positions_by_sample = _metadata_position_lists(
+        metadata,
+        batch_size=batch_size,
+        list_field="top_token_positions_by_sample",
+        tensor_field="top_token_positions",
+    )
+    seed_token_positions_by_sample = _metadata_position_lists(
+        metadata,
+        batch_size=batch_size,
+        list_field="seed_token_positions_by_sample",
+        tensor_field="seed_token_positions",
+    )
+    target_cpu = targets.detach().cpu().long()
+    target_value_in_page_candidates = torch.zeros(batch_size, dtype=torch.bool)
+    target_pair_in_page_candidates = torch.zeros(batch_size, dtype=torch.bool)
+    target_value_in_top_tokens = torch.zeros(batch_size, dtype=torch.bool)
+    target_pair_in_top_tokens = torch.zeros(batch_size, dtype=torch.bool)
+    target_value_in_seed_tokens = torch.zeros(batch_size, dtype=torch.bool)
+    target_pair_in_seed_tokens = torch.zeros(batch_size, dtype=torch.bool)
+    for sample_idx in range(batch_size):
+        query_position = int(query_positions_cpu[sample_idx].item())
+        target_token = int(target_cpu[sample_idx].item())
+        page_position_set = {
+            int(position)
+            for position in page_candidate_positions_by_sample[sample_idx].tolist()
+            if int(position) < query_position
+        }
+        top_token_position_set = {
+            int(position)
+            for position in top_token_positions_by_sample[sample_idx].tolist()
+            if int(position) < query_position
+        }
+        seed_token_position_set = {
+            int(position)
+            for position in seed_token_positions_by_sample[sample_idx].tolist()
+            if int(position) < query_position
+        }
+        for position in page_position_set:
+            if 0 <= position < sequence_width and int(X[sample_idx, position].item()) == target_token:
+                target_value_in_page_candidates[sample_idx] = True
+                left_position = position - 1
+                if (
+                    left_position in page_position_set
+                    and int(X[sample_idx, left_position].item()) == NEEDLE_KEY_TOKEN_ID
+                ):
+                    target_pair_in_page_candidates[sample_idx] = True
+                break
+        for position in top_token_position_set:
+            if 0 <= position < sequence_width and int(X[sample_idx, position].item()) == target_token:
+                target_value_in_top_tokens[sample_idx] = True
+                left_position = position - 1
+                if (
+                    left_position in top_token_position_set
+                    and int(X[sample_idx, left_position].item()) == NEEDLE_KEY_TOKEN_ID
+                ):
+                    target_pair_in_top_tokens[sample_idx] = True
+                break
+        for position in seed_token_position_set:
+            if 0 <= position < sequence_width and int(X[sample_idx, position].item()) == target_token:
+                target_value_in_seed_tokens[sample_idx] = True
+                left_position = position - 1
+                if (
+                    left_position in seed_token_position_set
+                    and int(X[sample_idx, left_position].item()) == NEEDLE_KEY_TOKEN_ID
+                ):
+                    target_pair_in_seed_tokens[sample_idx] = True
+                break
+        valid_candidate_positions = {
+            int(positions_cpu[sample_idx, candidate_idx].item())
+            for candidate_idx in range(candidate_count)
+            if bool(mask_cpu[sample_idx, candidate_idx].item())
+        }
+        for candidate_idx in range(candidate_count):
+            if not bool(mask_cpu[sample_idx, candidate_idx].item()):
+                copyable_mask[sample_idx, candidate_idx] = False
+                continue
+            candidate_position = int(positions_cpu[sample_idx, candidate_idx].item())
+            if candidate_position < 0 or candidate_position >= sequence_width:
+                copyable_mask[sample_idx, candidate_idx] = False
+                continue
+            candidate_token = int(X[sample_idx, candidate_position].item())
+            candidate_tokens[sample_idx, candidate_idx] = candidate_token
+            if candidate_token == NEEDLE_KEY_TOKEN_ID and candidate_position + 1 < sequence_width:
+                source_position = candidate_position + 1
+                source_token = int(X[sample_idx, source_position].item())
+                if (
+                    source_position >= query_position
+                    or source_position not in valid_candidate_positions
+                ):
+                    copyable_mask[sample_idx, candidate_idx] = False
+                    continue
+                source_positions[sample_idx, candidate_idx] = source_position
+                source_tokens[sample_idx, candidate_idx] = source_token
+                if source_token >= FILLER_TOKEN_START:
+                    pair_mask[sample_idx, candidate_idx] = True
+            elif candidate_token >= FILLER_TOKEN_START:
+                if candidate_position >= query_position:
+                    copyable_mask[sample_idx, candidate_idx] = False
+                    continue
+                source_positions[sample_idx, candidate_idx] = candidate_position
+                source_tokens[sample_idx, candidate_idx] = candidate_token
+                left_position = candidate_position - 1
+                if (
+                    left_position >= 0
+                    and left_position in valid_candidate_positions
+                    and int(X[sample_idx, left_position].item()) == NEEDLE_KEY_TOKEN_ID
+                ):
+                    pair_mask[sample_idx, candidate_idx] = True
+            else:
+                copyable_mask[sample_idx, candidate_idx] = False
+
+    raw_copyable_mask = copyable_mask.clone()
+    pair_mask &= copyable_mask
+    if candidate_filter == "key_value_pair":
+        copyable_mask &= pair_mask
+    elif candidate_filter == "prefer_key_value_pair":
+        rows_with_pair = pair_mask.any(dim=1)
+        copyable_mask[rows_with_pair] = pair_mask[rows_with_pair]
+
+    weights = last_layer.get("selected_retrieval_token_weight_by_sample_for_loss")
+    if not isinstance(weights, torch.Tensor):
+        weights = last_layer.get("selected_retrieval_token_weight_by_sample")
+    weights_cpu = None
+    if isinstance(weights, torch.Tensor):
+        weights_cpu = weights.detach().cpu().float()
+        if weights_cpu.dim() == 1:
+            weights_cpu = weights_cpu.view(1, -1)
+        if weights_cpu.shape != positions_cpu.shape:
+            weights_cpu = None
+
+    scores = last_layer.get("selected_retrieval_token_score_by_sample_for_loss")
+    if not isinstance(scores, torch.Tensor):
+        scores = last_layer.get("selected_retrieval_token_score_by_sample")
+    scores_cpu = None
+    if isinstance(scores, torch.Tensor):
+        scores_cpu = scores.detach().cpu().float()
+        if scores_cpu.dim() == 1:
+            scores_cpu = scores_cpu.view(1, -1)
+        if scores_cpu.shape != positions_cpu.shape:
+            scores_cpu = None
+
+    target_mask = (source_tokens == target_cpu.view(-1, 1)) & copyable_mask
+    return {
+        "positions": positions_cpu.to(device=device),
+        "source_positions": source_positions.to(device=device),
+        "candidate_token_ids": candidate_tokens.to(device=device),
+        "source_token_ids": source_tokens.to(device=device),
+        "mask": copyable_mask.to(device=device),
+        "raw_mask": raw_copyable_mask.to(device=device),
+        "pair_mask": pair_mask.to(device=device),
+        "target_mask": target_mask.to(device=device),
+        "weights": None if weights_cpu is None else weights_cpu.to(device=device),
+        "scores": None if scores_cpu is None else scores_cpu.to(device=device),
+        "candidate_filter": candidate_filter,
+        "target_value_in_page_candidates": target_value_in_page_candidates.to(device=device),
+        "target_pair_in_page_candidates": target_pair_in_page_candidates.to(device=device),
+        "target_value_in_top_tokens": target_value_in_top_tokens.to(device=device),
+        "target_pair_in_top_tokens": target_pair_in_top_tokens.to(device=device),
+        "target_value_in_seed_tokens": target_value_in_seed_tokens.to(device=device),
+        "target_pair_in_seed_tokens": target_pair_in_seed_tokens.to(device=device),
+    }, None
+
+
+def compute_retrieval_span_predictor_loss(
+    model,
+    hidden_query,
+    X,
+    targets,
+    query_positions,
+    aux,
+    *,
+    device,
+    candidate_filter=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+    loss_mode=DEFAULT_NIAH_SPAN_LOSS_MODE,
+):
+    """Train the opt-in retrieval span predictor from selected candidates only.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case` when
+      `retrieval_span_predictor_alpha > 0`。
+    - 调用对象 / Calls: `_prepare_niah_span_candidate_tensors`,
+      `model.score_retrieval_span_candidates`, `F.cross_entropy`。
+    - 作用 / Purpose: 让默认关闭的小头学习在模型 selected retrieval 候选中选择能复制出答案的
+      key/value span；默认 `single_positive` 保持旧行为，显式 `multi_positive`
+      时所有能复制正确 token 的候选都作为正例。它不读取 validation/test 选择信号，
+      也不把 gold evidence 位置当输入特征。
+    - 返回 / Returns: `(loss, metrics)`；没有可监督候选时返回 0 loss 和 unavailable reason。
+    - 错误处理 / Error handling: 缺 aux 或无正例时返回 unavailable，避免默认训练路径失败。
+    - 副作用 / Side effects: 只产生 predictor 训练梯度。
+    - 关键词 / Keywords:
+      niah|span_predictor|retrieval|auxiliary_loss|selected_candidates|训练
+    """
+    zero = torch.tensor(0.0, device=device)
+    candidate_filter = normalize_niah_span_candidate_filter(candidate_filter)
+    loss_mode = normalize_niah_span_loss_mode(loss_mode)
+    metrics = _default_retrieval_span_metrics(device)
+    metrics["candidate_filter"] = candidate_filter
+    metrics["loss_mode"] = loss_mode
+    if not hasattr(model, "score_retrieval_span_candidates"):
+        metrics["unavailable_reason"] = "model_missing_span_predictor_method"
+        return zero, metrics
+    try:
+        candidates, reason = _prepare_niah_span_candidate_tensors(
+            X,
+            targets,
+            query_positions,
+            aux,
+            device=device,
+            candidate_filter=candidate_filter,
+        )
+    except (RuntimeError, ValueError) as exc:
+        metrics["unavailable_reason"] = f"candidate_prepare_error:{exc}"
+        return zero, metrics
+    if candidates is None:
+        metrics["unavailable_reason"] = reason
+        return zero, metrics
+    target_mask = candidates["target_mask"].to(device=device, dtype=torch.bool)
+    valid_rows = target_mask.any(dim=1)
+    metrics["hit_rate"] = float(
+        target_mask.any(dim=1).to(dtype=torch.float32).mean().detach().cpu().item()
+    )
+    metrics["positive_count"] = int(
+        target_mask.any(dim=1).to(dtype=torch.long).sum().detach().cpu().item()
+    )
+    if not bool(valid_rows.any().item()):
+        metrics["unavailable_reason"] = "target_not_in_selected_candidates"
+        return zero, metrics
+
+    logits = model.score_retrieval_span_candidates(
+        hidden_query,
+        candidates["candidate_token_ids"],
+        candidates["source_token_ids"],
+        candidates["positions"],
+        query_positions,
+        candidate_mask=candidates["mask"],
+        candidate_weights=candidates["weights"],
+        candidate_scores=candidates["scores"],
+        candidate_pair_mask=candidates["pair_mask"],
+        source_positions=candidates["source_positions"],
+    )
+    row_indices = valid_rows.nonzero(as_tuple=True)[0]
+    candidate_mask = candidates["mask"].to(device=device, dtype=torch.bool)
+    positive_indices = target_mask.to(dtype=torch.long).argmax(dim=1)
+    if loss_mode == "multi_positive":
+        valid_logits = logits.masked_fill(~candidate_mask, torch.finfo(logits.dtype).min)
+        positive_logits_for_loss = logits.masked_fill(
+            ~target_mask,
+            torch.finfo(logits.dtype).min,
+        )
+        losses = -torch.logsumexp(positive_logits_for_loss[row_indices], dim=1)
+        losses = losses + torch.logsumexp(valid_logits[row_indices], dim=1)
+        loss = losses.mean()
+    else:
+        loss = F.cross_entropy(logits[row_indices], positive_indices[row_indices])
+
+    if loss_mode == "multi_positive":
+        positive_logits = logits.masked_fill(
+            ~target_mask,
+            torch.finfo(logits.dtype).min,
+        )
+        evidence_logits = positive_logits.max(dim=1).values
+    else:
+        evidence_logits = logits.gather(1, positive_indices.view(-1, 1)).squeeze(1)
+    negative_mask = candidate_mask & ~target_mask
+    has_negative = negative_mask.any(dim=1)
+    negative_logits = logits.masked_fill(
+        ~negative_mask,
+        torch.finfo(logits.dtype).min,
+    )
+    best_negative_logits = torch.where(
+        has_negative,
+        negative_logits.max(dim=1).values,
+        torch.zeros_like(evidence_logits),
+    )
+    ranks = (
+        (negative_mask & (logits > evidence_logits.unsqueeze(1)))
+        .to(dtype=torch.long)
+        .sum(dim=1)
+        + 1
+    )
+    top1_rows = evidence_logits >= best_negative_logits
+    metrics.update(
+        {
+            "available": True,
+            "unavailable_reason": None,
+            "loss": float(loss.detach().cpu().item()),
+            "candidate_filter": candidate_filter,
+            "loss_mode": loss_mode,
+            "target_rank_mean": float(
+                ranks[valid_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+            ),
+            "top1_rate": float(
+                top1_rows[valid_rows].to(dtype=torch.float32).mean().detach().cpu().item()
+            ),
+            "evidence_logit_mean": float(
+                evidence_logits[valid_rows].mean().detach().cpu().item()
+            ),
+            "best_negative_logit_mean": float(
+                best_negative_logits[valid_rows].mean().detach().cpu().item()
+            ),
+            "logit_margin_mean": float(
+                (evidence_logits - best_negative_logits)[valid_rows]
+                .mean()
+                .detach()
+                .cpu()
+                .item()
+            ),
+        }
+    )
+    return loss, metrics
+
+
+def compute_niah_span_predictor_sample_metrics(
+    model,
+    hidden_query,
+    X,
+    targets,
+    query_positions,
+    aux,
+    seq_len,
+    depth,
+    sample_index_start=0,
+    candidate_filter=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+):
+    """Evaluate NIAH by selecting a retrieved span with the opt-in predictor."""
+    candidate_filter = normalize_niah_span_candidate_filter(candidate_filter)
+    if X.dim() != 2:
+        raise ValueError(f"expected token ids with shape [B, SeqLen], got {tuple(X.shape)}")
+    if targets.dim() != 1:
+        raise ValueError(f"expected targets with shape [B], got {tuple(targets.shape)}")
+    batch_size, sequence_width = X.shape
+    targets_cpu = targets.detach().cpu()
+    query_positions_cpu = query_positions.detach().cpu()
+    denominator = max(seq_len - 1, 1)
+    unavailable_reason = None
+    if not hasattr(model, "score_retrieval_span_candidates"):
+        unavailable_reason = "model_missing_span_predictor_method"
+        candidates = None
+    else:
+        candidates, unavailable_reason = _prepare_niah_span_candidate_tensors(
+            X,
+            targets,
+            query_positions,
+            aux,
+            device=hidden_query.device,
+            candidate_filter=candidate_filter,
+        )
+    logits = None
+    if candidates is not None:
+        try:
+            logits = model.score_retrieval_span_candidates(
+                hidden_query,
+                candidates["candidate_token_ids"],
+                candidates["source_token_ids"],
+                candidates["positions"],
+                query_positions,
+                candidate_mask=candidates["mask"],
+                candidate_weights=candidates["weights"],
+                candidate_scores=candidates["scores"],
+                candidate_pair_mask=candidates["pair_mask"],
+                source_positions=candidates["source_positions"],
+            ).detach().cpu()
+        except (RuntimeError, ValueError) as exc:
+            unavailable_reason = f"span_predictor_error:{exc}"
+            logits = None
+
+    sample_rows = []
+    for sample_offset in range(batch_size):
+        target_token = int(targets_cpu[sample_offset].item())
+        query_position = int(query_positions_cpu[sample_offset].item())
+        pred_token = PAD_TOKEN_ID
+        readout_available = unavailable_reason is None and logits is not None
+        row_unavailable_reason = unavailable_reason
+        copied_from_position = None
+        copied_candidate_position = None
+        target_candidate_present = False
+        target_candidate_rank = None
+        pred_prob = 0.0
+        span_valid_candidate_count = 0
+        span_raw_candidate_count = 0
+        span_pair_candidate_count = 0
+        span_pair_available = False
+        span_filter_fallback = False
+        span_selected_is_pair = False
+        span_target_pair_candidate_present = False
+        span_target_value_in_page_candidates = False
+        span_target_pair_in_page_candidates = False
+        span_target_value_in_top_tokens = False
+        span_target_pair_in_top_tokens = False
+        span_target_value_in_seed_tokens = False
+        span_target_pair_in_seed_tokens = False
+        if readout_available and candidates is not None:
+            mask_row = candidates["mask"][sample_offset].detach().cpu().bool()
+            raw_mask_row = candidates.get("raw_mask", candidates["mask"])[
+                sample_offset
+            ].detach().cpu().bool()
+            pair_mask_row = candidates.get("pair_mask", candidates["mask"])[
+                sample_offset
+            ].detach().cpu().bool()
+            span_valid_candidate_count = int(mask_row.to(dtype=torch.long).sum().item())
+            span_raw_candidate_count = int(raw_mask_row.to(dtype=torch.long).sum().item())
+            span_pair_candidate_count = int(pair_mask_row.to(dtype=torch.long).sum().item())
+            span_pair_available = span_pair_candidate_count > 0
+            span_filter_fallback = (
+                candidate_filter == "prefer_key_value_pair"
+                and span_pair_candidate_count == 0
+                and span_valid_candidate_count > 0
+            )
+            span_target_value_in_page_candidates = bool(
+                candidates.get("target_value_in_page_candidates")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            span_target_pair_in_page_candidates = bool(
+                candidates.get("target_pair_in_page_candidates")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            span_target_value_in_top_tokens = bool(
+                candidates.get("target_value_in_top_tokens")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            span_target_pair_in_top_tokens = bool(
+                candidates.get("target_pair_in_top_tokens")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            span_target_value_in_seed_tokens = bool(
+                candidates.get("target_value_in_seed_tokens")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            span_target_pair_in_seed_tokens = bool(
+                candidates.get("target_pair_in_seed_tokens")[
+                    sample_offset
+                ].detach().cpu().item()
+            )
+            if not bool(mask_row.any().item()):
+                readout_available = False
+                row_unavailable_reason = "no_valid_retrieval_candidates"
+            else:
+                logits_row = logits[sample_offset].masked_fill(~mask_row, float("-inf"))
+                chosen_index = int(torch.argmax(logits_row).item())
+                valid_indices = mask_row.nonzero(as_tuple=True)[0]
+                sorted_indices = valid_indices[
+                    torch.argsort(logits_row[valid_indices], descending=True)
+                ]
+                source_tokens = candidates["source_token_ids"][sample_offset].detach().cpu().long()
+                source_positions = candidates["source_positions"][sample_offset].detach().cpu().long()
+                candidate_positions = candidates["positions"][sample_offset].detach().cpu().long()
+                for rank_offset, candidate_index_tensor in enumerate(sorted_indices):
+                    candidate_index = int(candidate_index_tensor.item())
+                    if int(source_tokens[candidate_index].item()) == target_token:
+                        target_candidate_present = True
+                        target_candidate_rank = rank_offset + 1
+                        span_target_pair_candidate_present = bool(
+                            pair_mask_row[candidate_index].item()
+                        )
+                        break
+                copied_candidate_position = int(candidate_positions[chosen_index].item())
+                copied_from_position = int(source_positions[chosen_index].item())
+                span_selected_is_pair = bool(pair_mask_row[chosen_index].item())
+                if 0 <= copied_from_position < sequence_width:
+                    pred_token = int(X[sample_offset, copied_from_position].item())
+                    probs = torch.softmax(logits_row[valid_indices], dim=0)
+                    chosen_valid_rank = (valid_indices == chosen_index).nonzero(as_tuple=True)[0]
+                    pred_prob = (
+                        float(probs[int(chosen_valid_rank[0].item())].item())
+                        if chosen_valid_rank.numel()
+                        else 0.0
+                    )
+                else:
+                    readout_available = False
+                    row_unavailable_reason = "source_position_out_of_range"
+
+        correct = readout_available and pred_token == target_token
+        sample_rows.append(
+            {
+                "sample_index": sample_index_start + sample_offset,
+                "depth": float(depth),
+                "query_position": query_position,
+                "query_position_ratio": float(query_position / denominator),
+                "target_token": target_token,
+                "pred_token": int(pred_token),
+                "correct": bool(correct),
+                "top3_correct": bool(correct),
+                "top5_correct": bool(correct),
+                "target_rank": 1 if correct else 2,
+                "target_prob": 1.0 if correct else 0.0,
+                "pred_prob": pred_prob if readout_available else 0.0,
+                "loss": 0.0 if correct else 1.0,
+                "logit_margin": 1.0 if correct else -1.0,
+                "prob_margin": 1.0 if correct else 0.0,
+                "entropy": 0.0,
+                "readout_mode": "span_predictor",
+                "readout_available": bool(readout_available),
+                "readout_unavailable_reason": row_unavailable_reason,
+                "copied_from_position": copied_from_position,
+                "copied_candidate_position": copied_candidate_position,
+                "target_candidate_present": bool(target_candidate_present),
+                "target_candidate_rank": target_candidate_rank,
+                "span_candidate_filter": candidate_filter,
+                "span_valid_candidate_count": span_valid_candidate_count,
+                "span_raw_candidate_count": span_raw_candidate_count,
+                "span_pair_candidate_count": span_pair_candidate_count,
+                "span_pair_available": bool(span_pair_available),
+                "span_filter_fallback": bool(span_filter_fallback),
+                "span_selected_is_pair": bool(span_selected_is_pair),
+                "span_target_pair_candidate_present": bool(
+                    span_target_pair_candidate_present
+                ),
+                "span_target_value_in_page_candidates": bool(
+                    span_target_value_in_page_candidates
+                ),
+                "span_target_pair_in_page_candidates": bool(
+                    span_target_pair_in_page_candidates
+                ),
+                "span_target_value_in_top_tokens": bool(
+                    span_target_value_in_top_tokens
+                ),
+                "span_target_pair_in_top_tokens": bool(
+                    span_target_pair_in_top_tokens
+                ),
+                "span_target_value_in_seed_tokens": bool(
+                    span_target_value_in_seed_tokens
+                ),
+                "span_target_pair_in_seed_tokens": bool(
+                    span_target_pair_in_seed_tokens
+                ),
+            }
+        )
+    return sample_rows
+
+
+def summarize_retrieval_evidence_step_metrics(step_rows):
+    """Summarize train-time retrieval evidence diagnostics across observed steps.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 调用对象 / Calls: local numeric helpers only
+    - 作用 / Purpose: final step 的 evidence hit/rank 可能刚好没有命中；本函数聚合整段训练
+      的 evidence 诊断，帮助判断辅助监督是否曾经拿到可学习信号。
+    - 参数 / Parameters: `step_rows` 是训练循环每步写入报告的行。
+    - 返回 / Returns: dict，包含 available step 数、hit/top1/rank/margin/loss 均值。
+    - 错误处理 / Error handling: 缺字段或 None 会被跳过，不抛错影响训练报告。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|retrieval_evidence|summary|hit_rate|rank|margin|training|诊断
+
+    English documentation:
+    Function name:
+        summarize_retrieval_evidence_step_metrics
+    Purpose:
+        Aggregate train-time evidence diagnostics so reports are not interpreted
+        only from the final optimizer step.
+    """
+    rows = list(step_rows or [])
+    available_rows = [
+        row for row in rows if bool(row.get("retrieval_evidence_available"))
+    ]
+
+    def _mean_field(field):
+        values = [
+            float(row[field])
+            for row in available_rows
+            if row.get(field) is not None
+        ]
+        return None if not values else sum(values) / len(values)
+
+    return {
+        "steps": len(rows),
+        "available_steps": len(available_rows),
+        "positive_steps": sum(
+            1
+            for row in available_rows
+            if float(row.get("retrieval_evidence_positive_count") or 0.0) > 0.0
+        ),
+        "mean_hit_rate": _mean_field("retrieval_evidence_hit_rate"),
+        "mean_evidence_weight": _mean_field("retrieval_evidence_weight_mean"),
+        "mean_best_negative_weight": _mean_field(
+            "retrieval_evidence_best_negative_weight_mean"
+        ),
+        "mean_evidence_margin": _mean_field("retrieval_evidence_margin_mean"),
+        "mean_target_rank": _mean_field("retrieval_evidence_target_rank_mean"),
+        "mean_top1_rate": _mean_field("retrieval_evidence_top1_rate"),
+        "mean_ranking_loss": _mean_field("retrieval_evidence_ranking_loss"),
+        "mean_margin_loss": _mean_field("retrieval_evidence_margin_loss"),
+        "mean_score_margin_loss": _mean_field(
+            "retrieval_evidence_score_margin_loss"
+        ),
+        "mean_evidence_score": _mean_field("retrieval_evidence_score_mean"),
+        "mean_best_negative_score": _mean_field(
+            "retrieval_evidence_best_negative_score_mean"
+        ),
+        "mean_evidence_score_margin": _mean_field(
+            "retrieval_evidence_score_margin_mean"
+        ),
+        "mean_score_target_rank": _mean_field(
+            "retrieval_evidence_score_target_rank_mean"
+        ),
+        "mean_score_top1_rate": _mean_field("retrieval_evidence_score_top1_rate"),
+        "mean_gate_loss": _mean_field("retrieval_evidence_gate_loss"),
+    }
+
+
+def summarize_query_evidence_alignment_step_metrics(step_rows):
+    """Summarize train-time query/evidence representation alignment diagnostics.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 调用对象 / Calls: local numeric helpers only
+    - 作用 / Purpose: 将显式开启的 query/evidence hidden 对齐辅助目标汇总到报告，
+      便于判断该目标是否真的推动 query 表征靠近证据 embedding。
+    - 参数 / Parameters: `step_rows` 是训练循环每步写入报告的行。
+    - 返回 / Returns: dict，包含 available step 数、loss/cosine/mse 均值。
+    - 错误处理 / Error handling: 缺字段或 None 会被跳过。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|query_evidence_alignment|hidden|embedding|cosine|mse|summary|表征
+
+    English documentation:
+    Function name:
+        summarize_query_evidence_alignment_step_metrics
+    Purpose:
+        Aggregate optional query/evidence representation-alignment diagnostics.
+    """
+    rows = list(step_rows or [])
+    available_rows = [
+        row for row in rows if bool(row.get("query_evidence_alignment_available"))
+    ]
+
+    def _mean_field(field):
+        values = [
+            float(row[field])
+            for row in available_rows
+            if row.get(field) is not None
+        ]
+        return None if not values else sum(values) / len(values)
+
+    return {
+        "steps": len(rows),
+        "available_steps": len(available_rows),
+        "mean_loss": _mean_field("query_evidence_alignment_loss"),
+        "mean_cosine": _mean_field("query_evidence_alignment_mean_cosine"),
+        "mean_mse": _mean_field("query_evidence_alignment_mean_mse"),
+    }
+
+
+def summarize_retrieval_span_predictor_step_metrics(step_rows):
+    """Summarize train-time retrieval span predictor diagnostics.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`.
+    - 调用对象 / Calls: local numeric helpers only.
+    - 作用 / Purpose: 聚合默认关闭的 span predictor 辅助目标，判断它是否真的学会
+      在 selected retrieval 候选里选择可复制答案的 span。
+    - 参数 / Parameters: `step_rows` 是训练循环每步写入报告的行。
+    - 返回 / Returns: dict，包含可用步数、命中率、rank、top1、loss 和 logit margin。
+    - 错误处理 / Error handling: 缺失字段会被跳过，不影响实验报告生成。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      niah|retrieval_span_predictor|summary|rank|top1|候选选择
+    """
+    rows = list(step_rows or [])
+    available_rows = [
+        row for row in rows if bool(row.get("retrieval_span_predictor_available"))
+    ]
+
+    def _mean_field(field):
+        values = [
+            float(row[field])
+            for row in available_rows
+            if row.get(field) is not None
+        ]
+        return None if not values else sum(values) / len(values)
+
+    return {
+        "steps": len(rows),
+        "available_steps": len(available_rows),
+        "positive_steps": sum(
+            1
+            for row in available_rows
+            if float(row.get("retrieval_span_predictor_positive_count") or 0.0) > 0.0
+        ),
+        "mean_loss": _mean_field("retrieval_span_predictor_loss"),
+        "mean_hit_rate": _mean_field("retrieval_span_predictor_hit_rate"),
+        "mean_target_rank": _mean_field("retrieval_span_predictor_target_rank_mean"),
+        "mean_top1_rate": _mean_field("retrieval_span_predictor_top1_rate"),
+        "mean_evidence_logit": _mean_field("retrieval_span_predictor_evidence_logit_mean"),
+        "mean_best_negative_logit": _mean_field(
+            "retrieval_span_predictor_best_negative_logit_mean"
+        ),
+        "mean_logit_margin": _mean_field("retrieval_span_predictor_logit_margin_mean"),
+    }
 
 
 def build_niah_model(
@@ -925,6 +2355,9 @@ def build_niah_model(
     chunk_size=256,
     model_type="mhdsra2",
     mhdsra2_config_override=None,
+    use_retrieval: bool = False,
+    use_retrieval_span_predictor: bool = False,
+    retrieval_span_structure_features: bool = False,
 ):
     """Build the long-context Needle-In-A-Haystack benchmark model.
 
@@ -935,7 +2368,11 @@ def build_niah_model(
     - 作用 / Purpose: 统一构造 NIAH 基准模型；归档的 `dsra` 名称会经领域层别名映射到
       当前 active 架构 `mhdsra2`
     - 变量 / Variables:
-      `model_type` 支持 `dsra/mhdsra2`, 其余参数为维度、层数、槽位与 chunk 配置
+      `model_type` 支持 `dsra/mhdsra2`, 其余参数为维度、层数、槽位与 chunk 配置；
+      `use_retrieval` 显式决定是否启用外部分页召回分支，默认 False 保持旧 NIAH 行为；
+      `use_retrieval_span_predictor` 只给显式实验组创建候选 span 打分头；
+      `retrieval_span_structure_features` 默认关闭，只让显式结构组把 pair/source 提示
+      送入 span predictor。
     - 接入 / Integration: 新增长上下文模型时优先扩展本函数，避免分散在多个训练入口
     - 错误处理 / Error handling: 未知 `model_type` 抛出 `ValueError`
     - 关键词 / Keywords:
@@ -950,6 +2387,9 @@ def build_niah_model(
             K,
             kr,
             chunk_size,
+            use_retrieval=use_retrieval,
+            use_retrieval_span_predictor=use_retrieval_span_predictor,
+            retrieval_span_structure_features=retrieval_span_structure_features,
             mhdsra2_config_override=mhdsra2_config_override,
         ).to(device)
     raise ValueError(f"Unsupported model_type: {model_type} (normalized: {active_model_type})")
@@ -1170,6 +2610,273 @@ def compute_selected_logits_sample_metrics(
     return sample_rows
 
 
+def compute_niah_needle_copy_readout_sample_metrics(
+    X,
+    targets,
+    query_positions,
+    aux,
+    seq_len,
+    depth,
+    sample_index_start=0,
+    readout_mode="needle_copy",
+):
+    """Compute NIAH sample metrics by copying from predicted retrieval evidence.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_niah_depths` when `niah_readout_mode` is
+      `needle_copy` or `needle_pair_copy`
+    - 调用对象 / Calls: tensor indexing, `torch.argmax`
+    - 作用 / Purpose: 只使用模型在 query 位置暴露的 selected retrieval 候选和权重，
+      选出最高权重候选；若候选是 needle key，则复制后一个 token；若候选本身是非保留
+      value token，则直接复制它。`needle_pair_copy` 会先在候选中寻找 key/right-value 成对
+      结构，再退回 `needle_copy`，用于验证“候选覆盖 + 结构化复制”是否足够回答 NIAH。
+    - 参数 / Parameters:
+      `X` 是 CPU token tensor；`targets` 是正确答案 token，仅用于评价；`aux` 是
+      `forward_selected_logits(..., return_aux=True)` 返回的轻量诊断。
+    - 返回 / Returns: 与 `compute_selected_logits_sample_metrics` 兼容的样本级指标列表。
+    - 错误处理 / Error handling: 缺少 selected retrieval metadata/weights 或形状不匹配时
+      返回 unavailable 样本指标，而不是猜测或读取 gold answer。
+    - 副作用 / Side effects: 无；不修改模型、不写文件。
+    - 关键词 / Keywords:
+      niah|needle_copy|retrieval_metadata|selected_aux|copy_readout|证据复制
+
+    English documentation:
+    Function name:
+        compute_niah_needle_copy_readout_sample_metrics
+    Purpose:
+        Evaluate explicit NIAH copy readouts from predicted selected retrieval
+        candidates without using labels to construct predictions.
+    """
+    readout_mode = normalize_niah_readout_mode(readout_mode)
+    if readout_mode not in {"needle_copy", "needle_pair_copy"}:
+        raise ValueError(f"copy readout metrics do not support mode: {readout_mode!r}")
+    if X.dim() != 2:
+        raise ValueError(f"expected token ids with shape [B, SeqLen], got {tuple(X.shape)}")
+    if targets.dim() != 1:
+        raise ValueError(f"expected targets with shape [B], got {tuple(targets.shape)}")
+    if X.shape[0] != targets.shape[0]:
+        raise ValueError("token batch size must match targets")
+
+    batch_size, sequence_width = X.shape
+    query_positions_cpu = query_positions.detach().cpu()
+    targets_cpu = targets.detach().cpu()
+    denominator = max(seq_len - 1, 1)
+
+    last_layer = aux.get("last_layer") if isinstance(aux, dict) else None
+    selected_metadata = (
+        last_layer.get("selected_retrieval_metadata")
+        if isinstance(last_layer, dict)
+        else None
+    )
+    weights = (
+        last_layer.get("selected_retrieval_token_weight_by_sample")
+        if isinstance(last_layer, dict)
+        else None
+    )
+
+    unavailable_reason = None
+    if not isinstance(selected_metadata, dict):
+        unavailable_reason = "missing_selected_retrieval_metadata"
+    elif not isinstance(weights, torch.Tensor):
+        unavailable_reason = "missing_selected_retrieval_weights"
+
+    positions = None
+    mask = None
+    if unavailable_reason is None:
+        positions = selected_metadata.get("positions")
+        mask = selected_metadata.get("mask")
+        if not isinstance(positions, torch.Tensor) or not isinstance(mask, torch.Tensor):
+            unavailable_reason = "missing_selected_positions_or_mask"
+
+    if unavailable_reason is None:
+        positions = positions.detach().cpu().long()
+        mask = mask.detach().cpu().bool()
+        weights = weights.detach().cpu().float()
+        if positions.dim() == 1:
+            positions = positions.view(1, -1)
+            mask = mask.view(1, -1)
+        if weights.dim() == 1:
+            weights = weights.view(1, -1)
+        if positions.shape != mask.shape or positions.shape != weights.shape:
+            unavailable_reason = "selected_retrieval_shape_mismatch"
+        elif positions.shape[0] != batch_size:
+            unavailable_reason = "selected_retrieval_batch_mismatch"
+
+    sample_rows = []
+    for sample_offset in range(batch_size):
+        target_token = int(targets_cpu[sample_offset].item())
+        query_position = int(query_positions_cpu[sample_offset].item())
+        copied_token = PAD_TOKEN_ID
+        copied_from_position = None
+        copied_candidate_position = None
+        copied_candidate_token = None
+        target_candidate_present = False
+        target_candidate_rank = None
+        pair_candidate_position = None
+        pair_neighbor_position = None
+        pair_neighbor_present = False
+        readout_available = unavailable_reason is None
+        row_unavailable_reason = unavailable_reason
+
+        if readout_available:
+            row_mask = mask[sample_offset]
+            if not bool(row_mask.any().item()):
+                readout_available = False
+                row_unavailable_reason = "no_valid_retrieval_candidates"
+            else:
+                row_weights = weights[sample_offset].masked_fill(~row_mask, float("-inf"))
+                best_candidate_index = int(torch.argmax(row_weights).item())
+                valid_candidate_indices = row_mask.nonzero(as_tuple=True)[0]
+                sorted_candidate_indices = valid_candidate_indices[
+                    torch.argsort(row_weights[valid_candidate_indices], descending=True)
+                ]
+                valid_candidate_positions = {
+                    int(positions[sample_offset, index_tensor].item())
+                    for index_tensor in valid_candidate_indices
+                }
+                for rank_offset, candidate_index_tensor in enumerate(sorted_candidate_indices):
+                    candidate_index = int(candidate_index_tensor.item())
+                    candidate_pos_for_diag = int(positions[sample_offset, candidate_index].item())
+                    if 0 <= candidate_pos_for_diag < sequence_width:
+                        candidate_token_for_diag = int(
+                            X[sample_offset, candidate_pos_for_diag].item()
+                        )
+                        if candidate_token_for_diag == target_token:
+                            target_candidate_present = True
+                            target_candidate_rank = rank_offset + 1
+                            break
+                        if (
+                            candidate_token_for_diag == NEEDLE_KEY_TOKEN_ID
+                            and candidate_pos_for_diag + 1 < sequence_width
+                            and int(X[sample_offset, candidate_pos_for_diag + 1].item())
+                            == target_token
+                        ):
+                            target_candidate_present = True
+                            target_candidate_rank = rank_offset + 1
+                            break
+                selected_candidate_index = best_candidate_index
+                if readout_mode == "needle_pair_copy":
+                    preferred_pair_key_index = None
+                    fallback_pair_key_index = None
+                    preferred_pair_value_index = None
+                    for candidate_index_tensor in sorted_candidate_indices:
+                        candidate_index = int(candidate_index_tensor.item())
+                        candidate_position_for_pair = int(
+                            positions[sample_offset, candidate_index].item()
+                        )
+                        if not 0 <= candidate_position_for_pair < sequence_width:
+                            continue
+                        candidate_token_for_pair = int(
+                            X[sample_offset, candidate_position_for_pair].item()
+                        )
+                        if (
+                            candidate_position_for_pair > 0
+                            and candidate_token_for_pair >= FILLER_TOKEN_START
+                            and int(X[sample_offset, candidate_position_for_pair - 1].item())
+                            == NEEDLE_KEY_TOKEN_ID
+                        ):
+                            preferred_pair_value_index = candidate_index
+                            break
+                        if candidate_position_for_pair >= sequence_width - 1:
+                            continue
+                        right_neighbor_position = candidate_position_for_pair + 1
+                        right_neighbor_token = int(
+                            X[sample_offset, right_neighbor_position].item()
+                        )
+                        if (
+                            candidate_token_for_pair == NEEDLE_KEY_TOKEN_ID
+                            and right_neighbor_token >= FILLER_TOKEN_START
+                        ):
+                            if fallback_pair_key_index is None:
+                                fallback_pair_key_index = candidate_index
+                            if right_neighbor_position in valid_candidate_positions:
+                                preferred_pair_key_index = candidate_index
+                                break
+                    selected_pair_candidate_index = (
+                        preferred_pair_value_index
+                        if preferred_pair_value_index is not None
+                        else (
+                            preferred_pair_key_index
+                            if preferred_pair_key_index is not None
+                            else fallback_pair_key_index
+                        )
+                    )
+                    if selected_pair_candidate_index is not None:
+                        selected_candidate_index = selected_pair_candidate_index
+                        pair_candidate_position = int(
+                            positions[sample_offset, selected_candidate_index].item()
+                        )
+                        if (
+                            pair_candidate_position > 0
+                            and int(X[sample_offset, pair_candidate_position].item())
+                            >= FILLER_TOKEN_START
+                            and int(X[sample_offset, pair_candidate_position - 1].item())
+                            == NEEDLE_KEY_TOKEN_ID
+                        ):
+                            pair_neighbor_position = pair_candidate_position - 1
+                        else:
+                            pair_neighbor_position = pair_candidate_position + 1
+                        pair_neighbor_present = pair_neighbor_position in valid_candidate_positions
+
+                candidate_position = int(
+                    positions[sample_offset, selected_candidate_index].item()
+                )
+                copied_candidate_position = candidate_position
+                if 0 <= candidate_position < sequence_width:
+                    candidate_token = int(X[sample_offset, candidate_position].item())
+                    copied_candidate_token = candidate_token
+                    if (
+                        candidate_token == NEEDLE_KEY_TOKEN_ID
+                        and candidate_position + 1 < sequence_width
+                    ):
+                        copied_from_position = candidate_position + 1
+                        copied_token = int(X[sample_offset, copied_from_position].item())
+                    elif candidate_token >= FILLER_TOKEN_START:
+                        copied_from_position = candidate_position
+                        copied_token = candidate_token
+                    else:
+                        readout_available = False
+                        row_unavailable_reason = "candidate_is_not_copyable"
+                else:
+                    readout_available = False
+                    row_unavailable_reason = "candidate_position_out_of_range"
+
+        correct = readout_available and copied_token == target_token
+        loss = 0.0 if correct else 1.0
+        sample_rows.append(
+            {
+                "sample_index": sample_index_start + sample_offset,
+                "depth": float(depth),
+                "query_position": query_position,
+                "query_position_ratio": float(query_position / denominator),
+                "target_token": target_token,
+                "pred_token": int(copied_token),
+                "correct": bool(correct),
+                "top3_correct": bool(correct),
+                "top5_correct": bool(correct),
+                "target_rank": 1 if correct else 2,
+                "target_prob": 1.0 if correct else 0.0,
+                "pred_prob": 1.0 if readout_available else 0.0,
+                "loss": loss,
+                "logit_margin": 1.0 if correct else -1.0,
+                "prob_margin": 1.0 if correct else 0.0,
+                "entropy": 0.0,
+                "readout_mode": readout_mode,
+                "readout_available": bool(readout_available),
+                "readout_unavailable_reason": row_unavailable_reason,
+                "copied_from_position": copied_from_position,
+                "copied_candidate_position": copied_candidate_position,
+                "copied_candidate_token": copied_candidate_token,
+                "pair_candidate_position": pair_candidate_position,
+                "pair_neighbor_position": pair_neighbor_position,
+                "pair_neighbor_present": bool(pair_neighbor_present),
+                "target_candidate_present": bool(target_candidate_present),
+                "target_candidate_rank": target_candidate_rank,
+            }
+        )
+    return sample_rows
+
+
 def summarize_niah_sample_metrics(sample_metrics):
     """Summarize sample-level NIAH diagnostics into aggregate scalar metrics.
 
@@ -1215,7 +2922,7 @@ def summarize_niah_sample_metrics(sample_metrics):
     """
     if not sample_metrics:
         raise ValueError("sample_metrics must not be empty")
-    return {
+    summary = {
         "total_samples": len(sample_metrics),
         "top1_accuracy": _mean([1.0 if row["correct"] else 0.0 for row in sample_metrics]),
         "top3_accuracy": _mean([1.0 if row["top3_correct"] else 0.0 for row in sample_metrics]),
@@ -1228,6 +2935,105 @@ def summarize_niah_sample_metrics(sample_metrics):
         "mean_logit_margin": _mean([row["logit_margin"] for row in sample_metrics]),
         "mean_prob_margin": _mean([row["prob_margin"] for row in sample_metrics]),
         "mean_entropy": _mean([row["entropy"] for row in sample_metrics]),
+    }
+    if any("readout_available" in row for row in sample_metrics):
+        summary["readout_available_rate"] = _mean(
+            [1.0 if row.get("readout_available") else 0.0 for row in sample_metrics]
+        )
+    if any("target_candidate_present" in row for row in sample_metrics):
+        summary["target_candidate_hit_rate"] = _mean(
+            [1.0 if row.get("target_candidate_present") else 0.0 for row in sample_metrics]
+        )
+        target_candidate_ranks = [
+            row.get("target_candidate_rank")
+            for row in sample_metrics
+            if row.get("target_candidate_rank") is not None
+        ]
+        summary["mean_target_candidate_rank"] = (
+            None if not target_candidate_ranks else _mean(target_candidate_ranks)
+        )
+    if any("span_valid_candidate_count" in row for row in sample_metrics):
+        summary["mean_span_valid_candidate_count"] = _mean(
+            [float(row.get("span_valid_candidate_count") or 0.0) for row in sample_metrics]
+        )
+        summary["mean_span_raw_candidate_count"] = _mean(
+            [float(row.get("span_raw_candidate_count") or 0.0) for row in sample_metrics]
+        )
+        summary["mean_span_pair_candidate_count"] = _mean(
+            [float(row.get("span_pair_candidate_count") or 0.0) for row in sample_metrics]
+        )
+        summary["span_pair_available_rate"] = _mean(
+            [1.0 if row.get("span_pair_available") else 0.0 for row in sample_metrics]
+        )
+        summary["span_filter_fallback_rate"] = _mean(
+            [1.0 if row.get("span_filter_fallback") else 0.0 for row in sample_metrics]
+        )
+        summary["span_selected_pair_rate"] = _mean(
+            [1.0 if row.get("span_selected_is_pair") else 0.0 for row in sample_metrics]
+        )
+        summary["span_target_pair_candidate_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_pair_candidate_present") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_value_page_candidate_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_value_in_page_candidates") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_pair_page_candidate_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_pair_in_page_candidates") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_value_top_token_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_value_in_top_tokens") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_pair_top_token_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_pair_in_top_tokens") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_value_seed_token_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_value_in_seed_tokens") else 0.0
+                for row in sample_metrics
+            ]
+        )
+        summary["span_target_pair_seed_token_rate"] = _mean(
+            [
+                1.0 if row.get("span_target_pair_in_seed_tokens") else 0.0
+                for row in sample_metrics
+            ]
+        )
+    return summary
+
+
+def _span_candidate_diagnostics_from_eval(eval_result):
+    """Extract span candidate diagnostics from an eval result.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`。
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 用统一字段表从 light/robust/re-eval 结果抽取 span predictor
+      候选结构诊断，避免三个分支维护不同字段。
+    - 参数 / Parameters: `eval_result` 是 `evaluate_niah_depths` 返回值或 None。
+    - 返回 / Returns: dict，字段缺失时值为 None。
+    - 错误处理 / Error handling: None 或非 dict 输入返回全 None。
+    - 副作用 / Side effects: 无。
+    """
+    if not isinstance(eval_result, dict):
+        return {field: None for field in NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS}
+    return {
+        field: eval_result.get(field)
+        for field in NIAH_SPAN_CANDIDATE_DIAGNOSTIC_FIELDS
     }
 
 
@@ -1336,6 +3142,9 @@ def add_niah_eval_metrics_to_swanlab_payload(payload, prefix, eval_result, inclu
         "mean_logit_margin",
         "mean_prob_margin",
         "mean_entropy",
+        "readout_available_rate",
+        "target_candidate_hit_rate",
+        "mean_target_candidate_rank",
         "total_samples",
     )
     for metric_name in scalar_metric_names:
@@ -1378,6 +3187,8 @@ def evaluate_niah_depths(
     criterion,
     depths=NIAH_DEPTHS,
     batches_per_depth=DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
+    niah_readout_mode=DEFAULT_NIAH_READOUT_MODE,
+    niah_span_candidate_filter=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
 ):
     """Evaluate NIAH retrieval on independent batches across all configured depths.
 
@@ -1441,6 +3252,10 @@ def evaluate_niah_depths(
     if batches_per_depth <= 0:
         raise ValueError("batches_per_depth must be positive")
 
+    niah_readout_mode = normalize_niah_readout_mode(niah_readout_mode)
+    niah_span_candidate_filter = normalize_niah_span_candidate_filter(
+        niah_span_candidate_filter
+    )
     was_training = model.training
     depth_rows = []
     sample_metrics = []
@@ -1459,15 +3274,53 @@ def evaluate_niah_depths(
                         needle_depth_ratio=depth,
                     )
                     query_positions, targets = extract_query_positions_and_targets(X, Y, device)
-                    logits_target = model.forward_selected_logits(X, query_positions)
-                    batch_sample_metrics = compute_selected_logits_sample_metrics(
-                        logits_target=logits_target,
-                        targets=targets,
-                        query_positions=query_positions,
-                        seq_len=seq_len,
-                        depth=depth,
-                        sample_index_start=sample_index,
-                    )
+                    if niah_readout_mode in {"needle_copy", "needle_pair_copy"}:
+                        logits_target, aux = model.forward_selected_logits(
+                            X,
+                            query_positions,
+                            return_aux=True,
+                        )
+                        batch_sample_metrics = compute_niah_needle_copy_readout_sample_metrics(
+                            X=X,
+                            targets=targets,
+                            query_positions=query_positions,
+                            aux=aux,
+                            seq_len=seq_len,
+                            depth=depth,
+                            sample_index_start=sample_index,
+                            readout_mode=niah_readout_mode,
+                        )
+                        del aux
+                    elif niah_readout_mode == "span_predictor":
+                        logits_target, hidden_query, aux = model.forward_selected_logits(
+                            X,
+                            query_positions,
+                            return_hidden=True,
+                            return_aux=True,
+                        )
+                        batch_sample_metrics = compute_niah_span_predictor_sample_metrics(
+                            model=model,
+                            hidden_query=hidden_query,
+                            X=X,
+                            targets=targets,
+                            query_positions=query_positions,
+                            aux=aux,
+                            seq_len=seq_len,
+                            depth=depth,
+                            sample_index_start=sample_index,
+                            candidate_filter=niah_span_candidate_filter,
+                        )
+                        del hidden_query, aux
+                    else:
+                        logits_target = model.forward_selected_logits(X, query_positions)
+                        batch_sample_metrics = compute_selected_logits_sample_metrics(
+                            logits_target=logits_target,
+                            targets=targets,
+                            query_positions=query_positions,
+                            seq_len=seq_len,
+                            depth=depth,
+                            sample_index_start=sample_index,
+                        )
                     sample_index += len(batch_sample_metrics)
                     depth_sample_metrics.extend(batch_sample_metrics)
                     sample_metrics.extend(batch_sample_metrics)
@@ -1490,6 +3343,54 @@ def evaluate_niah_depths(
                         "mean_logit_margin": depth_summary["mean_logit_margin"],
                         "mean_prob_margin": depth_summary["mean_prob_margin"],
                         "mean_entropy": depth_summary["mean_entropy"],
+                        "readout_available_rate": depth_summary.get(
+                            "readout_available_rate"
+                        ),
+                        "target_candidate_hit_rate": depth_summary.get(
+                            "target_candidate_hit_rate"
+                        ),
+                        "mean_target_candidate_rank": depth_summary.get(
+                            "mean_target_candidate_rank"
+                        ),
+                        "mean_span_valid_candidate_count": depth_summary.get(
+                            "mean_span_valid_candidate_count"
+                        ),
+                        "mean_span_raw_candidate_count": depth_summary.get(
+                            "mean_span_raw_candidate_count"
+                        ),
+                        "mean_span_pair_candidate_count": depth_summary.get(
+                            "mean_span_pair_candidate_count"
+                        ),
+                        "span_pair_available_rate": depth_summary.get(
+                            "span_pair_available_rate"
+                        ),
+                        "span_filter_fallback_rate": depth_summary.get(
+                            "span_filter_fallback_rate"
+                        ),
+                        "span_selected_pair_rate": depth_summary.get(
+                            "span_selected_pair_rate"
+                        ),
+                        "span_target_pair_candidate_rate": depth_summary.get(
+                            "span_target_pair_candidate_rate"
+                        ),
+                        "span_target_value_page_candidate_rate": depth_summary.get(
+                            "span_target_value_page_candidate_rate"
+                        ),
+                        "span_target_pair_page_candidate_rate": depth_summary.get(
+                            "span_target_pair_page_candidate_rate"
+                        ),
+                        "span_target_value_top_token_rate": depth_summary.get(
+                            "span_target_value_top_token_rate"
+                        ),
+                        "span_target_pair_top_token_rate": depth_summary.get(
+                            "span_target_pair_top_token_rate"
+                        ),
+                        "span_target_value_seed_token_rate": depth_summary.get(
+                            "span_target_value_seed_token_rate"
+                        ),
+                        "span_target_pair_seed_token_rate": depth_summary.get(
+                            "span_target_pair_seed_token_rate"
+                        ),
                     }
                 )
     finally:
@@ -1511,9 +3412,101 @@ def evaluate_niah_depths(
         "mean_logit_margin": overall_summary["mean_logit_margin"],
         "mean_prob_margin": overall_summary["mean_prob_margin"],
         "mean_entropy": overall_summary["mean_entropy"],
+        "readout_mode": niah_readout_mode,
+        "readout_available_rate": overall_summary.get("readout_available_rate"),
+        "target_candidate_hit_rate": overall_summary.get("target_candidate_hit_rate"),
+        "mean_target_candidate_rank": overall_summary.get("mean_target_candidate_rank"),
+        "mean_span_valid_candidate_count": overall_summary.get(
+            "mean_span_valid_candidate_count"
+        ),
+        "mean_span_raw_candidate_count": overall_summary.get(
+            "mean_span_raw_candidate_count"
+        ),
+        "mean_span_pair_candidate_count": overall_summary.get(
+            "mean_span_pair_candidate_count"
+        ),
+        "span_pair_available_rate": overall_summary.get("span_pair_available_rate"),
+        "span_filter_fallback_rate": overall_summary.get("span_filter_fallback_rate"),
+        "span_selected_pair_rate": overall_summary.get("span_selected_pair_rate"),
+        "span_target_pair_candidate_rate": overall_summary.get(
+            "span_target_pair_candidate_rate"
+        ),
+        "span_target_value_page_candidate_rate": overall_summary.get(
+            "span_target_value_page_candidate_rate"
+        ),
+        "span_target_pair_page_candidate_rate": overall_summary.get(
+            "span_target_pair_page_candidate_rate"
+        ),
+        "span_target_value_top_token_rate": overall_summary.get(
+            "span_target_value_top_token_rate"
+        ),
+        "span_target_pair_top_token_rate": overall_summary.get(
+            "span_target_pair_top_token_rate"
+        ),
+        "span_target_value_seed_token_rate": overall_summary.get(
+            "span_target_value_seed_token_rate"
+        ),
+        "span_target_pair_seed_token_rate": overall_summary.get(
+            "span_target_pair_seed_token_rate"
+        ),
         "depth_rows": depth_rows,
         "sample_metrics": sample_metrics,
         "total_samples": overall_summary["total_samples"],
+    }
+
+
+def summarize_retrieval_projection_step_metrics(step_rows):
+    """Summarize train-time retrieval projection contrastive diagnostics.
+
+    中文说明:
+    - 调用方 / Called by: `run_niah_verification_case`
+    - 调用对象 / Calls: local numeric helpers only
+    - 作用 / Purpose: 聚合每个 optimizer step 的 projection contrastive 诊断，
+      帮助判断 q/k 表征监督是否真的接通并改善 evidence 排名。
+    - 参数 / Parameters: `step_rows` 是训练循环每步写入报告的行。
+    - 返回 / Returns: dict，包含 available step 数、hit/top1/rank/margin/loss 均值。
+    - 错误处理 / Error handling: 缺字段或 None 会被跳过。
+    - 副作用 / Side effects: 无。
+    - 关键词 / Keywords:
+      retrieval|projection|contrastive|summary|rank|niah|诊断
+
+    English documentation:
+    Function name:
+        summarize_retrieval_projection_step_metrics
+    Purpose:
+        Aggregate opt-in retrieval q/k projection loss diagnostics over training steps.
+    """
+    rows = list(step_rows or [])
+    available_rows = [
+        row for row in rows if bool(row.get("retrieval_projection_available"))
+    ]
+
+    def _mean_field(field_name):
+        values = [
+            float(row[field_name])
+            for row in available_rows
+            if row.get(field_name) is not None
+        ]
+        return None if not values else sum(values) / len(values)
+
+    positive_steps = sum(
+        1
+        for row in available_rows
+        if float(row.get("retrieval_projection_positive_count") or 0.0) > 0.0
+    )
+    return {
+        "steps": len(rows),
+        "available_steps": len(available_rows),
+        "positive_steps": positive_steps,
+        "mean_loss": _mean_field("retrieval_projection_loss"),
+        "mean_hit_rate": _mean_field("retrieval_projection_hit_rate"),
+        "mean_evidence_score": _mean_field("retrieval_projection_evidence_score_mean"),
+        "mean_best_negative_score": _mean_field(
+            "retrieval_projection_best_negative_score_mean"
+        ),
+        "mean_score_margin": _mean_field("retrieval_projection_score_margin_mean"),
+        "mean_target_rank": _mean_field("retrieval_projection_target_rank_mean"),
+        "mean_top1_rate": _mean_field("retrieval_projection_top1_rate"),
     }
 
 
@@ -1530,6 +3523,7 @@ def run_single_niah_test(
     eval_batches_per_depth=DEFAULT_NIAH_EVAL_BATCHES_PER_DEPTH,
     return_metrics=False,
     swanlab_run: SwanLabRunProxy | None = None,
+    use_retrieval: bool = False,
 ):
     """Train one NIAH context length using selected-query logits to bound GPU memory.
 
@@ -1607,6 +3601,7 @@ def run_single_niah_test(
         chunk_size=chunk_size,
         model_type=model_type,
         mhdsra2_config_override=mhdsra2_config_override,
+        use_retrieval=use_retrieval,
     )
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -1920,6 +3915,7 @@ def run_niah_verification_case(
     eval_batches_per_depth=DEFAULT_NIAH_LIGHT_EVAL_BATCHES_PER_DEPTH,
     robust_eval_interval=None,
     robust_eval_batches_per_depth=DEFAULT_NIAH_ROBUST_EVAL_BATCHES_PER_DEPTH,
+    niah_test_batches_per_depth: int = DEFAULT_NIAH_TEST_BATCHES_PER_DEPTH,
     cudnn_benchmark=False,
     model_type="mhdsra2",
     mhdsra2_config_override=None,
@@ -1929,6 +3925,20 @@ def run_niah_verification_case(
     needle_loss_alpha: float = 0.5,
     hidden_mse_alpha: float = 0.0,
     retrieval_evidence_loss_alpha: float = 0.0,
+    retrieval_evidence_rank_margin: float = 0.0,
+    retrieval_evidence_score_margin: float = 0.0,
+    retrieval_evidence_target_offset: int = 1,
+    query_evidence_alignment_alpha: float = 0.0,
+    retrieval_projection_contrastive_alpha: float = 0.0,
+    retrieval_projection_temperature: float = (
+        DEFAULT_RETRIEVAL_PROJECTION_CONTRASTIVE_TEMPERATURE
+    ),
+    retrieval_span_predictor_alpha: float = 0.0,
+    retrieval_span_structure_features: bool = False,
+    use_retrieval: bool = False,
+    niah_readout_mode: str = DEFAULT_NIAH_READOUT_MODE,
+    niah_span_candidate_filter: str = DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+    niah_span_loss_mode: str = DEFAULT_NIAH_SPAN_LOSS_MODE,
 ):
     """Run a reproducible NIAH verification case and return report-ready metrics.
 
@@ -1944,7 +3954,20 @@ def run_niah_verification_case(
       `seq_len` 是上下文长度；`dim/num_layers/K/kr/chunk_size` 控制模型规模；
       `epochs/learning_rate/seed` 控制训练过程；`target_accuracy/stop_loss` 控制提前停止；
       `eval_batches_per_depth` 控制每 step light eval 样本数；`robust_eval_interval` 与
-      `robust_eval_batches_per_depth` 控制正式 robust eval；`cudnn_benchmark` 控制 cuDNN 自动调优
+      `robust_eval_batches_per_depth` 控制正式 robust eval；`niah_test_batches_per_depth`
+      默认 0，显式大于 0 时只在训练和 best-state 选择结束后运行 held-out test eval，
+      不参与训练、best 选择或 final validation 口径；`cudnn_benchmark` 控制 cuDNN 自动调优；
+      `retrieval_evidence_target_offset` 控制 evidence loss 监督 needle key(offset=0)
+      还是 needle value(offset=1)，默认 1 保持旧行为；`query_evidence_alignment_alpha`
+      默认 0，仅显式开启时把 query hidden 拉近 evidence token embedding；
+      `retrieval_projection_contrastive_alpha` 默认 0，仅显式开启时直接监督 selected retrieval
+      query/key projection 的 evidence 排名；`retrieval_span_predictor_alpha` 默认 0，仅显式
+      开启时训练一个候选 span 打分头；`retrieval_span_structure_features` 默认 False，
+      只让显式结构组把 pair/source 提示送入 span predictor；`niah_span_candidate_filter` 默认 `all`
+      保持旧候选池，显式 `key_value_pair` 时只保留成对召回的 key/value 候选；
+      `niah_span_loss_mode` 默认 `single_positive` 保持旧 loss，显式 `multi_positive`
+      时不再把其它正确候选当成负例。
+      `use_retrieval` 显式打开外部分页召回。
     - 返回 / Returns: dict，包含模型配置、训练日志、最终/最佳 eval 准确率、loss、耗时和显存指标；
       `passed_success_criteria` 只在同一 eval 点同时满足 min-depth accuracy 与 loss 阈值时为 true
     - 内部关键变量 / Internal variables:
@@ -1990,6 +4013,18 @@ def run_niah_verification_case(
         The warmup step consumes RNG state, so the same seed produces different
         training data sequences compared to run_single_niah_test.
     """
+    niah_readout_mode = normalize_niah_readout_mode(niah_readout_mode)
+    niah_span_candidate_filter = normalize_niah_span_candidate_filter(
+        niah_span_candidate_filter
+    )
+    niah_span_loss_mode = normalize_niah_span_loss_mode(niah_span_loss_mode)
+    retrieval_evidence_target_offset = int(retrieval_evidence_target_offset)
+    if retrieval_evidence_target_offset not in (0, 1):
+        raise ValueError("retrieval_evidence_target_offset must be 0 (key) or 1 (value)")
+    if retrieval_projection_temperature <= 0.0:
+        raise ValueError("retrieval_projection_temperature must be positive")
+    if retrieval_span_predictor_alpha < 0.0:
+        raise ValueError("retrieval_span_predictor_alpha must be non-negative")
     if batch_size <= 0:
         raise ValueError("batch_size must be positive")
     if epochs <= 0:
@@ -2003,6 +4038,9 @@ def run_niah_verification_case(
         raise ValueError("robust_eval_interval must be positive")
     if robust_eval_batches_per_depth <= 0:
         raise ValueError("robust_eval_batches_per_depth must be positive")
+    niah_test_batches_per_depth = int(niah_test_batches_per_depth)
+    if niah_test_batches_per_depth < 0:
+        raise ValueError("niah_test_batches_per_depth must be non-negative")
 
     seed_all(seed, cudnn_benchmark=cudnn_benchmark)
     if device.type == "cuda":
@@ -2039,9 +4077,22 @@ def run_niah_verification_case(
             "needle_loss_alpha": needle_loss_alpha,
             "hidden_mse_alpha": hidden_mse_alpha,
             "retrieval_evidence_loss_alpha": retrieval_evidence_loss_alpha,
+            "retrieval_evidence_rank_margin": retrieval_evidence_rank_margin,
+            "retrieval_evidence_score_margin": retrieval_evidence_score_margin,
+            "retrieval_evidence_target_offset": retrieval_evidence_target_offset,
+            "query_evidence_alignment_alpha": query_evidence_alignment_alpha,
+            "retrieval_projection_contrastive_alpha": retrieval_projection_contrastive_alpha,
+            "retrieval_projection_temperature": retrieval_projection_temperature,
+            "retrieval_span_predictor_alpha": retrieval_span_predictor_alpha,
+            "retrieval_span_structure_features": bool(retrieval_span_structure_features),
+            "use_retrieval": use_retrieval,
+            "niah_readout_mode": niah_readout_mode,
+            "niah_span_candidate_filter": niah_span_candidate_filter,
+            "niah_span_loss_mode": niah_span_loss_mode,
             "light_eval_batches_per_depth": eval_batches_per_depth,
             "robust_eval_interval": resolved_robust_eval_interval,
             "robust_eval_batches_per_depth": robust_eval_batches_per_depth,
+            "niah_test_batches_per_depth": niah_test_batches_per_depth,
         },
         mode=swanlab_mode,
         description=f"NIAH verification seq_len={seq_len}",
@@ -2058,6 +4109,10 @@ def run_niah_verification_case(
         chunk_size=chunk_size,
         model_type=model_type,
         mhdsra2_config_override=resolved_config_override,
+        use_retrieval=use_retrieval,
+        use_retrieval_span_predictor=retrieval_span_predictor_alpha > 0.0
+        or niah_readout_mode == "span_predictor",
+        retrieval_span_structure_features=bool(retrieval_span_structure_features),
     )
 
     if load_checkpoint is not None:
@@ -2111,10 +4166,35 @@ def run_niah_verification_case(
         "hit_rate": None,
         "gate_mean": None,
         "evidence_weight_mean": None,
+        "best_negative_weight_mean": None,
+        "evidence_margin_mean": None,
+        "target_rank_mean": None,
+        "top1_rate": None,
         "ranking_loss": None,
+        "margin_loss": None,
+        "score_margin_loss": None,
+        "evidence_score_mean": None,
+        "best_negative_score_mean": None,
+        "evidence_score_margin_mean": None,
+        "score_target_rank_mean": None,
+        "score_top1_rate": None,
         "gate_loss": None,
         "positive_count": 0,
     }
+    final_retrieval_projection_metrics = {
+        "available": False,
+        "unavailable_reason": None,
+        "hit_rate": None,
+        "positive_count": 0,
+        "loss": None,
+        "evidence_score_mean": None,
+        "best_negative_score_mean": None,
+        "score_margin_mean": None,
+        "target_rank_mean": None,
+        "top1_rate": None,
+        "temperature": float(retrieval_projection_temperature),
+    }
+    final_retrieval_span_predictor_metrics = _default_retrieval_span_metrics(device)
     success_step = None
     status = "completed"
     train_step_sec = 0.0
@@ -2139,12 +4219,30 @@ def run_niah_verification_case(
         step_start = time.perf_counter()
         optimizer.zero_grad()
         retrieval_aux = None
-        if retrieval_evidence_loss_alpha > 0.0:
+        retrieval_evidence_positions = needle_positions + retrieval_evidence_target_offset
+        retrieval_span_train_positions = torch.stack(
+            [needle_positions, needle_positions + 1],
+            dim=1,
+        )
+        use_retrieval_aux = (
+            retrieval_evidence_loss_alpha > 0.0
+            or retrieval_projection_contrastive_alpha > 0.0
+            or retrieval_span_predictor_alpha > 0.0
+        )
+        if use_retrieval_aux:
             logits_target, hidden_query, retrieval_aux = model.forward_selected_logits(
                 X,
                 query_positions,
                 return_hidden=True,
                 return_aux=True,
+                return_retrieval_projection_aux=(
+                    retrieval_projection_contrastive_alpha > 0.0
+                ),
+                train_retrieval_evidence_positions=(
+                    retrieval_span_train_positions
+                    if retrieval_span_predictor_alpha > 0.0
+                    else retrieval_evidence_positions
+                ),
             )
         else:
             logits_target, hidden_query = model.forward_selected_logits(
@@ -2159,6 +4257,31 @@ def run_niah_verification_case(
             target_embed = model.embedding(targets).detach()
             loss_hidden = F.mse_loss(hidden_query, target_embed)
             loss = loss + hidden_mse_alpha * loss_hidden
+
+        query_evidence_alignment_loss = torch.tensor(0.0, device=device)
+        query_evidence_alignment_metrics = {
+            "available": False,
+            "loss": 0.0,
+            "mean_cosine": None,
+            "mean_mse": None,
+            "detach_evidence": True,
+        }
+        if query_evidence_alignment_alpha > 0.0:
+            evidence_token_positions = needle_positions + retrieval_evidence_target_offset
+            evidence_tokens = X[
+                torch.arange(batch_size, device=X.device),
+                evidence_token_positions,
+            ].to(device)
+            (
+                query_evidence_alignment_loss,
+                query_evidence_alignment_metrics,
+            ) = compute_query_evidence_alignment_loss(
+                hidden_query,
+                evidence_tokens,
+                model.embedding,
+                detach_evidence=True,
+            )
+            loss = loss + query_evidence_alignment_alpha * query_evidence_alignment_loss
 
         # Auxiliary loss at needle value position
         if needle_loss_alpha > 0.0:
@@ -2175,17 +4298,75 @@ def run_niah_verification_case(
             "hit_rate": None,
             "gate_mean": None,
             "evidence_weight_mean": None,
+            "best_negative_weight_mean": None,
+            "evidence_margin_mean": None,
+            "target_rank_mean": None,
+            "top1_rate": None,
             "ranking_loss": None,
+            "margin_loss": None,
+            "score_margin_loss": None,
+            "evidence_score_mean": None,
+            "best_negative_score_mean": None,
+            "evidence_score_margin_mean": None,
+            "score_target_rank_mean": None,
+            "score_top1_rate": None,
             "gate_loss": None,
             "positive_count": 0,
         }
         if retrieval_evidence_loss_alpha > 0.0:
             retrieval_evidence_loss, retrieval_evidence_metrics = compute_retrieval_evidence_gate_loss(
                 retrieval_aux,
-                needle_positions + 1,
+                retrieval_evidence_positions,
                 device=device,
+                rank_margin=retrieval_evidence_rank_margin,
+                score_margin=retrieval_evidence_score_margin,
             )
             loss = loss + retrieval_evidence_loss_alpha * retrieval_evidence_loss
+
+        retrieval_projection_loss = torch.tensor(0.0, device=device)
+        retrieval_projection_metrics = {
+            "available": False,
+            "unavailable_reason": None,
+            "hit_rate": None,
+            "positive_count": 0,
+            "loss": 0.0,
+            "evidence_score_mean": None,
+            "best_negative_score_mean": None,
+            "score_margin_mean": None,
+            "target_rank_mean": None,
+            "top1_rate": None,
+            "temperature": float(retrieval_projection_temperature),
+        }
+        if retrieval_projection_contrastive_alpha > 0.0:
+            (
+                retrieval_projection_loss,
+                retrieval_projection_metrics,
+            ) = compute_retrieval_projection_contrastive_loss(
+                retrieval_aux,
+                retrieval_evidence_positions,
+                device=device,
+                temperature=retrieval_projection_temperature,
+            )
+            loss = loss + retrieval_projection_contrastive_alpha * retrieval_projection_loss
+
+        retrieval_span_predictor_loss = torch.tensor(0.0, device=device)
+        retrieval_span_predictor_metrics = _default_retrieval_span_metrics(device)
+        if retrieval_span_predictor_alpha > 0.0:
+            (
+                retrieval_span_predictor_loss,
+                retrieval_span_predictor_metrics,
+            ) = compute_retrieval_span_predictor_loss(
+                model,
+                hidden_query,
+                X,
+                targets,
+                query_positions,
+                retrieval_aux,
+                device=device,
+                candidate_filter=niah_span_candidate_filter,
+                loss_mode=niah_span_loss_mode,
+            )
+            loss = loss + retrieval_span_predictor_alpha * retrieval_span_predictor_loss
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -2204,6 +4385,8 @@ def run_niah_verification_case(
         final_step_train_accuracy = step_train_accuracy
         final_train_loss = loss_value
         final_retrieval_evidence_metrics = retrieval_evidence_metrics
+        final_retrieval_projection_metrics = retrieval_projection_metrics
+        final_retrieval_span_predictor_metrics = retrieval_span_predictor_metrics
         should_stop = False
 
         light_eval_result = evaluate_niah_depths(
@@ -2212,10 +4395,12 @@ def run_niah_verification_case(
             device=device,
             vocab_size=resolved_data_vocab,
             batch_size=batch_size,
-            criterion=criterion,
-            depths=depths_to_test,
-            batches_per_depth=eval_batches_per_depth,
-        )
+                criterion=criterion,
+                depths=depths_to_test,
+                batches_per_depth=eval_batches_per_depth,
+                niah_readout_mode=niah_readout_mode,
+                niah_span_candidate_filter=niah_span_candidate_filter,
+            )
         final_light_eval = light_eval_result
         light_eval_mean_accuracy = light_eval_result["mean_accuracy"]
         light_eval_min_depth_accuracy = light_eval_result["min_depth_accuracy"]
@@ -2243,6 +4428,8 @@ def run_niah_verification_case(
                 criterion=criterion,
                 depths=depths_to_test,
                 batches_per_depth=robust_eval_batches_per_depth,
+                niah_readout_mode=niah_readout_mode,
+                niah_span_candidate_filter=niah_span_candidate_filter,
             )
             has_robust_eval = True
             final_robust_eval = robust_eval_result
@@ -2267,6 +4454,16 @@ def run_niah_verification_case(
                 "mean_logit_margin": robust_eval_result["mean_logit_margin"],
                 "mean_prob_margin": robust_eval_result["mean_prob_margin"],
                 "mean_entropy": robust_eval_result["mean_entropy"],
+                "readout_mode": robust_eval_result["readout_mode"],
+                "readout_available_rate": robust_eval_result.get(
+                    "readout_available_rate"
+                ),
+                "target_candidate_hit_rate": robust_eval_result.get(
+                    "target_candidate_hit_rate"
+                ),
+                "mean_target_candidate_rank": robust_eval_result.get(
+                    "mean_target_candidate_rank"
+                ),
                 "total_samples": robust_eval_result["total_samples"],
             }
             robust_eval_rows.append(robust_eval_row)
@@ -2326,6 +4523,14 @@ def run_niah_verification_case(
             "mean_logit_margin": light_eval_result["mean_logit_margin"],
             "mean_prob_margin": light_eval_result["mean_prob_margin"],
             "mean_entropy": light_eval_result["mean_entropy"],
+            "readout_mode": light_eval_result["readout_mode"],
+            "readout_available_rate": light_eval_result.get("readout_available_rate"),
+            "target_candidate_hit_rate": light_eval_result.get(
+                "target_candidate_hit_rate"
+            ),
+            "mean_target_candidate_rank": light_eval_result.get(
+                "mean_target_candidate_rank"
+            ),
             "total_samples": light_eval_result["total_samples"],
             "retrieval_evidence_loss": float(
                 retrieval_evidence_loss.detach().cpu().item()
@@ -2339,9 +4544,104 @@ def run_niah_verification_case(
             "retrieval_evidence_weight_mean": retrieval_evidence_metrics[
                 "evidence_weight_mean"
             ],
+            "retrieval_evidence_best_negative_weight_mean": retrieval_evidence_metrics[
+                "best_negative_weight_mean"
+            ],
+            "retrieval_evidence_margin_mean": retrieval_evidence_metrics[
+                "evidence_margin_mean"
+            ],
+            "retrieval_evidence_target_rank_mean": retrieval_evidence_metrics[
+                "target_rank_mean"
+            ],
+            "retrieval_evidence_top1_rate": retrieval_evidence_metrics["top1_rate"],
             "retrieval_evidence_ranking_loss": retrieval_evidence_metrics["ranking_loss"],
+            "retrieval_evidence_margin_loss": retrieval_evidence_metrics["margin_loss"],
+            "retrieval_evidence_score_margin_loss": retrieval_evidence_metrics[
+                "score_margin_loss"
+            ],
+            "retrieval_evidence_score_mean": retrieval_evidence_metrics[
+                "evidence_score_mean"
+            ],
+            "retrieval_evidence_best_negative_score_mean": retrieval_evidence_metrics[
+                "best_negative_score_mean"
+            ],
+            "retrieval_evidence_score_margin_mean": retrieval_evidence_metrics[
+                "evidence_score_margin_mean"
+            ],
+            "retrieval_evidence_score_target_rank_mean": retrieval_evidence_metrics[
+                "score_target_rank_mean"
+            ],
+            "retrieval_evidence_score_top1_rate": retrieval_evidence_metrics[
+                "score_top1_rate"
+            ],
             "retrieval_evidence_gate_loss": retrieval_evidence_metrics["gate_loss"],
             "retrieval_evidence_positive_count": retrieval_evidence_metrics["positive_count"],
+            "query_evidence_alignment_loss": float(
+                query_evidence_alignment_loss.detach().cpu().item()
+            ),
+            "query_evidence_alignment_available": query_evidence_alignment_metrics[
+                "available"
+            ],
+            "query_evidence_alignment_mean_cosine": query_evidence_alignment_metrics[
+                "mean_cosine"
+            ],
+            "query_evidence_alignment_mean_mse": query_evidence_alignment_metrics[
+                "mean_mse"
+            ],
+            "retrieval_projection_loss": float(
+                retrieval_projection_loss.detach().cpu().item()
+            ),
+            "retrieval_projection_available": retrieval_projection_metrics["available"],
+            "retrieval_projection_unavailable_reason": retrieval_projection_metrics[
+                "unavailable_reason"
+            ],
+            "retrieval_projection_hit_rate": retrieval_projection_metrics["hit_rate"],
+            "retrieval_projection_positive_count": retrieval_projection_metrics[
+                "positive_count"
+            ],
+            "retrieval_projection_evidence_score_mean": retrieval_projection_metrics[
+                "evidence_score_mean"
+            ],
+            "retrieval_projection_best_negative_score_mean": (
+                retrieval_projection_metrics["best_negative_score_mean"]
+            ),
+            "retrieval_projection_score_margin_mean": retrieval_projection_metrics[
+                "score_margin_mean"
+            ],
+            "retrieval_projection_target_rank_mean": retrieval_projection_metrics[
+                "target_rank_mean"
+            ],
+            "retrieval_projection_top1_rate": retrieval_projection_metrics["top1_rate"],
+            "retrieval_span_predictor_loss": float(
+                retrieval_span_predictor_loss.detach().cpu().item()
+            ),
+            "retrieval_span_predictor_available": retrieval_span_predictor_metrics[
+                "available"
+            ],
+            "retrieval_span_predictor_unavailable_reason": (
+                retrieval_span_predictor_metrics["unavailable_reason"]
+            ),
+            "retrieval_span_predictor_hit_rate": retrieval_span_predictor_metrics[
+                "hit_rate"
+            ],
+            "retrieval_span_predictor_positive_count": (
+                retrieval_span_predictor_metrics["positive_count"]
+            ),
+            "retrieval_span_predictor_target_rank_mean": (
+                retrieval_span_predictor_metrics["target_rank_mean"]
+            ),
+            "retrieval_span_predictor_top1_rate": retrieval_span_predictor_metrics[
+                "top1_rate"
+            ],
+            "retrieval_span_predictor_evidence_logit_mean": (
+                retrieval_span_predictor_metrics["evidence_logit_mean"]
+            ),
+            "retrieval_span_predictor_best_negative_logit_mean": (
+                retrieval_span_predictor_metrics["best_negative_logit_mean"]
+            ),
+            "retrieval_span_predictor_logit_margin_mean": (
+                retrieval_span_predictor_metrics["logit_margin_mean"]
+            ),
         }
         step_rows.append(row)
         print(
@@ -2357,6 +4657,12 @@ def run_niah_verification_case(
                 "train/depth": current_depth,
                 "train/retrieval_evidence_loss": float(
                     retrieval_evidence_loss.detach().cpu().item()
+                ),
+                "train/retrieval_projection_loss": float(
+                    retrieval_projection_loss.detach().cpu().item()
+                ),
+                "train/retrieval_span_predictor_loss": float(
+                    retrieval_span_predictor_loss.detach().cpu().item()
                 ),
             }
             add_niah_eval_metrics_to_swanlab_payload(
@@ -2381,6 +4687,26 @@ def run_niah_verification_case(
 
     re_eval_mean_accuracy = None
     re_eval_min_depth_accuracy = None
+    final_readout_available_rate = (
+        None
+        if final_light_eval is None
+        else final_light_eval.get("readout_available_rate")
+    )
+    final_target_candidate_hit_rate = (
+        None
+        if final_light_eval is None
+        else final_light_eval.get("target_candidate_hit_rate")
+    )
+    final_mean_target_candidate_rank = (
+        None
+        if final_light_eval is None
+        else final_light_eval.get("mean_target_candidate_rank")
+    )
+    final_span_candidate_diagnostics = (
+        {}
+        if final_light_eval is None
+        else _span_candidate_diagnostics_from_eval(final_light_eval)
+    )
 
     if best_state_dict is not None and status != "success":
         model.load_state_dict(best_state_dict)
@@ -2396,6 +4722,8 @@ def run_niah_verification_case(
             criterion=criterion,
             depths=depths_to_test,
             batches_per_depth=re_eval_batches_per_depth,
+            niah_readout_mode=niah_readout_mode,
+            niah_span_candidate_filter=niah_span_candidate_filter,
         )
         re_eval_mean_accuracy = final_eval["mean_accuracy"]
         re_eval_min_depth_accuracy = final_eval["min_depth_accuracy"]
@@ -2404,8 +4732,61 @@ def run_niah_verification_case(
         final_eval_loss = final_eval["mean_loss"]
         final_loss = final_eval["mean_loss"]
         final_eval_source = best_eval_source
+        final_readout_available_rate = final_eval.get("readout_available_rate")
+        final_target_candidate_hit_rate = final_eval.get("target_candidate_hit_rate")
+        final_mean_target_candidate_rank = final_eval.get("mean_target_candidate_rank")
+        final_span_candidate_diagnostics = _span_candidate_diagnostics_from_eval(
+            final_eval
+        )
+    elif final_robust_eval is not None and final_eval_source == "robust":
+        final_readout_available_rate = final_robust_eval.get("readout_available_rate")
+        final_target_candidate_hit_rate = final_robust_eval.get(
+            "target_candidate_hit_rate"
+        )
+        final_mean_target_candidate_rank = final_robust_eval.get(
+            "mean_target_candidate_rank"
+        )
+        final_span_candidate_diagnostics = _span_candidate_diagnostics_from_eval(
+            final_robust_eval
+        )
+
+    test_eval = None
+    test_span_candidate_diagnostics = {}
+    if niah_test_batches_per_depth > 0:
+        rng_state = capture_niah_rng_state(device)
+        try:
+            seed_all(seed + NIAH_TEST_SEED_OFFSET, cudnn_benchmark=cudnn_benchmark)
+            test_eval = evaluate_niah_depths(
+                model=model,
+                seq_len=seq_len,
+                device=device,
+                vocab_size=resolved_data_vocab,
+                batch_size=batch_size,
+                criterion=criterion,
+                depths=depths_to_test,
+                batches_per_depth=niah_test_batches_per_depth,
+                niah_readout_mode=niah_readout_mode,
+                niah_span_candidate_filter=niah_span_candidate_filter,
+            )
+            test_span_candidate_diagnostics = _span_candidate_diagnostics_from_eval(
+                test_eval
+            )
+        finally:
+            restore_niah_rng_state(rng_state)
 
     elapsed_sec = time.perf_counter() - started_at
+    train_retrieval_evidence_summary = summarize_retrieval_evidence_step_metrics(
+        step_rows
+    )
+    train_query_evidence_alignment_summary = (
+        summarize_query_evidence_alignment_step_metrics(step_rows)
+    )
+    train_retrieval_projection_summary = summarize_retrieval_projection_step_metrics(
+        step_rows
+    )
+    train_retrieval_span_predictor_summary = (
+        summarize_retrieval_span_predictor_step_metrics(step_rows)
+    )
     peak_allocated_mb = 0.0
     peak_reserved_mb = 0.0
     if device.type == "cuda":
@@ -2470,8 +4851,27 @@ def run_niah_verification_case(
             "light_eval_batches_per_depth": eval_batches_per_depth,
             "robust_eval_interval": resolved_robust_eval_interval,
             "robust_eval_batches_per_depth": robust_eval_batches_per_depth,
+            "niah_test_batches_per_depth": niah_test_batches_per_depth,
+            "niah_test_seed": (
+                seed + NIAH_TEST_SEED_OFFSET
+                if niah_test_batches_per_depth > 0
+                else None
+            ),
             "eval_depths": list(depths_to_test),
             "cudnn_benchmark": cudnn_benchmark,
+            "use_retrieval": use_retrieval,
+            "niah_readout_mode": niah_readout_mode,
+            "niah_span_candidate_filter": niah_span_candidate_filter,
+            "niah_span_loss_mode": niah_span_loss_mode,
+            "retrieval_evidence_loss_alpha": retrieval_evidence_loss_alpha,
+            "retrieval_evidence_rank_margin": retrieval_evidence_rank_margin,
+            "retrieval_evidence_score_margin": retrieval_evidence_score_margin,
+            "retrieval_evidence_target_offset": retrieval_evidence_target_offset,
+            "query_evidence_alignment_alpha": query_evidence_alignment_alpha,
+            "retrieval_projection_contrastive_alpha": retrieval_projection_contrastive_alpha,
+            "retrieval_projection_temperature": retrieval_projection_temperature,
+            "retrieval_span_predictor_alpha": retrieval_span_predictor_alpha,
+            "retrieval_span_structure_features": bool(retrieval_span_structure_features),
         },
         "best_accuracy": best_accuracy,
         "best_min_depth_accuracy": best_min_depth_accuracy,
@@ -2505,6 +4905,32 @@ def run_niah_verification_case(
         "peak_memory_reserved_mb": peak_reserved_mb,
         "final_aux_diagnostics": final_aux_diagnostics,
         "final_retrieval_evidence_metrics": final_retrieval_evidence_metrics,
+        "final_retrieval_projection_metrics": final_retrieval_projection_metrics,
+        "final_retrieval_span_predictor_metrics": final_retrieval_span_predictor_metrics,
+        "train_retrieval_evidence_summary": train_retrieval_evidence_summary,
+        "train_query_evidence_alignment_summary": train_query_evidence_alignment_summary,
+        "train_retrieval_projection_summary": train_retrieval_projection_summary,
+        "train_retrieval_span_predictor_summary": train_retrieval_span_predictor_summary,
+        "final_readout_mode": niah_readout_mode,
+        "final_readout_available_rate": final_readout_available_rate,
+        "final_target_candidate_hit_rate": final_target_candidate_hit_rate,
+        "final_mean_target_candidate_rank": final_mean_target_candidate_rank,
+        "final_span_candidate_diagnostics": final_span_candidate_diagnostics,
+        "test_accuracy": None if test_eval is None else test_eval["mean_accuracy"],
+        "test_min_depth_accuracy": (
+            None if test_eval is None else test_eval["min_depth_accuracy"]
+        ),
+        "test_eval_loss": None if test_eval is None else test_eval["mean_loss"],
+        "test_readout_available_rate": (
+            None if test_eval is None else test_eval.get("readout_available_rate")
+        ),
+        "test_target_candidate_hit_rate": (
+            None if test_eval is None else test_eval.get("target_candidate_hit_rate")
+        ),
+        "test_mean_target_candidate_rank": (
+            None if test_eval is None else test_eval.get("mean_target_candidate_rank")
+        ),
+        "test_span_candidate_diagnostics": test_span_candidate_diagnostics,
         "passed_accuracy": final_min_depth_accuracy >= target_accuracy,
         "passed_success_criteria": status == "success",
         "re_eval_mean_accuracy": re_eval_mean_accuracy,
@@ -2826,16 +5252,23 @@ def resolve_niah_reports_dir(reports_dir, project_root=None):
     root = Path(PROJECT_ROOT if project_root is None else project_root).resolve()
     raw_reports_dir = Path(reports_dir)
     candidate = raw_reports_dir if raw_reports_dir.is_absolute() else root / raw_reports_dir
-    candidate = candidate if candidate.name == "reports" else candidate / "reports"
+    if candidate.parts[-2:] != ("docs", "reports"):
+        if candidate.name == "docs":
+            candidate = candidate / "reports"
+        elif candidate.name == "reports":
+            candidate = candidate.parent / "docs" / "reports"
+        else:
+            candidate = candidate / "docs" / "reports"
     resolved_reports_dir = candidate.resolve()
-    expected_reports_dir = (root / "reports").resolve()
+    expected_reports_dir = (root / "docs" / "reports").resolve()
     if resolved_reports_dir != expected_reports_dir:
         raise ValueError(
-            "--reports-dir must resolve to the project reports/ directory; "
+            "--reports-dir must resolve to the project docs/reports/ directory; "
             f"got {resolved_reports_dir}"
         )
     resolved_reports_dir.mkdir(parents=True, exist_ok=True)
     return resolved_reports_dir
+
 
 
 def resolve_niah_checkpoint_path(checkpoint_path, *, project_root=None, create_parent=False):
@@ -2873,7 +5306,7 @@ def resolve_niah_checkpoint_path(checkpoint_path, *, project_root=None, create_p
         May create the parent directory.
     """
     root = Path(PROJECT_ROOT if project_root is None else project_root).resolve()
-    checkpoint_dir = (root / "reports" / "checkpoints").resolve()
+    checkpoint_dir = (root / "docs" / "reports" / "checkpoints").resolve()
     raw_path = Path(checkpoint_path)
     if raw_path.is_absolute():
         candidate = raw_path
@@ -2884,7 +5317,7 @@ def resolve_niah_checkpoint_path(checkpoint_path, *, project_root=None, create_p
     resolved = candidate.resolve()
     if not resolved.is_relative_to(checkpoint_dir):
         raise ValueError(
-            "--load-checkpoint/--save-checkpoint must stay inside reports/checkpoints/; "
+            "--load-checkpoint/--save-checkpoint must stay inside docs/reports/checkpoints/; "
             f"got {resolved}"
         )
     if resolved.suffix.lower() not in NIAH_CHECKPOINT_SUFFIXES:
@@ -3464,7 +5897,7 @@ def build_parser():
         )
         command_parser.add_argument("--cudnn-benchmark", action="store_true")
         command_parser.add_argument("--swanlab-mode", default="disabled", choices=["cloud", "local", "offline", "disabled"])
-        command_parser.add_argument("--reports-dir", default="reports")
+        command_parser.add_argument("--reports-dir", default="docs/reports")
         command_parser.add_argument("--report-name", default=None)
         command_parser.add_argument(
             "--mhdsra2-config",
@@ -3491,6 +5924,57 @@ def build_parser():
             default=0.0,
             help="Weight for hidden-state MSE auxiliary loss (0.0 to disable). "
                  "Aligns query hidden state with target token embedding.",
+        )
+        command_parser.add_argument(
+            "--retrieval-projection-contrastive-alpha",
+            type=float,
+            default=0.0,
+            help=(
+                "Weight for opt-in retrieval q/k projection contrastive loss "
+                "(0.0 to disable)."
+            ),
+        )
+        command_parser.add_argument(
+            "--retrieval-projection-temperature",
+            type=float,
+            default=DEFAULT_RETRIEVAL_PROJECTION_CONTRASTIVE_TEMPERATURE,
+            help="Positive softmax temperature for retrieval projection contrastive loss.",
+        )
+        command_parser.add_argument(
+            "--retrieval-span-predictor-alpha",
+            type=float,
+            default=0.0,
+            help=(
+                "Weight for opt-in retrieval candidate span predictor loss "
+                "(0.0 to disable)."
+            ),
+        )
+        command_parser.add_argument(
+            "--niah-readout-mode",
+            type=str,
+            default=DEFAULT_NIAH_READOUT_MODE,
+            choices=ALLOWED_NIAH_READOUT_MODES,
+            help="Evaluation readout mode; default keeps query-logit model evaluation.",
+        )
+        command_parser.add_argument(
+            "--niah-span-candidate-filter",
+            type=str,
+            default=DEFAULT_NIAH_SPAN_CANDIDATE_FILTER,
+            choices=ALLOWED_NIAH_SPAN_CANDIDATE_FILTERS,
+            help=(
+                "Candidate filter for span_predictor readout/loss; default keeps "
+                "all selected retrieval candidates."
+            ),
+        )
+        command_parser.add_argument(
+            "--niah-span-loss-mode",
+            type=str,
+            default=DEFAULT_NIAH_SPAN_LOSS_MODE,
+            choices=ALLOWED_NIAH_SPAN_LOSS_MODES,
+            help=(
+                "Training loss for retrieval span predictor; default keeps the "
+                "single-positive cross entropy behavior."
+            ),
         )
         command_parser.add_argument(
             "--load-checkpoint",
@@ -3624,6 +6108,15 @@ def run_cli_command(args):
         save_checkpoint=args.save_checkpoint,
         needle_loss_alpha=args.needle_loss_alpha,
         hidden_mse_alpha=args.hidden_mse_alpha,
+        retrieval_projection_contrastive_alpha=args.retrieval_projection_contrastive_alpha,
+        retrieval_projection_temperature=args.retrieval_projection_temperature,
+        retrieval_span_predictor_alpha=args.retrieval_span_predictor_alpha,
+        use_retrieval=args.retrieval_span_predictor_alpha > 0.0
+        or args.retrieval_projection_contrastive_alpha > 0.0
+        or args.niah_readout_mode != "model",
+        niah_readout_mode=args.niah_readout_mode,
+        niah_span_candidate_filter=args.niah_span_candidate_filter,
+        niah_span_loss_mode=args.niah_span_loss_mode,
     )
     paths = save_niah_verification_report(result, args.reports_dir, report_name, title)
     result["report_paths"] = paths

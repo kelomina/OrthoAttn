@@ -211,6 +211,7 @@ class DSRA_Chunk_Layer(nn.Module):
         use_orthogonal_update: bool = True,
         use_bypass: bool = True,
         pe_mode: str = "none",
+        use_retrieval: bool = False,
     ) -> None:
         """Create a DSRA-compatible layer backed by `MultiHeadDSRA2`.
 
@@ -221,7 +222,7 @@ class DSRA_Chunk_Layer(nn.Module):
         - 作用 / Purpose: 保留旧 DSRA 构造参数，同时把实际注意力机制替换为 MHDSRA2
         - 变量 / Variables:
           `dim/K/kr` 控制维度与槽位, `eta/decay_lambda` 映射到 MHDSRA2 更新与遗忘参数,
-          `use_bypass` 控制 local 分支, `pe_mode` 保留旧兼容字段
+          `use_bypass` 控制 local 分支, `pe_mode` 保留旧兼容字段, `use_retrieval` 控制外部检索分支
         - 接入 / Integration: 旧代码继续实例化 `DSRA_Chunk_Layer` 即可使用新机制
         - 错误处理 / Error handling: 非法领域规格或 MHDSRA2 配置会抛出 `ValueError`
         - 关键词 / Keywords:
@@ -236,6 +237,7 @@ class DSRA_Chunk_Layer(nn.Module):
         self.use_orthogonal_update = use_orthogonal_update
         self.use_bypass = use_bypass
         self.pe_mode = pe_mode
+        self.use_retrieval = bool(use_retrieval)
         self.time_decay_alpha = 0.01
         self.read_temperature = nn.Parameter(torch.tensor(1.0))
 
@@ -256,7 +258,7 @@ class DSRA_Chunk_Layer(nn.Module):
             write_topk=self.spec.write_topk,
             local_window=self.spec.local_window,
             use_local=use_bypass,
-            use_retrieval=True,
+            use_retrieval=self.use_retrieval,
             eta=max(float(eta), 1e-6),
             forget_base=max(float(decay_lambda), 0.0),
             detach_state=False,
@@ -271,6 +273,7 @@ class DSRA_Chunk_Layer(nn.Module):
             enabled=True,
             dtype=torch.float32,
             query_pooling=self.core.cfg.retrieval_query_pooling,
+            page_score_mode=self.core.cfg.page_score_mode,
         )
         self.last_V_orth = torch.empty(0)
         self.last_external_memory_diagnostic: dict[str, object] = {

@@ -42,6 +42,12 @@ class MHDSRA2Config:
     usage_prior: float = 0.25
     retrieval_tau: float = 8.0
     retrieval_query_pooling: str = "mean"
+    retrieval_max_tokens: int = 128
+    retrieval_attention_topk: Optional[int] = None
+    retrieval_neighbor_span: int = 0
+    retrieval_neighbor_direction: str = "right"
+    retrieval_neighbor_seed_multiplier: int = 1
+    retrieval_neighbor_budget_mode: str = "unbounded"
     retrieval_quality_gate_bias: float = 0.0
     retrieval_quality_gate_adapter: bool = False
     age_write_bias: float = 0.02
@@ -59,6 +65,10 @@ class MHDSRA2Config:
     # RoPE position encoding for slot read
     slot_pe: str = "none"  # "none" or "rope"
     write_protection: int = 0  # 写入保护：写入后 N 步内不允许覆盖
+    # 写入驱动模式：overwrite_aware(默认, 覆盖感知) | novelty_only(纯 Novelty, 消融用)
+    write_drive_mode: str = "overwrite_aware"
+    # 页面评分模式：two_level(默认, max(page_mean, page_token)) | page_mean(纯均值, 消融用)
+    page_score_mode: str = "two_level"
 
     def __post_init__(self) -> None:
         if self.dim % self.heads != 0:
@@ -71,8 +81,33 @@ class MHDSRA2Config:
             raise ValueError("context_film_hidden must be positive or None")
         if self.retrieval_query_pooling not in {"mean", "max_token"}:
             raise ValueError("retrieval_query_pooling must be 'mean' or 'max_token'")
+        if int(self.retrieval_max_tokens) < 1:
+            raise ValueError("retrieval_max_tokens must be positive")
+        self.retrieval_max_tokens = int(self.retrieval_max_tokens)
+        if self.retrieval_attention_topk is not None:
+            if int(self.retrieval_attention_topk) < 1:
+                raise ValueError("retrieval_attention_topk must be positive or None")
+            self.retrieval_attention_topk = int(self.retrieval_attention_topk)
+        if int(self.retrieval_neighbor_span) < 0:
+            raise ValueError("retrieval_neighbor_span must be non-negative")
+        self.retrieval_neighbor_span = int(self.retrieval_neighbor_span)
+        if self.retrieval_neighbor_direction not in {"right", "left", "both"}:
+            raise ValueError("retrieval_neighbor_direction must be 'right', 'left', or 'both'")
+        if int(self.retrieval_neighbor_seed_multiplier) < 1:
+            raise ValueError("retrieval_neighbor_seed_multiplier must be positive")
+        self.retrieval_neighbor_seed_multiplier = int(
+            self.retrieval_neighbor_seed_multiplier
+        )
+        if self.retrieval_neighbor_budget_mode not in {"unbounded", "pair_aware"}:
+            raise ValueError(
+                "retrieval_neighbor_budget_mode must be 'unbounded' or 'pair_aware'"
+            )
         if not isinstance(self.retrieval_quality_gate_adapter, bool):
             raise ValueError("retrieval_quality_gate_adapter must be a bool")
+        if self.write_drive_mode not in {"overwrite_aware", "novelty_only"}:
+            raise ValueError("write_drive_mode must be 'overwrite_aware' or 'novelty_only'")
+        if self.page_score_mode not in {"two_level", "page_mean"}:
+            raise ValueError("page_score_mode must be 'two_level' or 'page_mean'")
 
 
 @dataclass
@@ -432,6 +467,50 @@ class MultiHeadDSRA2(nn.Module):
             new_v = new_v.detach()
         return out, new_k.contiguous(), new_v.contiguous()
 
+    def _apply_retrieval_attention_topk(
+        self,
+        scaled_logits: torch.Tensor,
+        valid_view: torch.Tensor,
+    ) -> torch.Tensor:
+        """Mask retrieval attention logits to the strongest valid candidates.
+
+        中文说明:
+        - 调用方 / Called by: `_retrieval_attention`。
+        - 调用对象 / Calls: `torch.topk`, `Tensor.scatter_`, `masked_fill`。
+        - 作用 / Purpose: 在 retrieval 已经返回较大候选池后，只让每个 query
+          的最高分候选参与 softmax，避免 128 个候选共同归一化导致关键 token
+          权重被摊薄；默认 `retrieval_attention_topk=None` 时完全保留旧行为。
+        - 参数 / Parameters: `scaled_logits` 是温度缩放和 padding mask 之后的
+          `[B,H,T,R]` 分数；`valid_view` 是可广播到同形状的 bool 有效候选 mask。
+        - 返回 / Returns: 形状不变的 logits；未入选 top-k 或无效候选被置为当前
+          dtype 可表示最小值，后续 softmax 后再乘 mask 并重归一化。
+        - 错误处理 / Error handling: 非正 top-k 已在 `MHDSRA2Config.__post_init__`
+          拒绝；空候选行保持全 mask，由后续归一化路径输出零向量。
+        - 副作用 / Side effects: 无，只返回新 logits。
+        - 关键词 / Keywords:
+          retrieval_attention_topk|softmax_dilution|topk_mask|paged_recall|mhdsra2|注意力稀释
+
+        English documentation:
+        Function name:
+            _apply_retrieval_attention_topk
+        Purpose:
+            Keep retrieval recall broad while limiting softmax normalization to
+            the strongest valid candidates for each query.
+        """
+        topk = self.cfg.retrieval_attention_topk
+        if topk is None or int(topk) >= scaled_logits.shape[-1]:
+            return scaled_logits
+
+        selected_count = min(int(topk), scaled_logits.shape[-1])
+        _, top_idx = torch.topk(scaled_logits, selected_count, dim=-1)
+        topk_mask = torch.zeros_like(scaled_logits, dtype=torch.bool)
+        topk_mask.scatter_(-1, top_idx, True)
+        keep_mask = topk_mask & valid_view.to(device=scaled_logits.device, dtype=torch.bool)
+        return scaled_logits.masked_fill(
+            ~keep_mask,
+            torch.finfo(scaled_logits.dtype).min,
+        )
+
     def _retrieval_attention(
         self,
         q: torch.Tensor,
@@ -439,20 +518,29 @@ class MultiHeadDSRA2(nn.Module):
         retrieved_v: Optional[torch.Tensor],
         retrieved_mask: Optional[torch.Tensor] = None,
         return_weights: bool = False,
-    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
+        return_scores: bool = False,
+    ) -> (
+        torch.Tensor
+        | tuple[torch.Tensor, torch.Tensor | None]
+        | tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]
+    ):
         """Read exact external K/V memory with sharp score-normalized attention.
 
         中文说明:
         - 调用方 / Called by: `forward`
         - 调用对象 / Calls: `torch.einsum`, `F.softmax`
         - 作用 / Purpose: 对外部 paged recall 返回的 K/V 执行 retrieval 分支读出；
-          使用带温度的 softmax 让最高相似 token 胜出，避免多个相近 distractor 用数量压过 exact match
+          使用带温度的 softmax 让最高相似 token 胜出；当显式设置
+          `retrieval_attention_topk` 时，softmax 只在最高分有效候选上归一化，
+          避免召回候选过多时把 exact match 的权重摊薄
         - 变量 / Variables:
           `q` 为当前 query heads, `retrieved_k/retrieved_v` 为外部记忆召回的键和值,
           `retrieved_mask` 标记 batch padding 后仍有效的召回 token,
-          `logits` 为缩放点积分数, `tau` 为 retrieval softmax 温度, `weights` 为 token 权重
+          `logits` 为缩放点积分数, `tau` 为 retrieval softmax 温度, `weights` 为 token 权重；
+          `return_scores` 仅在训练/诊断显式请求时返回 mask 后 raw score，默认不改变旧 API。
         - 接入 / Integration: 调用 `forward(..., retrieved_k=..., retrieved_v=...)` 时自动启用；
-          可通过 `MHDSRA2Config.retrieval_tau` 调整 retrieval 分支锐度
+          可通过 `MHDSRA2Config.retrieval_tau` 调整 retrieval 分支锐度，
+          通过 `MHDSRA2Config.retrieval_attention_topk` 显式开启 softmax 候选裁剪
         - 错误处理 / Error handling: 关闭 retrieval 或缺少 K/V 时返回零张量；非法 K/V 维度抛出 `ValueError`
         - 关键词 / Keywords:
           retrieval_attention|paged_recall|softmax|retrieval_tau|exact_match|distractor|external_memory|mhdsra2|recall|检索注意力
@@ -460,6 +548,8 @@ class MultiHeadDSRA2(nn.Module):
         cfg = self.cfg
         if (not cfg.use_retrieval) or retrieved_k is None or retrieved_v is None:
             output = torch.zeros_like(q)
+            if return_scores:
+                return output, None, None
             return (output, None) if return_weights else output
         scale = self.d_head**-0.5
         tau = torch.tensor(float(cfg.retrieval_tau), device=q.device, dtype=q.dtype)
@@ -467,15 +557,18 @@ class MultiHeadDSRA2(nn.Module):
             logits = torch.einsum("bhtd,bhrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
             valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask).to(device=q.device)
             valid_view = valid.view(valid.shape[0], 1, 1, valid.shape[1])
-            scaled_logits = (tau * logits).masked_fill(
+            masked_logits = (tau * logits).masked_fill(
                 ~valid_view,
                 torch.finfo(logits.dtype).min,
             )
-            weights = F.softmax(scaled_logits, dim=-1)
+            attention_logits = self._apply_retrieval_attention_topk(masked_logits, valid_view)
+            weights = F.softmax(attention_logits, dim=-1)
             weights = weights * valid_view.to(dtype=q.dtype)
             denom = weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
             weights = weights / denom
             output = torch.einsum("bhtr,bhrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            if return_scores:
+                return output, weights, masked_logits
             return (output, weights) if return_weights else output
         if retrieved_k.dim() == 5:
             logits = torch.einsum("bhtd,bhtrd->bhtr", q, retrieved_k.to(dtype=q.dtype)) * scale
@@ -484,15 +577,18 @@ class MultiHeadDSRA2(nn.Module):
                 valid_view = valid.view(valid.shape[0], 1, 1, valid.shape[1])
             else:
                 valid_view = valid.unsqueeze(1)
-            scaled_logits = (tau * logits).masked_fill(
+            masked_logits = (tau * logits).masked_fill(
                 ~valid_view,
                 torch.finfo(logits.dtype).min,
             )
-            weights = F.softmax(scaled_logits, dim=-1)
+            attention_logits = self._apply_retrieval_attention_topk(masked_logits, valid_view)
+            weights = F.softmax(attention_logits, dim=-1)
             weights = weights * valid_view.to(dtype=q.dtype)
             denom = weights.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
             weights = weights / denom
             output = torch.einsum("bhtr,bhtrd->bhtd", weights, retrieved_v.to(dtype=q.dtype))
+            if return_scores:
+                return output, weights, masked_logits
             return (output, weights) if return_weights else output
         raise ValueError("retrieved_k/v must be [B,H,R,d] or [B,H,T,R,d]")
 
@@ -539,16 +635,24 @@ class MultiHeadDSRA2(nn.Module):
         write_logits = write_logits + cfg.age_write_bias * torch.log1p(state.age).to(
             dtype=k.dtype
         ).unsqueeze(2)
-        write_logits = write_logits + tau * read_hint
+        # 覆盖感知的读回强化项: novelty_only 消融模式下跳过(WriteDrive 仅由 Novelty 驱动)
+        if cfg.write_drive_mode != "novelty_only":
+            write_logits = write_logits + tau * read_hint
 
         w_top = min(cfg.write_topk, cfg.slots)
         top_logits, top_idx = torch.topk(write_logits, w_top, dim=-1)
         route = F.softmax(top_logits, dim=-1)
         base_token_gate = torch.sigmoid(self.token_write_gate(k)).squeeze(-1)
-        selected_sim = sim.gather(3, top_idx).clamp(0.0, 1.0)
-        selected_read_hint = read_hint.expand(-1, -1, seq_len, -1).gather(3, top_idx)
-        overwrite_gate = torch.maximum(selected_sim, selected_read_hint)
-        write_drive = torch.maximum(novelty.unsqueeze(-1), overwrite_gate)
+        if cfg.write_drive_mode == "novelty_only":
+            # 纯 Novelty 门控(消融): 覆盖感知关闭, write_drive 不含 overwrite_gate
+            write_drive = novelty.unsqueeze(-1)
+            # overwrite_gate 置零保持诊断字段语义一致(覆盖感知成分被关闭)
+            overwrite_gate = torch.zeros_like(novelty).unsqueeze(-1)
+        else:
+            selected_sim = sim.gather(3, top_idx).clamp(0.0, 1.0)
+            selected_read_hint = read_hint.expand(-1, -1, seq_len, -1).gather(3, top_idx)
+            overwrite_gate = torch.maximum(selected_sim, selected_read_hint)
+            write_drive = torch.maximum(novelty.unsqueeze(-1), overwrite_gate)
         token_gate = base_token_gate
         weights = route * token_gate.unsqueeze(-1) * write_drive
 
@@ -579,7 +683,11 @@ class MultiHeadDSRA2(nn.Module):
             .unsqueeze(-1)
         )
         read_mass_boost = read_mass.to(dtype=k.dtype).unsqueeze(-1).clamp(0.0, 1.0)
-        reinforced_mass = mass + read_mass_boost * has_write
+        if cfg.write_drive_mode == "novelty_only":
+            # 纯 Novelty 消融: 写入质量不做读回强化(覆盖感知反馈关闭)
+            reinforced_mass = mass
+        else:
+            reinforced_mass = mass + read_mass_boost * has_write
         write_gate = (1.0 - torch.exp(-cfg.eta * reinforced_mass)).to(dtype=k.dtype).clamp(
             0.0, cfg.max_update
         ) * has_write
@@ -796,7 +904,8 @@ class MultiHeadDSRA2(nn.Module):
         if valid_tokens.dim() != 2:
             return None
         valid_float = valid_tokens.to(dtype=torch.float32)
-        available = (valid_float.sum(dim=1) > 0).to(dtype=torch.float32)
+        valid_counts = valid_float.sum(dim=1)
+        available = (valid_counts > 0).to(dtype=torch.float32)
         safe_scores = token_scores.to(dtype=torch.float32).masked_fill(
             ~valid_tokens,
             torch.finfo(torch.float32).min,
@@ -815,8 +924,14 @@ class MultiHeadDSRA2(nn.Module):
             second_score = top_values[:, 1]
         else:
             second_score = torch.zeros_like(max_score)
-        margin = torch.where(available > 0, max_score - second_score, torch.zeros_like(max_score))
-        count_feature = torch.log1p(valid_float.sum(dim=1))
+        has_second = valid_counts > 1
+        margin = torch.where(
+            has_second,
+            (max_score - second_score).clamp(min=0.0, max=50.0),
+            torch.zeros_like(max_score),
+        )
+        max_score = torch.where(available > 0, max_score.clamp(min=-50.0, max=50.0), max_score)
+        count_feature = torch.log1p(valid_counts)
         return torch.stack((available, max_score, margin, count_feature), dim=1).to(
             device=q.device,
             dtype=q.dtype,
@@ -834,6 +949,7 @@ class MultiHeadDSRA2(nn.Module):
         retrieved_v: Optional[torch.Tensor] = None,
         retrieved_mask: Optional[torch.Tensor] = None,
         return_aux: bool = False,
+        return_projection_aux: bool = False,
         stage_id: int | None = None,
         context_id: int | None = None,
     ):
@@ -890,13 +1006,15 @@ class MultiHeadDSRA2(nn.Module):
         else:
             slot_out, aux_read = self._slot_read(q, state)
         local_out, new_local_k, new_local_v = self._local_attention(q, k, v, state)
+        retrieval_scores = None
         if return_aux:
-            retrieval_out, retrieval_weights = self._retrieval_attention(
+            retrieval_out, retrieval_weights, retrieval_scores = self._retrieval_attention(
                 q,
                 retrieved_k,
                 retrieved_v,
                 retrieved_mask,
                 return_weights=True,
+                return_scores=True,
             )
         else:
             retrieval_out = self._retrieval_attention(q, retrieved_k, retrieved_v, retrieved_mask)
@@ -957,6 +1075,35 @@ class MultiHeadDSRA2(nn.Module):
         next_state = self._slot_write(k, v, state, aux_read["read_mass"], stage_id=stage_id)
         next_state = replace(next_state, local_k=new_local_k, local_v=new_local_v)
 
+        retrieval_score_by_sample = None
+        retrieval_score_by_sample_for_loss = None
+        retrieval_score_by_token = None
+        retrieval_score_by_token_for_loss = None
+        if retrieval_scores is not None and retrieved_k is not None:
+            score_valid = self._retrieval_valid_mask(retrieved_k, retrieved_mask).to(
+                device=q.device,
+            )
+            if score_valid.dim() == 2:
+                score_valid_view = score_valid.view(score_valid.shape[0], 1, 1, score_valid.shape[1])
+            elif score_valid.dim() == 3:
+                score_valid_view = score_valid.unsqueeze(1)
+            else:
+                score_valid_view = None
+            if score_valid_view is not None:
+                safe_scores = torch.where(
+                    score_valid_view,
+                    retrieval_scores,
+                    torch.zeros_like(retrieval_scores),
+                )
+                retrieval_score_by_sample = safe_scores.detach().mean(dim=(1, 2)).to(
+                    dtype=torch.float32,
+                )
+                retrieval_score_by_sample_for_loss = safe_scores.mean(dim=(1, 2))
+                retrieval_score_by_token = safe_scores.detach().mean(dim=1).to(
+                    dtype=torch.float32,
+                )
+                retrieval_score_by_token_for_loss = safe_scores.mean(dim=1)
+
         if return_aux:
             aux = {
                 "gates_mean": gates.detach().mean(dim=(0, 2)),
@@ -1003,6 +1150,10 @@ class MultiHeadDSRA2(nn.Module):
                 "retrieval_token_weight_by_token_for_loss": retrieval_weights.mean(dim=1)
                 if retrieval_weights is not None
                 else None,
+                "retrieval_token_score_by_sample": retrieval_score_by_sample,
+                "retrieval_token_score_by_sample_for_loss": retrieval_score_by_sample_for_loss,
+                "retrieval_token_score_by_token": retrieval_score_by_token,
+                "retrieval_token_score_by_token_for_loss": retrieval_score_by_token_for_loss,
                 "gate_retrieval_by_sample": gates[..., 2]
                 .detach()
                 .mean(dim=(1, 2))
@@ -1021,6 +1172,32 @@ class MultiHeadDSRA2(nn.Module):
                 "slot_confidence": next_state.confidence.detach(),
                 "write_stats": getattr(self, "last_write_stats", None),
             }
+            if return_projection_aux:
+                retrieval_key_projection_by_sample = None
+                retrieval_key_projection_by_sample_for_loss = None
+                retrieval_key_projection_by_token = None
+                retrieval_key_projection_by_token_for_loss = None
+                if retrieved_k is not None:
+                    if retrieved_k.dim() == 4:
+                        retrieval_key_projection_by_sample = retrieved_k.detach()
+                        retrieval_key_projection_by_sample_for_loss = retrieved_k.to(dtype=q.dtype)
+                    elif retrieved_k.dim() == 5:
+                        retrieval_key_projection_by_token = retrieved_k.detach()
+                        retrieval_key_projection_by_token_for_loss = retrieved_k.to(dtype=q.dtype)
+                aux.update(
+                    {
+                        "retrieval_query_projection_by_token": q.detach(),
+                        "retrieval_query_projection_by_token_for_loss": q,
+                        "retrieval_key_projection_by_sample": retrieval_key_projection_by_sample,
+                        "retrieval_key_projection_by_sample_for_loss": (
+                            retrieval_key_projection_by_sample_for_loss
+                        ),
+                        "retrieval_key_projection_by_token": retrieval_key_projection_by_token,
+                        "retrieval_key_projection_by_token_for_loss": (
+                            retrieval_key_projection_by_token_for_loss
+                        ),
+                    }
+                )
             return y, next_state, aux
         return y, next_state
 
@@ -1032,6 +1209,7 @@ class MultiHeadDSRA2(nn.Module):
         retrieved_v: Optional[torch.Tensor] = None,
         retrieved_mask: Optional[torch.Tensor] = None,
         return_aux: bool = False,
+        return_projection_aux: bool = False,
         stage_id: int | None = None,
         context_id: int | None = None,
     ):
@@ -1047,6 +1225,7 @@ class MultiHeadDSRA2(nn.Module):
             retrieved_v=retrieved_v,
             retrieved_mask=retrieved_mask,
             return_aux=return_aux,
+            return_projection_aux=return_projection_aux,
             stage_id=stage_id,
             context_id=context_id,
         )

@@ -52,6 +52,8 @@ def _record_retrieval_calls(model: MultiLayerMHDSRA2Model) -> list[dict[str, obj
             retrieved_k,
             retrieved_v,
             retrieved_mask=None,
+            return_weights=False,
+            return_scores=False,
             *,
             _idx=layer_idx,
             _original=original,
@@ -72,7 +74,14 @@ def _record_retrieval_calls(model: MultiLayerMHDSRA2Model) -> list[dict[str, obj
                     else int(retrieved_mask.sum().item()),
                 }
             )
-            return _original(q, retrieved_k, retrieved_v, retrieved_mask)
+            return _original(
+                q,
+                retrieved_k,
+                retrieved_v,
+                retrieved_mask,
+                return_weights=return_weights,
+                return_scores=return_scores,
+            )
 
         layer._retrieval_attention = wrapped
     return records
@@ -182,7 +191,16 @@ class _CapturingRepository(PagedMemoryRepository):
         super().__init__(enabled=True, page_size=4, dtype=torch.float32, max_tokens=2)
         self.max_position_calls: list[torch.Tensor | int | None] = []
 
-    def retrieve(self, query, device, max_position=None, *, return_mask=False, profile=False):
+    def retrieve(
+        self,
+        query,
+        device,
+        max_position=None,
+        *,
+        return_mask=False,
+        return_metadata=False,
+        profile=False,
+    ):
         if isinstance(max_position, torch.Tensor):
             self.max_position_calls.append(max_position.detach().cpu().clone())
         else:
@@ -192,6 +210,7 @@ class _CapturingRepository(PagedMemoryRepository):
             device,
             max_position=max_position,
             return_mask=return_mask,
+            return_metadata=return_metadata,
             profile=profile,
         )
 

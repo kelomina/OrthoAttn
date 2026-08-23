@@ -142,7 +142,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("auto", "cpu", "cuda"),
     )
     parser.add_argument(
-        "--reports-dir", type=Path, default=PROJECT_ROOT / "reports",
+        "--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports",
     )
     return parser
 

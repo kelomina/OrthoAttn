@@ -359,7 +359,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--target-stage-count", type=int, default=3)
     parser.add_argument("--device", type=str, default=DEFAULT_ARITHMETIC_EMERGENCE_DEVICE, choices=("auto", "cpu", "cuda"))
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     parser.add_argument(
         "--checkpoint-path",
         type=Path,

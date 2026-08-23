@@ -24,7 +24,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 261.6803999990225,
+      "elapsed_ms": 72.33439999981783,
       "retrieved_counts": [
         8
       ],
@@ -47,7 +47,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 14.789199994993396,
+      "elapsed_ms": 2.7464000158943236,
       "retrieved_counts": [
         8
       ],
@@ -70,7 +70,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 15.234600003168453,
+      "elapsed_ms": 2.3087000008672476,
       "retrieved_counts": [
         8
       ],
@@ -93,7 +93,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 25.25669999886304,
+      "elapsed_ms": 7.520699989981949,
       "retrieved_counts": [
         8
       ],
@@ -116,7 +116,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 42.04689999460243,
+      "elapsed_ms": 5.8129999961238354,
       "retrieved_counts": [
         8
       ],
@@ -139,7 +139,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 27.01389999856474,
+      "elapsed_ms": 5.931899999268353,
       "retrieved_counts": [
         8
       ],
@@ -162,7 +162,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 37.45340000023134,
+      "elapsed_ms": 8.525599987478927,
       "retrieved_counts": [
         8,
         8,
@@ -191,7 +191,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 39.879399999335874,
+      "elapsed_ms": 9.421900002053007,
       "retrieved_counts": [
         8,
         8,
@@ -220,7 +220,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 21.488800004590303,
+      "elapsed_ms": 8.31920001655817,
       "retrieved_counts": [
         8,
         8,
@@ -249,7 +249,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 62.60230000043521,
+      "elapsed_ms": 21.78280000225641,
       "retrieved_counts": [
         8,
         8,
@@ -278,7 +278,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 74.86060000519501,
+      "elapsed_ms": 23.460700002033263,
       "retrieved_counts": [
         8,
         8,
@@ -307,7 +307,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 92.53010000247741,
+      "elapsed_ms": 18.387399992207065,
       "retrieved_counts": [
         8,
         8,
@@ -336,7 +336,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 84.13909999944735,
+      "elapsed_ms": 16.403999994508922,
       "retrieved_counts": [
         8,
         8,
@@ -373,7 +373,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 87.03290000266861,
+      "elapsed_ms": 15.06510001490824,
       "retrieved_counts": [
         8,
         8,
@@ -410,7 +410,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 83.40070000122068,
+      "elapsed_ms": 13.976099988212809,
       "retrieved_counts": [
         8,
         8,
@@ -447,7 +447,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 159.7704999949201,
+      "elapsed_ms": 38.0606000253465,
       "retrieved_counts": [
         8,
         8,
@@ -484,7 +484,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 127.8768999982276,
+      "elapsed_ms": 35.70340000442229,
       "retrieved_counts": [
         8,
         8,
@@ -521,7 +521,7 @@
       "page_size": 64,
       "top_pages": 4,
       "max_tokens": 8,
-      "elapsed_ms": 85.80900000379188,
+      "elapsed_ms": 41.51149999233894,
       "retrieved_counts": [
         8,
         8,

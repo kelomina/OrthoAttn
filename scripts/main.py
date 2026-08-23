@@ -27,7 +27,8 @@ class TeeStream:
 
 
 def get_reports_dir():
-    return ensure_reports_dir(Path(__file__).resolve().parents[1])
+    # 统一输出到 docs/reports/（docs 为文档与报告总目录）
+    return ensure_reports_dir(Path(__file__).resolve().parents[1] / "docs")
 
 
 def write_run_report(reports_dir, executed_tests):
@@ -42,19 +43,19 @@ def write_run_report(reports_dir, executed_tests):
         [
             "",
             "## Generated Files",
-            "- `reports/all_output.txt`",
-            "- `reports/needle_capacity_results.md`",
-            "- `reports/needle_capacity_results.json`",
-            "- `reports/mhdsra2_vs_dsra_compare.md`",
-            "- `reports/mhdsra2_vs_dsra_compare.json`",
-            "- `reports/mhdsra2_vs_dsra_next_round_benchmark.md`",
-            "- `reports/mhdsra2_vs_dsra_next_round_benchmark.json`",
-            "- `reports/mhdsra2_layer_emergence_curve.md`",
-            "- `reports/mhdsra2_layer_emergence_curve.json`",
-            "- `reports/mhdsra2_curriculum_strategy_grid.md`",
-            "- `reports/mhdsra2_curriculum_strategy_grid.json`",
-            "- `reports/mhdsra2_carry_diagnostic_grid.md`",
-            "- `reports/mhdsra2_carry_diagnostic_grid.json`",
+            "- `docs/reports/all_output.txt`",
+            "- `docs/reports/needle_capacity_results.md`",
+            "- `docs/reports/needle_capacity_results.json`",
+            "- `docs/reports/mhdsra2_vs_dsra_compare.md`",
+            "- `docs/reports/mhdsra2_vs_dsra_compare.json`",
+            "- `docs/reports/mhdsra2_vs_dsra_next_round_benchmark.md`",
+            "- `docs/reports/mhdsra2_vs_dsra_next_round_benchmark.json`",
+            "- `docs/reports/mhdsra2_layer_emergence_curve.md`",
+            "- `docs/reports/mhdsra2_layer_emergence_curve.json`",
+            "- `docs/reports/mhdsra2_curriculum_strategy_grid.md`",
+            "- `docs/reports/mhdsra2_curriculum_strategy_grid.json`",
+            "- `docs/reports/mhdsra2_carry_diagnostic_grid.md`",
+            "- `docs/reports/mhdsra2_carry_diagnostic_grid.json`",
         ]
     )
     write_markdown(reports_dir / "run_summary.md", lines)
@@ -285,6 +286,39 @@ def run_chat():
     return chat_main()
 
 
+def run_verify_technical_report(extra_args=None):
+    """Run the technical-report experiment data verification suite.
+
+    中文说明:
+    - 调用方 / Called by: `main` dispatch mapping (`python main.py verify-report ...`).
+    - 调用对象 / Calls: `scripts.verify_technical_report.main`.
+    - 作用 / Purpose: 从统一主入口触发技术报告表1~表5的复核实验
+      (audit/probe/throughput/ppl/memory/niah/ablation/aggregate/self-test)。
+    - 变量 / Variables: `extra_args` 为转发给复核脚本的子命令参数列表。
+    - 接入 / Integration: `python main.py verify-report probe` 等。
+    - 错误处理 / Error handling: 复核脚本失败时异常向上传播, 不吞掉错误。
+    - 关键词 / Keywords: verify|technical_report|复核|audit|probe|niah|ppl|调度
+    """
+    print("\n" + "=" * 50)
+    print("Running Technical Report Verification")
+    print("=" * 50)
+    from scripts.verify_technical_report import main as verify_main
+
+    return verify_main(extra_args)
+
+
+def run_mqar_benchmark():
+    """运行 Stanford MQAR (Multi-Query Associative Recall) 标准评测."""
+    print("\n" + "=" * 50)
+    print("Running Stanford MQAR Benchmark")
+    print("=" * 50)
+    import torch
+    from scripts.benchmark_mqar import run_mqar_benchmark_suite
+    run_mqar_benchmark_suite(device_name="cuda:0" if torch.cuda.is_available() else "cpu", epochs=60)
+
+
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="DSRA (Decoupled Sparse Routing Attention) Unified Test Runner",
@@ -292,21 +326,21 @@ def main():
             "Environment variables:\n"
             "  DSRA_FAST_ALL=1\n"
             "    - Effect: when running `python main.py all`, execute a minimal suite for fast CI/regression.\n"
-            "    - Reports: still generates `reports/all_output.txt` and `reports/run_summary.md`.\n"
+            "    - Reports: still generates `docs/reports/all_output.txt` and `docs/reports/run_summary.md`.\n"
             "  DSRA_FAST_COMPARE=1\n"
             "    - Effect: when running `python main.py mhdsra2_compare`, execute a smaller CPU comparison workload.\n"
-            "    - Reports: generates `reports/mhdsra2_vs_dsra_compare.json` and `.md`.\n"
+            "    - Reports: generates `docs/reports/mhdsra2_vs_dsra_compare.json` and `.md`.\n"
             "\n"
             "Machine-readable output (stdout):\n"
             "  When running `python main.py report` (or `python scripts/main.py report`):\n"
             "    DSRA_REPORT_STATUS=ok\n"
-            "    DSRA_REPORT_RUN_SUMMARY=reports/run_summary.md\n"
+            "    DSRA_REPORT_RUN_SUMMARY=docs/reports/run_summary.md\n"
             "    DSRA_REPORT_EXECUTED_SUITES=0\n"
             "\n"
             "  When running `python main.py all` (or `python scripts/main.py all`):\n"
             "    DSRA_ALL_STATUS=ok\n"
-            "    DSRA_ALL_LOG=reports/all_output.txt\n"
-            "    DSRA_ALL_RUN_SUMMARY=reports/run_summary.md\n"
+            "    DSRA_ALL_LOG=docs/reports/all_output.txt\n"
+            "    DSRA_ALL_RUN_SUMMARY=docs/reports/run_summary.md\n"
             "    DSRA_ALL_EXECUTED_SUITES=<N>\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -330,6 +364,8 @@ def main():
         'mhdsra2_curriculum_strategy_grid',
         'mhdsra2_carry_diagnostic_grid',
         'ablation',     # ablation_study.py
+        'verify-report',  # verify_technical_report.py (技术报告数据复核)
+        'mqar',         # benchmark_mqar.py (Stanford MQAR 标准评测)
         'chat',         # interactive chat with pre-trained model
         'report',
         'all'           # Run everything in sequence
@@ -342,7 +378,7 @@ def main():
         help="Specify which test to run, or 'all' to run everything."
     )
 
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
 
     # Mapping choices to functions
     tests_to_run = []
@@ -391,6 +427,8 @@ def main():
                 run_mhdsra2_carry_diagnostic_grid,
             ),
             'ablation': ("ablation", run_ablation),
+            'verify-report': ("verify-report", lambda: run_verify_technical_report(unknown_args)),
+            'mqar': ("mqar", run_mqar_benchmark),
             'chat': ("chat", run_chat),
             'report': ("report", lambda: write_run_report(reports_dir, [])),
         }

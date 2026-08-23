@@ -281,7 +281,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("reports") / "dependency_osv_audit.json",
+        default=Path("docs") / "reports" / "dependency_osv_audit.json",
         help="JSON report path.",
     )
     parser.add_argument(

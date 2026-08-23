@@ -24,6 +24,7 @@ from scripts.tiny_llama_shared import (
     load_wikitext2_splits,
     split_train_validation_text,
     resolve_device,
+    set_reproducible_seed,
 )
 
 
@@ -214,6 +215,7 @@ def main_mhdsra2(config: dict | None = None) -> float:
     if config:
         cfg.update(config)
 
+    set_reproducible_seed(cfg.get("seed"))
     device = resolve_device(cfg["device"])
     tokenizer = CharTokenizer()
     print(f"[MHDSRA2] Device: {device}, Vocab: {tokenizer.vocab_size}")
@@ -233,6 +235,7 @@ def main_mhdsra2(config: dict | None = None) -> float:
         valid_text, tokenizer, cfg["seq_len"], cfg["batch_size"],
     )
     print(f"[MHDSRA2] Data: {len(train_loader.dataset)} sequences, seq_len={cfg['seq_len']}")
+    chunk_size = int(cfg.get("mhdsra2_chunk_size", 128))
 
     # Model
     model = build_mhdsra2_lm(
@@ -240,9 +243,10 @@ def main_mhdsra2(config: dict | None = None) -> float:
         dim=cfg["dim"],
         heads=cfg["heads"],
         num_layers=cfg["num_layers"],
+        chunk_size=chunk_size,
     ).to(device)
     total_params = sum(p.numel() for p in model.parameters())
-    print(f"[MHDSRA2] Model: {total_params:,} parameters")
+    print(f"[MHDSRA2] Model: {total_params:,} parameters, chunk_size={chunk_size}")
 
     # Train
     train_mhdsra2_lm(model, train_loader, cfg, device)

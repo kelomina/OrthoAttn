@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import shutil
 import zipfile
 from pathlib import Path
@@ -31,6 +32,8 @@ LMConfig = {
     "vocab_size": len(LM_VOCAB) + SPECIAL_TOKENS + 1,
     "seq_len": 512,
     "batch_size": 8,
+    "mhdsra2_chunk_size": 128,
+    "seed": 1234,
     "lr": 3e-4,
     "max_steps": 50000,
     "eval_interval": 1000,
@@ -592,6 +595,40 @@ def create_eval_loader(
     """
     dataset = LMDataset(tokenizer, text, seq_len)
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=False)
+
+
+def set_reproducible_seed(seed: int | None) -> None:
+    """Seed Python, NumPy and Torch for tiny LM comparisons.
+
+    中文说明:
+    - 调用方 / Called by: `scripts.tiny_llama_baseline.main_standard`,
+      `scripts.tiny_llama_mhdsra2.main_mhdsra2`.
+    - 调用对象 / Calls: `random.seed`, `numpy.random.seed`, `torch.manual_seed`,
+      `torch.cuda.manual_seed_all`.
+    - 作用 / Purpose: 让 tiny LM PPL 对照的模型初始化和 DataLoader shuffle 可复现，
+      避免同一命令多次运行时因为随机起点不同而误读结果。
+    - 参数 / Parameters: `seed=None` 表示保持调用方原有随机状态。
+    - 错误处理 / Error handling: NumPy 导入失败会自然抛错；无 CUDA 时跳过 CUDA seed。
+    - 副作用 / Side effects: 修改当前 Python 进程的随机数状态。
+
+    English documentation:
+    Function name:
+        set_reproducible_seed
+    Purpose:
+        Seed the tiny LM comparison stack before model and DataLoader creation.
+    """
+    if seed is None:
+        return
+    resolved_seed = int(seed)
+    random.seed(resolved_seed)
+    try:
+        import numpy as np
+        np.random.seed(resolved_seed)
+    except Exception:
+        pass
+    torch.manual_seed(resolved_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(resolved_seed)
 
 
 def resolve_device(device_str: str) -> torch.device:

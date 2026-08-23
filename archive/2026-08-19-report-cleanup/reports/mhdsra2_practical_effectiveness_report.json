@@ -1,0 +1,95 @@
+{
+  "title": "MHDSRA2 Practical Effectiveness Report",
+  "date": "2026-06-30",
+  "verdict": "partial_practical_signal_not_full_practical_effectiveness",
+  "plain_language_verdict": "当前不能说 MHDSRA2 已经实战有效；可以说它在 tiny LM 文本建模上出现可复现的质量接近信号，并且通过调大 chunk_size 把一个明显工程瓶颈降了下来。但 raw JSON 原生生成仍不能完整答对，整体效率也没有超过标准注意力基线。",
+  "executed_results": {
+    "tiny_lm_seq1024_300_steps_cli": {
+      "command": "python scripts\\tiny_llama_compare.py --seq-len 1024 --batch-size 1 --max-steps 300 --dim 128 --heads 4 --layers 2 --mhdsra2-chunk-size 1024 --device cuda:0",
+      "standard_validation_ppl": 12.67,
+      "mhdsra2_validation_ppl": 12.61,
+      "ppl_ratio_mhdsra2_over_standard": 0.996,
+      "standard_time_s": 21.0,
+      "mhdsra2_time_s": 52.0,
+      "time_ratio_mhdsra2_over_standard": 2.48,
+      "evidence_level": "project_proxy_smoke",
+      "interpretation": "质量接近且略优，但训练仍慢约 2.5 倍；300 steps 不等于完整 PPL 结论。"
+    },
+    "tiny_lm_seq256_1000_steps_cli": {
+      "command": "python scripts\\tiny_llama_compare.py --seq-len 256 --batch-size 4 --max-steps 1000 --dim 128 --heads 4 --layers 2 --device cuda:0",
+      "standard_validation_ppl": 9.18,
+      "mhdsra2_validation_ppl": 11.62,
+      "ppl_ratio_mhdsra2_over_standard": 1.266,
+      "standard_time_s": 34.0,
+      "mhdsra2_time_s": 384.0,
+      "time_ratio_mhdsra2_over_standard": 11.29,
+      "evidence_level": "project_proxy_smoke",
+      "interpretation": "短上下文/默认 chunk 下，MHDSRA2 质量与效率都不达标。"
+    },
+    "tiny_lm_chunk_ablation_seq1024_100_steps": {
+      "chunk_128": {
+        "command": "python scripts\\tiny_llama_compare.py --only mhdsra2 --seq-len 1024 --batch-size 1 --max-steps 100 --dim 128 --heads 4 --layers 2 --seed 1234 --mhdsra2-chunk-size 128 --device cuda:0",
+        "wall_time_s": 301.8,
+        "validation_ppl": 15.94
+      },
+      "chunk_1024": {
+        "command": "python scripts\\tiny_llama_compare.py --only mhdsra2 --seq-len 1024 --batch-size 1 --max-steps 100 --dim 128 --heads 4 --layers 2 --seed 1234 --mhdsra2-chunk-size 1024 --device cuda:0",
+        "wall_time_s": 36.0,
+        "validation_ppl": 16.02
+      },
+      "speedup_chunk1024_over_128": 8.38,
+      "ppl_delta_chunk1024_minus_128": 0.08,
+      "interpretation": "调大 MHDSRA2 tiny LM chunk_size 可以显著降低训练耗时，短训质量几乎不变。"
+    },
+    "complexity_cuda": {
+      "report": "reports/mhdsra2_practical_complexity_cuda.json",
+      "interpretation": "项目内随机 token 前向复杂度显示 MHDSRA2 显存略低但速度慢于项目内 standard/sliding baselines；该 standard_attention 是项目内分块基线，不等同于 tiny LLaMA 整段标准 Transformer。"
+    }
+  },
+  "historical_reference_results": {
+    "raw_json_generation": {
+      "reports": [
+        "reports/mhdsra2_readout_adapter_mixed_stage1_cuda.md",
+        "reports/mhdsra2_readout_adapter_mixed_extended_cuda.md",
+        "reports/mhdsra2_evidence_retrieval_json_stage1_cuda.md"
+      ],
+      "summary": "不用 extract_then_compose readout 时，JSON generation exact 在已审计多 seed 报告里为 0；这说明 raw byte-by-byte answer generation 仍未实战打通。"
+    },
+    "extract_compose_readout": {
+      "summary": "显式结构化读出器在 JSON 任务上有效，但它是任务特化 adapter，不算模型本体 raw generation 实战有效。"
+    }
+  },
+  "code_changes": [
+    "scripts/tiny_llama_shared.py: 增加 mhdsra2_chunk_size 与 seed 配置，新增 set_reproducible_seed。",
+    "scripts/tiny_llama_baseline.py / scripts/tiny_llama_mhdsra2.py: 训练入口调用固定 seed。",
+    "scripts/tiny_llama_mhdsra2.py: main_mhdsra2 读取 mhdsra2_chunk_size。",
+    "scripts/tiny_llama_compare.py: 增加 --mhdsra2-chunk-size 与 --seed，并移除 Windows GBK 不兼容输出字符。",
+    "tests/test_tiny_llama_ppl_regressions.py: 增加 parser 和 seed helper 回归测试。"
+  ],
+  "tests": [
+    "python -m py_compile scripts\\tiny_llama_compare.py scripts\\tiny_llama_mhdsra2.py scripts\\tiny_llama_baseline.py scripts\\tiny_llama_shared.py tests\\test_tiny_llama_ppl_regressions.py -> passed",
+    "python -m pytest tests\\test_tiny_llama_ppl_regressions.py -q -> 6 passed"
+  ],
+  "not_completed": [
+    "3-seed seq1024 300-step 汇总脚本超过 20 分钟上限并被终止；未生成汇总报告，不作为完成结果。",
+    "未跑 50,000 step tiny LM 正式 PPL。",
+    "未跑外部 LongBench/RULER/MMLU 等 LLM 评估。"
+  ],
+  "continued_validation_2026_06_30": {
+    "gpu_state": "cuda:0 memory.used ~= 7508MB / 8188MB, utilization.gpu=100%; other project processes active",
+    "decision": "Did not run new CUDA multiseed training under saturated GPU because time metrics would be polluted.",
+    "added_runner": "scripts/tiny_lm_practical_multiseed.py",
+    "resume_command": "python scripts\\tiny_lm_practical_multiseed.py --seeds 1234,2025,3036 --seq-len 1024 --batch-size 1 --max-steps 300 --dim 128 --heads 4 --layers 2 --mhdsra2-chunk-size 1024 --device cuda:0 --resume",
+    "runner_outputs": [
+      "reports/mhdsra2_practical_tiny_lm_multiseed.json",
+      "reports/mhdsra2_practical_tiny_lm_multiseed.md"
+    ],
+    "runner_tests": "python -m pytest tests\\test_tiny_llama_ppl_regressions.py -q -> 9 passed",
+    "runner_timeout_smoke": {
+      "command": "python scripts\\tiny_lm_practical_multiseed.py --seeds 42 --seq-len 16 --batch-size 1 --max-steps 1 --dim 16 --heads 4 --layers 1 --mhdsra2-chunk-size 16 --device cpu --report-name mhdsra2_practical_tiny_lm_runner_timeout_smoke --seed-timeout-sec 1",
+      "result": "completed runner process; wrote timeout row reports",
+      "json": "reports/mhdsra2_practical_tiny_lm_runner_timeout_smoke.json",
+      "markdown": "reports/mhdsra2_practical_tiny_lm_runner_timeout_smoke.md"
+    }
+  }
+}

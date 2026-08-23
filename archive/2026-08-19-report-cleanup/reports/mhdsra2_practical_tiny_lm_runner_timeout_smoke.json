@@ -1,0 +1,72 @@
+{
+  "name": "mhdsra2_practical_tiny_lm_runner_timeout_smoke",
+  "config": {
+    "seeds": [
+      42
+    ],
+    "seq_len": 16,
+    "batch_size": 1,
+    "max_steps": 1,
+    "dim": 16,
+    "heads": 4,
+    "layers": 1,
+    "mhdsra2_chunk_size": 16,
+    "device": "cpu",
+    "seed_timeout_sec": 1
+  },
+  "rows": [
+    {
+      "seed": 42,
+      "status": "timeout",
+      "command": [
+        "C:\\Users\\Saika\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "scripts/tiny_llama_compare.py",
+        "--seq-len",
+        "16",
+        "--batch-size",
+        "1",
+        "--max-steps",
+        "1",
+        "--dim",
+        "16",
+        "--heads",
+        "4",
+        "--layers",
+        "1",
+        "--seed",
+        "42",
+        "--mhdsra2-chunk-size",
+        "16",
+        "--device",
+        "cpu"
+      ],
+      "timeout_sec": 1,
+      "stdout_tail": "",
+      "stderr_tail": ""
+    }
+  ],
+  "summary": {
+    "completed_count": 0,
+    "failed_count": 1,
+    "standard_validation_ppl": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "mhdsra2_validation_ppl": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "ppl_ratio_mhdsra2_over_standard": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "time_ratio_mhdsra2_over_standard": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    }
+  }
+}

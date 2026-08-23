@@ -36,6 +36,11 @@ class PagedMemoryRepository:
         max_tokens: int = 128,
         max_pages: Optional[int] = None,
         query_pooling: str = "mean",
+        neighbor_span: int = 0,
+        neighbor_direction: str = "right",
+        neighbor_seed_multiplier: int = 1,
+        neighbor_budget_mode: str = "unbounded",
+        page_score_mode: str = "two_level",
     ) -> None:
         """Create a paged memory repository.
 
@@ -57,10 +62,19 @@ class PagedMemoryRepository:
             dtype=dtype,
             max_pages=max_pages,
             query_pooling=query_pooling,
+            neighbor_span=neighbor_span,
+            neighbor_direction=neighbor_direction,
+            neighbor_seed_multiplier=neighbor_seed_multiplier,
+            neighbor_budget_mode=neighbor_budget_mode,
+            page_score_mode=page_score_mode,
         )
         self.top_pages = int(top_pages)
         self.max_tokens = int(max_tokens)
         self.query_pooling = str(query_pooling)
+        self.neighbor_span = int(neighbor_span)
+        self.neighbor_direction = str(neighbor_direction)
+        self.neighbor_seed_multiplier = int(neighbor_seed_multiplier)
+        self.neighbor_budget_mode = str(neighbor_budget_mode)
 
     def append(self, key: torch.Tensor, value: torch.Tensor) -> None:
         """Append one chunk of head-space K/V into external memory.
@@ -151,6 +165,75 @@ class PagedMemoryRepository:
         if return_metadata:
             return retrieved_k, retrieved_v, metadata
         return retrieved_k, retrieved_v
+
+    def retrieve_positions(
+        self,
+        positions: int | torch.Tensor | list[int] | tuple[int, ...],
+        device: torch.device,
+        max_position: Optional[int | torch.Tensor | list[int] | tuple[int, ...]] = None,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        return_mask: bool = False,
+        return_metadata: bool = False,
+    ):
+        """Retrieve K/V candidates from explicit historical token positions.
+
+        中文说明:
+        - 调用方 / Called by: `MultiLayerMHDSRA2Model.forward_selected_logits`
+        - 调用对象 / Calls: `PagedExactMemory.retrieve_positions`
+        - 作用 / Purpose: 给训练期 evidence supervision 提供显式、默认关闭的 gold evidence
+          候选注入能力；普通检索和默认推理不调用本方法。
+        - 参数 / Parameters:
+          `positions` 是每个样本的历史证据位置；`max_position` 是当前 chunk 起点或逐样本 cutoff。
+        - 返回 / Returns: K/V、有效 mask 和可选 metadata；禁用或空记忆时返回空召回。
+        - 错误处理 / Error handling: 禁用 repository 不抛错；底层 shape 校验错误直接向上抛出。
+        - 副作用 / Side effects: 只读底层分页记忆，不追加、不重排、不失效页面。
+        - 关键词 / Keywords:
+          evidence|position_lookup|retrieval|repository|mhdsra2|train_only|证据
+
+        English documentation:
+        Function name:
+            retrieve_positions
+        Purpose:
+            Expose exact position lookup through the repository boundary for
+            opt-in train-only evidence candidate injection.
+        """
+        if not self.enabled:
+            empty_positions = torch.empty(0, device=device, dtype=torch.long)
+            empty_mask = torch.empty(0, device=device, dtype=torch.bool)
+            metadata = {
+                "positions": empty_positions,
+                "mask": empty_mask,
+                "retrieved_token_counts": torch.zeros(1, device=device, dtype=torch.long),
+                "max_position": max_position,
+            }
+            if return_metadata:
+                if return_mask:
+                    return None, None, empty_positions, empty_mask, metadata
+                return None, None, empty_positions, metadata
+            if return_mask:
+                return None, None, empty_positions, empty_mask
+            return None, None, empty_positions
+        result = self.memory.retrieve_positions(
+            positions,
+            device=device,
+            max_position=max_position,
+            dtype=dtype,
+            return_mask=True,
+            return_metadata=return_metadata,
+        )
+        if return_metadata:
+            retrieved_k, retrieved_v, found_positions, found_mask, metadata = result
+        else:
+            retrieved_k, retrieved_v, found_positions, found_mask = result
+            metadata = None
+        if return_mask:
+            if return_metadata:
+                return retrieved_k, retrieved_v, found_positions, found_mask, metadata
+            return retrieved_k, retrieved_v, found_positions, found_mask
+        if return_metadata:
+            return retrieved_k, retrieved_v, found_positions, metadata
+        return retrieved_k, retrieved_v, found_positions
 
     def reset(self) -> None:
         """Clear all paged memory records.

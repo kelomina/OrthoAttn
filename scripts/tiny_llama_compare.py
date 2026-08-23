@@ -54,11 +54,11 @@ def run_comparison(config: dict | None = None) -> dict[str, float]:
     print(f"  Training Time Std:      {std_time:.0f}s")
     print(f"  Training Time MHDSRA2:  {mh_time:.0f}s")
     if ratio <= 1.2:
-        print("  ✅ MHDSRA2 achieves comparable perplexity.")
+        print("  [OK] MHDSRA2 achieves comparable perplexity.")
     elif ratio <= 1.5:
-        print("  🟡 MHDSRA2 needs optimization (RoPE, param tuning).")
+        print("  [WARN] MHDSRA2 needs optimization (RoPE, param tuning).")
     else:
-        print("  🔴 MHDSRA2 significantly underperforms — investigate bottlenecks.")
+        print("  [FAIL] MHDSRA2 significantly underperforms; investigate bottlenecks.")
     print()
 
     return results
@@ -72,6 +72,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dim", type=int, default=256, help="Model dimension")
     parser.add_argument("--heads", type=int, default=4, help="Attention heads")
     parser.add_argument("--layers", type=int, default=6, help="Number of layers")
+    parser.add_argument("--seed", type=int, default=LMConfig["seed"], help="Random seed")
+    parser.add_argument(
+        "--mhdsra2-chunk-size",
+        type=int,
+        default=LMConfig["mhdsra2_chunk_size"],
+        help="MHDSRA2 streaming chunk size",
+    )
     parser.add_argument("--device", type=str, default="auto", help="Device")
     parser.add_argument("--only", type=str, default=None,
                         choices=["standard", "mhdsra2"],
@@ -88,6 +95,8 @@ def main():
         "dim": args.dim,
         "heads": args.heads,
         "num_layers": args.layers,
+        "seed": args.seed,
+        "mhdsra2_chunk_size": args.mhdsra2_chunk_size,
         "device": args.device,
     }
 

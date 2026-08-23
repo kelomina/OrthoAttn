@@ -1,0 +1,484 @@
+{
+  "name": "mhdsra2_slot_readout_smoke_cpu",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "baseline",
+      "slot_readout_bias",
+      "evidence_slot_readout"
+    ],
+    "tasks": [
+      "json"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_slot_readout_smoke_cpu.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "slot_readout_bias",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_slot_readout",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.0
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.0
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.03076923076923077,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+        "validation_slot_decoder_full_answer_accuracy": null,
+        "validation_slot_decoder_museum_accuracy": null,
+        "validation_slot_decoder_artifact_accuracy": null,
+        "validation_slot_decoder_artist_accuracy": null,
+        "validation_slot_decoder_dynasty_accuracy": null,
+        "test_slot_decoder_full_answer_accuracy": null,
+        "test_slot_decoder_museum_accuracy": null,
+        "test_slot_decoder_artifact_accuracy": null,
+        "test_slot_decoder_artist_accuracy": null,
+        "test_slot_decoder_dynasty_accuracy": null,
+        "validation_evidence_window_accuracy": null,
+        "validation_evidence_window_mean_distance": null,
+        "test_evidence_window_accuracy": null,
+        "test_evidence_window_mean_distance": null
+      },
+      "elapsed_sec": 48.46042739999393
+    },
+    {
+      "group": "slot_readout_bias",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.06153846153846154
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.008333333333333333
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.038461538461538464,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+        "validation_slot_decoder_full_answer_accuracy": 0.0,
+        "validation_slot_decoder_museum_accuracy": 0.0,
+        "validation_slot_decoder_artifact_accuracy": 0.0,
+        "validation_slot_decoder_artist_accuracy": 1.0,
+        "validation_slot_decoder_dynasty_accuracy": 0.0,
+        "test_slot_decoder_full_answer_accuracy": 0.0,
+        "test_slot_decoder_museum_accuracy": 0.0,
+        "test_slot_decoder_artifact_accuracy": 0.0,
+        "test_slot_decoder_artist_accuracy": 0.0,
+        "test_slot_decoder_dynasty_accuracy": 0.0,
+        "validation_evidence_window_accuracy": null,
+        "validation_evidence_window_mean_distance": null,
+        "test_evidence_window_accuracy": null,
+        "test_evidence_window_mean_distance": null
+      },
+      "elapsed_sec": 39.21259909999935
+    },
+    {
+      "group": "evidence_slot_readout",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 3,
+        "dim": 32,
+        "slots": 16,
+        "read_topk": 4,
+        "chunk_size": 64,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.08461538461538462
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.008333333333333333
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.046153846153846156,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+        "validation_slot_decoder_full_answer_accuracy": 0.0,
+        "validation_slot_decoder_museum_accuracy": 0.0,
+        "validation_slot_decoder_artifact_accuracy": 1.0,
+        "validation_slot_decoder_artist_accuracy": 0.0,
+        "validation_slot_decoder_dynasty_accuracy": 0.0,
+        "test_slot_decoder_full_answer_accuracy": 0.0,
+        "test_slot_decoder_museum_accuracy": 0.0,
+        "test_slot_decoder_artifact_accuracy": 0.0,
+        "test_slot_decoder_artist_accuracy": 0.0,
+        "test_slot_decoder_dynasty_accuracy": 0.0,
+        "validation_evidence_window_accuracy": 0.0,
+        "validation_evidence_window_mean_distance": 6.0,
+        "test_evidence_window_accuracy": 0.0,
+        "test_evidence_window_mean_distance": 5.0
+      },
+      "elapsed_sec": 43.68764360000205
+    }
+  ],
+  "sections": {
+    "json": {
+      "task": "json",
+      "rows": [
+        {
+          "group": "baseline",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 3,
+            "dim": 32,
+            "slots": 16,
+            "read_topk": 4,
+            "chunk_size": 64,
+            "train_dataset_size": 2,
+            "validation_dataset_size": 1,
+            "test_dataset_size": 1,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "slot_decoder_loss_weight": 0.0,
+            "slot_decoder_logit_bias": 0.0,
+            "evidence_hint_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.0
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.0
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.03076923076923077,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+            "validation_slot_decoder_full_answer_accuracy": null,
+            "validation_slot_decoder_museum_accuracy": null,
+            "validation_slot_decoder_artifact_accuracy": null,
+            "validation_slot_decoder_artist_accuracy": null,
+            "validation_slot_decoder_dynasty_accuracy": null,
+            "test_slot_decoder_full_answer_accuracy": null,
+            "test_slot_decoder_museum_accuracy": null,
+            "test_slot_decoder_artifact_accuracy": null,
+            "test_slot_decoder_artist_accuracy": null,
+            "test_slot_decoder_dynasty_accuracy": null,
+            "validation_evidence_window_accuracy": null,
+            "validation_evidence_window_mean_distance": null,
+            "test_evidence_window_accuracy": null,
+            "test_evidence_window_mean_distance": null
+          },
+          "elapsed_sec": 48.46042739999393
+        },
+        {
+          "group": "slot_readout_bias",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 3,
+            "dim": 32,
+            "slots": 16,
+            "read_topk": 4,
+            "chunk_size": 64,
+            "train_dataset_size": 2,
+            "validation_dataset_size": 1,
+            "test_dataset_size": 1,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "slot_decoder_loss_weight": 0.35,
+            "slot_decoder_logit_bias": 4.0,
+            "evidence_hint_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.06153846153846154
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.008333333333333333
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.038461538461538464,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+            "validation_slot_decoder_full_answer_accuracy": 0.0,
+            "validation_slot_decoder_museum_accuracy": 0.0,
+            "validation_slot_decoder_artifact_accuracy": 0.0,
+            "validation_slot_decoder_artist_accuracy": 1.0,
+            "validation_slot_decoder_dynasty_accuracy": 0.0,
+            "test_slot_decoder_full_answer_accuracy": 0.0,
+            "test_slot_decoder_museum_accuracy": 0.0,
+            "test_slot_decoder_artifact_accuracy": 0.0,
+            "test_slot_decoder_artist_accuracy": 0.0,
+            "test_slot_decoder_dynasty_accuracy": 0.0,
+            "validation_evidence_window_accuracy": null,
+            "validation_evidence_window_mean_distance": null,
+            "test_evidence_window_accuracy": null,
+            "test_evidence_window_mean_distance": null
+          },
+          "elapsed_sec": 39.21259909999935
+        },
+        {
+          "group": "evidence_slot_readout",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 3,
+            "dim": 32,
+            "slots": 16,
+            "read_topk": 4,
+            "chunk_size": 64,
+            "train_dataset_size": 2,
+            "validation_dataset_size": 1,
+            "test_dataset_size": 1,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "slot_decoder_loss_weight": 0.35,
+            "slot_decoder_logit_bias": 4.0,
+            "evidence_hint_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.08461538461538462
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.008333333333333333
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.046153846153846156,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.03333333333333333,
+            "validation_slot_decoder_full_answer_accuracy": 0.0,
+            "validation_slot_decoder_museum_accuracy": 0.0,
+            "validation_slot_decoder_artifact_accuracy": 1.0,
+            "validation_slot_decoder_artist_accuracy": 0.0,
+            "validation_slot_decoder_dynasty_accuracy": 0.0,
+            "test_slot_decoder_full_answer_accuracy": 0.0,
+            "test_slot_decoder_museum_accuracy": 0.0,
+            "test_slot_decoder_artifact_accuracy": 0.0,
+            "test_slot_decoder_artist_accuracy": 0.0,
+            "test_slot_decoder_dynasty_accuracy": 0.0,
+            "validation_evidence_window_accuracy": 0.0,
+            "validation_evidence_window_mean_distance": 6.0,
+            "test_evidence_window_accuracy": 0.0,
+            "test_evidence_window_mean_distance": 5.0
+          },
+          "elapsed_sec": 43.68764360000205
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 3,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

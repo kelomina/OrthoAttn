@@ -1,0 +1,4265 @@
+{
+  "config": {
+    "device": "cpu",
+    "seed": 7,
+    "batch_size": [
+      1
+    ],
+    "dim": [
+      64
+    ],
+    "warmup_runs": 1,
+    "repeat_runs": 2,
+    "use_retrieval": false,
+    "retrieval_tokens": 0,
+    "slots": [
+      32,
+      64
+    ],
+    "read_topk": [
+      4,
+      8
+    ],
+    "chunk_sizes": [
+      16,
+      32,
+      64,
+      128
+    ],
+    "seq_lengths": [
+      256,
+      512,
+      1024
+    ]
+  },
+  "results": [
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 132.9337000000237,
+        "elapsed_ms_std": 0.6948031231439336,
+        "elapsed_ms_samples": [
+          133.42499999998836,
+          132.44240000005902
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1925.772020187164,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.0578732043504715,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 65.574550000008,
+        "elapsed_ms_std": 0.2679227593019807,
+        "elapsed_ms_samples": [
+          65.76399999994464,
+          65.38510000007136
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3903.9535917512017,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.04661083221435547,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5394542813301086,
+            0.46054571866989136,
+            0.0
+          ],
+          [
+            0.5243547558784485,
+            0.4756452441215515,
+            0.0
+          ],
+          [
+            0.5161186456680298,
+            0.4838813841342926,
+            0.0
+          ],
+          [
+            0.535226583480835,
+            0.46477341651916504,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.027214826483864,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 63.34729999997535,
+        "elapsed_ms_std": 0.047517575688309874,
+        "elapsed_ms_samples": [
+          63.3808999999701,
+          63.3136999999806
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4041.2140691094905,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.05580572038888931,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 32.39760000002434,
+        "elapsed_ms_std": 0.97354461633957,
+        "elapsed_ms_samples": [
+          31.709200000022975,
+          33.086000000025706
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7901.8198878869935,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.043300338089466095,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5123772025108337,
+            0.48762279748916626,
+            0.0
+          ],
+          [
+            0.5161089897155762,
+            0.48389101028442383,
+            0.0
+          ],
+          [
+            0.5077715516090393,
+            0.4922283887863159,
+            0.0
+          ],
+          [
+            0.5124621391296387,
+            0.48753786087036133,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9553084179052693,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 31.868350000024748,
+        "elapsed_ms_std": 1.6985411991166766,
+        "elapsed_ms_samples": [
+          30.667300000004616,
+          33.06940000004488
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8033.0484634379,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.054085616022348404,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 17.617400000006,
+        "elapsed_ms_std": 0.17465537499444722,
+        "elapsed_ms_samples": [
+          17.740900000035253,
+          17.493899999976747
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14531.08858287334,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.038472410291433334,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4970037341117859,
+            0.5029962658882141,
+            0.0
+          ],
+          [
+            0.4968552589416504,
+            0.5031448006629944,
+            0.0
+          ],
+          [
+            0.4988170862197876,
+            0.5011829137802124,
+            0.0
+          ],
+          [
+            0.4926794469356537,
+            0.5073205232620239,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.8089133470327003,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 16.52025000004187,
+        "elapsed_ms_std": 0.627133004202493,
+        "elapsed_ms_samples": [
+          16.076800000064395,
+          16.963700000019344
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 15496.133533048906,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.040869466960430145,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 10.525550000011208,
+        "elapsed_ms_std": 0.1273499313479966,
+        "elapsed_ms_samples": [
+          10.615600000051018,
+          10.435499999971398
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 24321.769408698587,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03716032952070236,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5042912364006042,
+            0.49570876359939575,
+            0.0
+          ],
+          [
+            0.5203808546066284,
+            0.4796190857887268,
+            0.0
+          ],
+          [
+            0.5057228803634644,
+            0.4942771792411804,
+            0.0
+          ],
+          [
+            0.5076747536659241,
+            0.4923252761363983,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.5695379338869968,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 128.2421500000055,
+        "elapsed_ms_std": 1.0975004350982072,
+        "elapsed_ms_samples": [
+          129.01820000001862,
+          127.46609999999237
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1996.2235505252293,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.06445746123790741,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 63.4538499999735,
+        "elapsed_ms_std": 1.1089555648762746,
+        "elapsed_ms_samples": [
+          64.23799999993207,
+          62.66970000001493
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4034.4281710267687,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.041591137647628784,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5216178894042969,
+            0.4783821105957031,
+            0.0
+          ],
+          [
+            0.5066640973091125,
+            0.49333590269088745,
+            0.0
+          ],
+          [
+            0.516740083694458,
+            0.4832599461078644,
+            0.0
+          ],
+          [
+            0.4954613447189331,
+            0.5045386552810669,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.021030244816651,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 68.55434999999943,
+        "elapsed_ms_std": 1.9060063287396538,
+        "elapsed_ms_samples": [
+          67.20659999996315,
+          69.90210000003572
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3734.2633983110063,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.05695924162864685,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 33.61315000000786,
+        "elapsed_ms_std": 1.2113446269033674,
+        "elapsed_ms_samples": [
+          32.756599999970604,
+          34.46970000004512
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7616.066926186332,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.04050102457404137,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4578002393245697,
+            0.5421997308731079,
+            0.0
+          ],
+          [
+            0.4751059412956238,
+            0.5248940587043762,
+            0.0
+          ],
+          [
+            0.43283623456954956,
+            0.5671637654304504,
+            0.0
+          ],
+          [
+            0.46353214979171753,
+            0.5364678502082825,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.0395098346921783,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 33.30390000002126,
+        "elapsed_ms_std": 2.928129180896441,
+        "elapsed_ms_samples": [
+          35.37440000002334,
+          31.233400000019174
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7686.7874332987,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.049731768667697906,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 19.1351999999938,
+        "elapsed_ms_std": 0.445618693536281,
+        "elapsed_ms_samples": [
+          18.820099999970807,
+          19.450300000016796
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13378.485722651601,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03761332109570503,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5187589526176453,
+            0.4812411069869995,
+            0.0
+          ],
+          [
+            0.5118754506111145,
+            0.4881245791912079,
+            0.0
+          ],
+          [
+            0.5201654434204102,
+            0.47983455657958984,
+            0.0
+          ],
+          [
+            0.525814950466156,
+            0.474185049533844,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.7404521510113322,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 19.11160000003065,
+        "elapsed_ms_std": 1.1131274948988588,
+        "elapsed_ms_samples": [
+          19.898699999998826,
+          18.32450000006247
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13395.006174239177,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.038788411766290665,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 10.428049999973155,
+        "elapsed_ms_std": 1.2735700235710683,
+        "elapsed_ms_samples": [
+          9.527499999990141,
+          11.328599999956168
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 24549.172664175854,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03396215662360191,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5048249363899231,
+            0.4951750636100769,
+            0.0
+          ],
+          [
+            0.5002937316894531,
+            0.4997062683105469,
+            0.0
+          ],
+          [
+            0.5076927542686462,
+            0.49230724573135376,
+            0.0
+          ],
+          [
+            0.5125148892402649,
+            0.4874851107597351,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.83271081363053,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 128.4834999999589,
+        "elapsed_ms_std": 2.4901472406259275,
+        "elapsed_ms_samples": [
+          130.24429999995846,
+          126.72269999995933
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1992.4737417651443,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.05748360976576805,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 62.33615000002146,
+        "elapsed_ms_std": 2.4847025184325764,
+        "elapsed_ms_samples": [
+          60.579200000006495,
+          64.09310000003643
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4106.766298526808,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.043930042535066605,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5407199263572693,
+            0.4592800736427307,
+            0.0
+          ],
+          [
+            0.5173730850219727,
+            0.48262685537338257,
+            0.0
+          ],
+          [
+            0.5100148916244507,
+            0.4899851083755493,
+            0.0
+          ],
+          [
+            0.5164821743965149,
+            0.4835178554058075,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.06113948326797,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 59.70874999997022,
+        "elapsed_ms_std": 1.1201278521194367,
+        "elapsed_ms_samples": [
+          58.91669999994065,
+          60.5007999999998
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4287.478803360105,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.05939851701259613,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 33.351550000020325,
+        "elapsed_ms_std": 0.17331187208946816,
+        "elapsed_ms_samples": [
+          33.47410000003492,
+          33.229000000005726
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7675.805172468566,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.04147396236658096,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5267545580863953,
+            0.47324544191360474,
+            0.0
+          ],
+          [
+            0.525986909866333,
+            0.4740130305290222,
+            0.0
+          ],
+          [
+            0.5256437659263611,
+            0.4743562340736389,
+            0.0
+          ],
+          [
+            0.531037449836731,
+            0.46896255016326904,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.7902841097320465,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 31.18245000001707,
+        "elapsed_ms_std": 1.1010359689952136,
+        "elapsed_ms_samples": [
+          30.403900000010253,
+          31.961000000023887
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8209.7461873541,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.053341083228588104,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 17.616949999990084,
+        "elapsed_ms_std": 0.3022881489577378,
+        "elapsed_ms_samples": [
+          17.83069999999043,
+          17.403199999989738
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14531.459758933534,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.040911901742219925,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5154619812965393,
+            0.4845380187034607,
+            0.0
+          ],
+          [
+            0.5178561210632324,
+            0.4821438789367676,
+            0.0
+          ],
+          [
+            0.5304633378982544,
+            0.4695367217063904,
+            0.0
+          ],
+          [
+            0.5239555835723877,
+            0.4760444164276123,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.7700254584383008,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 16.76385000001801,
+        "elapsed_ms_std": 0.2905501764035989,
+        "elapsed_ms_samples": [
+          16.969300000027943,
+          16.558400000008078
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 15270.955061022674,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.042168017476797104,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 10.468999999943662,
+        "elapsed_ms_std": 0.01159655124649189,
+        "elapsed_ms_samples": [
+          10.46079999991889,
+          10.477199999968434
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 24453.147387656667,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03806628659367561,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5182359218597412,
+            0.4817640781402588,
+            0.0
+          ],
+          [
+            0.5231090784072876,
+            0.4768908619880676,
+            0.0
+          ],
+          [
+            0.5201711058616638,
+            0.47982892394065857,
+            0.0
+          ],
+          [
+            0.5214556455612183,
+            0.47854435443878174,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.6012847454492523,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 120.52174999996623,
+        "elapsed_ms_std": 0.6715393101579037,
+        "elapsed_ms_samples": [
+          120.04689999992024,
+          120.99660000001222
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 2124.097932531445,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.05675268918275833,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 61.596049999991465,
+        "elapsed_ms_std": 0.731219122484071,
+        "elapsed_ms_samples": [
+          62.11310000003323,
+          61.0789999999497
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4156.110659693852,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.040792398154735565,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4912759065628052,
+            0.5087240934371948,
+            0.0
+          ],
+          [
+            0.46124470233917236,
+            0.5387552380561829,
+            0.0
+          ],
+          [
+            0.4762408137321472,
+            0.5237592458724976,
+            0.0
+          ],
+          [
+            0.49870532751083374,
+            0.5012946724891663,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9566473824211608,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 58.81699999997636,
+        "elapsed_ms_std": 2.4979254151993415,
+        "elapsed_ms_samples": [
+          57.050699999990684,
+          60.58329999996204
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4352.483125628694,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.054425954818725586,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 32.58070000003954,
+        "elapsed_ms_std": 1.3536852219264377,
+        "elapsed_ms_samples": [
+          31.62350000002334,
+          33.53790000005574
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7857.41251721692,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03889700770378113,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5617538690567017,
+            0.43824610114097595,
+            0.0
+          ],
+          [
+            0.5512568950653076,
+            0.4487431049346924,
+            0.0
+          ],
+          [
+            0.5467163324356079,
+            0.4532836675643921,
+            0.0
+          ],
+          [
+            0.5490604639053345,
+            0.4509395360946655,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.805271218847507,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 34.53555000004371,
+        "elapsed_ms_std": 0.6853986030502465,
+        "elapsed_ms_samples": [
+          34.0509000000111,
+          35.02020000007633
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7412.651601022018,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.04698578640818596,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 20.462850000001254,
+        "elapsed_ms_std": 0.3573010566041677,
+        "elapsed_ms_samples": [
+          20.71550000005118,
+          20.210199999951328
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 12510.476302176105,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03421267494559288,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5427826642990112,
+            0.45721733570098877,
+            0.0
+          ],
+          [
+            0.5430586934089661,
+            0.45694130659103394,
+            0.0
+          ],
+          [
+            0.5361764430999756,
+            0.4638235867023468,
+            0.0
+          ],
+          [
+            0.5513354539871216,
+            0.4486645460128784,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.6877194525709565,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 256,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        256,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 19.147300000042833,
+        "elapsed_ms_std": 0.03450681088301544,
+        "elapsed_ms_samples": [
+          19.12290000007033,
+          19.171700000015335
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13370.031283754228,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03896632790565491,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 12.73695000003272,
+        "elapsed_ms_std": 0.3594223768619828,
+        "elapsed_ms_samples": [
+          12.482800000043426,
+          12.991100000022016
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 20099.003293515507,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          256,
+          64
+        ],
+        "output_mean_abs": 0.03366594761610031,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5379521250724792,
+            0.46204787492752075,
+            0.0
+          ],
+          [
+            0.5363260507583618,
+            0.4636739492416382,
+            0.0
+          ],
+          [
+            0.5439410209655762,
+            0.4560590386390686,
+            0.0
+          ],
+          [
+            0.5405513644218445,
+            0.4594486355781555,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.5032876787609,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 282.0043499999656,
+        "elapsed_ms_std": 0.15224009001507693,
+        "elapsed_ms_samples": [
+          281.8966999999475,
+          282.1119999999837
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1815.5748306721598,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05863427370786667,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 126.90960000003315,
+        "elapsed_ms_std": 4.985244228707663,
+        "elapsed_ms_samples": [
+          123.38450000004286,
+          130.43470000002344
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4034.36777044342,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04745437577366829,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5096845626831055,
+            0.49031540751457214,
+            0.0
+          ],
+          [
+            0.4914233088493347,
+            0.5085766911506653,
+            0.0
+          ],
+          [
+            0.4929226338863373,
+            0.5070773363113403,
+            0.0
+          ],
+          [
+            0.4962124228477478,
+            0.5037875175476074,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.2220883999310685,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 129.04964999995627,
+        "elapsed_ms_std": 5.414670176971539,
+        "elapsed_ms_samples": [
+          132.8783999999814,
+          125.22089999993113
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3967.465235280944,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.058470968157052994,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 64.29344999997966,
+        "elapsed_ms_std": 0.7131171888349319,
+        "elapsed_ms_samples": [
+          64.79769999998553,
+          63.78919999997379
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7963.486171610981,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.042654167860746384,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.49189287424087524,
+            0.5081071257591248,
+            0.0
+          ],
+          [
+            0.503733217716217,
+            0.49626678228378296,
+            0.0
+          ],
+          [
+            0.4750071167945862,
+            0.5249928832054138,
+            0.0
+          ],
+          [
+            0.4802929759025574,
+            0.5197070240974426,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.007197467238064,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 64.57829999999376,
+        "elapsed_ms_std": 2.1487560866788713,
+        "elapsed_ms_samples": [
+          63.05889999998726,
+          66.09770000000026
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7928.359836044762,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05673716217279434,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 33.92404999993914,
+        "elapsed_ms_std": 1.7655749219325394,
+        "elapsed_ms_samples": [
+          32.675599999947735,
+          35.17249999993055
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 15092.537595037105,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03776799887418747,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.44521579146385193,
+            0.5547842383384705,
+            0.0
+          ],
+          [
+            0.4435824453830719,
+            0.5564175248146057,
+            0.0
+          ],
+          [
+            0.44696947932243347,
+            0.5530304908752441,
+            0.0
+          ],
+          [
+            0.4401211142539978,
+            0.5598788857460022,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9036141026825986,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 36.92149999994854,
+        "elapsed_ms_std": 0.6834894147539018,
+        "elapsed_ms_samples": [
+          37.404799999990246,
+          36.43819999990683
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13867.258914202122,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.049013372510671616,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 18.76444999999194,
+        "elapsed_ms_std": 0.2307289426893959,
+        "elapsed_ms_samples": [
+          18.927599999983613,
+          18.601300000000265
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 27285.63853458108,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03498219698667526,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5114444494247437,
+            0.48855555057525635,
+            0.0
+          ],
+          [
+            0.5041791796684265,
+            0.4958208203315735,
+            0.0
+          ],
+          [
+            0.5064191818237305,
+            0.49358078837394714,
+            0.0
+          ],
+          [
+            0.5057024955749512,
+            0.49429750442504883,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9676302795959593,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 277.62820000003785,
+        "elapsed_ms_std": 6.711433302955202,
+        "elapsed_ms_samples": [
+          282.3739000000387,
+          272.882500000037
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1844.1930610792788,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.06032322719693184,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 119.86085000000912,
+        "elapsed_ms_std": 0.2650943322647643,
+        "elapsed_ms_samples": [
+          119.67340000001059,
+          120.04830000000766
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4271.619965985233,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04243416339159012,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.47588080167770386,
+            0.5241191983222961,
+            0.0
+          ],
+          [
+            0.5086215138435364,
+            0.49137842655181885,
+            0.0
+          ],
+          [
+            0.4831451177597046,
+            0.5168548822402954,
+            0.0
+          ],
+          [
+            0.5028278231620789,
+            0.49717217683792114,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.3162542231263727,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 130.26109999998425,
+        "elapsed_ms_std": 4.643004546593171,
+        "elapsed_ms_samples": [
+          133.54419999996026,
+          126.97800000000825
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3930.5671455258853,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.052937835454940796,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 61.89514999994117,
+        "elapsed_ms_std": 1.7733530965059534,
+        "elapsed_ms_samples": [
+          63.14909999991869,
+          60.641199999963646
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8272.053626180512,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03956444561481476,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.44101303815841675,
+            0.5589869618415833,
+            0.0
+          ],
+          [
+            0.45101433992385864,
+            0.5489856600761414,
+            0.0
+          ],
+          [
+            0.43202638626098633,
+            0.5679736137390137,
+            0.0
+          ],
+          [
+            0.4678581953048706,
+            0.5321418046951294,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.1045445402443983,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 67.21384999997326,
+        "elapsed_ms_std": 1.7437960329983582,
+        "elapsed_ms_samples": [
+          68.4468999999126,
+          65.98080000003392
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7617.477647839004,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05416988581418991,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 35.131250000006276,
+        "elapsed_ms_std": 1.0673776861992466,
+        "elapsed_ms_samples": [
+          34.37650000000758,
+          35.88600000000497
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14573.919231450875,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.034860219806432724,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4755958914756775,
+            0.5244041085243225,
+            0.0
+          ],
+          [
+            0.480762779712677,
+            0.5192371606826782,
+            0.0
+          ],
+          [
+            0.47736674547195435,
+            0.5226332545280457,
+            0.0
+          ],
+          [
+            0.4882265627384186,
+            0.5117734670639038,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9132211350282513,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 41.83325000002469,
+        "elapsed_ms_std": 2.267620736593664,
+        "elapsed_ms_samples": [
+          43.436700000029305,
+          40.22980000002008
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 12239.068205307925,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04379783198237419,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 19.413699999972778,
+        "elapsed_ms_std": 0.2166575177551939,
+        "elapsed_ms_samples": [
+          19.56689999997252,
+          19.260499999973035
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 26373.128254826126,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03373541682958603,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5466880798339844,
+            0.453311949968338,
+            0.0
+          ],
+          [
+            0.5490516424179077,
+            0.4509482979774475,
+            0.0
+          ],
+          [
+            0.5499587655067444,
+            0.4500412344932556,
+            0.0
+          ],
+          [
+            0.5490028262138367,
+            0.45099717378616333,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.154831381966516,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 282.74890000005826,
+        "elapsed_ms_std": 6.81707505610323,
+        "elapsed_ms_samples": [
+          277.92850000003,
+          287.5693000000865
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1810.7939588797499,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05936959385871887,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 135.03930000001674,
+        "elapsed_ms_std": 0.4907321060299268,
+        "elapsed_ms_samples": [
+          135.38629999993645,
+          134.69230000009702
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3791.4888480607983,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04287152737379074,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.47396448254585266,
+            0.526035487651825,
+            0.0
+          ],
+          [
+            0.47735315561294556,
+            0.5226468443870544,
+            0.0
+          ],
+          [
+            0.49755436182022095,
+            0.502445638179779,
+            0.0
+          ],
+          [
+            0.5044540166854858,
+            0.49554598331451416,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.0938267600618725,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 140.60405000003584,
+        "elapsed_ms_std": 0.9912929964784254,
+        "elapsed_ms_samples": [
+          139.9031000000832,
+          141.30499999998847
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3641.4313812430687,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05402708053588867,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 66.72059999999647,
+        "elapsed_ms_std": 2.344907507670651,
+        "elapsed_ms_samples": [
+          65.0625000000673,
+          68.37869999992563
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7673.791902351404,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03859599307179451,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.46079665422439575,
+            0.539203405380249,
+            0.0
+          ],
+          [
+            0.4554176926612854,
+            0.5445823073387146,
+            0.0
+          ],
+          [
+            0.47632741928100586,
+            0.5236725807189941,
+            0.0
+          ],
+          [
+            0.45011669397354126,
+            0.5498833060264587,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.107355899078295,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 71.20274999999765,
+        "elapsed_ms_std": 1.8577816461111654,
+        "elapsed_ms_samples": [
+          69.88910000006854,
+          72.51639999992676
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7190.733503973047,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.050589196383953094,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 37.57605000004105,
+        "elapsed_ms_std": 3.955484623285109,
+        "elapsed_ms_samples": [
+          40.37300000004507,
+          34.77910000003703
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13625.700412881095,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.039201702922582626,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.49887263774871826,
+            0.5011273622512817,
+            0.0
+          ],
+          [
+            0.4998820424079895,
+            0.5001179575920105,
+            0.0
+          ],
+          [
+            0.5029935240745544,
+            0.49700647592544556,
+            0.0
+          ],
+          [
+            0.5019076466560364,
+            0.4980923533439636,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.8948971485805417,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 38.10259999994514,
+        "elapsed_ms_std": 1.0521748904019248,
+        "elapsed_ms_samples": [
+          37.35859999994773,
+          38.846599999942555
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13437.40322184673,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04332033544778824,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 21.956349999982194,
+        "elapsed_ms_std": 0.7600690791318763,
+        "elapsed_ms_samples": [
+          21.41889999995783,
+          22.49380000000656
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 23318.99427730088,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03872103616595268,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5504118204116821,
+            0.44958823919296265,
+            0.0
+          ],
+          [
+            0.5522233843803406,
+            0.4477766752243042,
+            0.0
+          ],
+          [
+            0.5466853976249695,
+            0.4533146321773529,
+            0.0
+          ],
+          [
+            0.5585171580314636,
+            0.4414828419685364,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.735379514353526,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 272.4030999999627,
+        "elapsed_ms_std": 10.245270152630239,
+        "elapsed_ms_samples": [
+          265.15859999994973,
+          279.6475999999757
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1879.5674498567384,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.056855425238609314,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 127.26740000005066,
+        "elapsed_ms_std": 1.8370634175470577,
+        "elapsed_ms_samples": [
+          128.56640000006792,
+          125.9684000000334
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4023.0255352100867,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03877628222107887,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5031435489654541,
+            0.4968564510345459,
+            0.0
+          ],
+          [
+            0.4946250319480896,
+            0.5053749680519104,
+            0.0
+          ],
+          [
+            0.48751288652420044,
+            0.5124870538711548,
+            0.0
+          ],
+          [
+            0.5047351121902466,
+            0.49526485800743103,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.140399662441869,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 136.9581000000153,
+        "elapsed_ms_std": 2.033214838619226,
+        "elapsed_ms_samples": [
+          135.52040000001853,
+          138.39580000001206
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3738.3696181528717,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05453792214393616,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 66.37029999996003,
+        "elapsed_ms_std": 0.999707567257806,
+        "elapsed_ms_samples": [
+          65.66339999994852,
+          67.07719999997153
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7714.293893508217,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.03337564691901207,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4927537739276886,
+            0.507246196269989,
+            0.0
+          ],
+          [
+            0.481074720621109,
+            0.5189252495765686,
+            0.0
+          ],
+          [
+            0.4927985966205597,
+            0.5072013735771179,
+            0.0
+          ],
+          [
+            0.49750930070877075,
+            0.502490758895874,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.063544989251183,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 73.00480000003517,
+        "elapsed_ms_std": 0.5883128419088576,
+        "elapsed_ms_samples": [
+          72.58880000006229,
+          73.42080000000806
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7013.237485750982,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.05345943570137024,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 36.432500000046275,
+        "elapsed_ms_std": 0.6569021997519474,
+        "elapsed_ms_samples": [
+          35.96800000002531,
+          36.89700000006724
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14053.386399488085,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.033860236406326294,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5025423169136047,
+            0.49745768308639526,
+            0.0
+          ],
+          [
+            0.49379268288612366,
+            0.5062073469161987,
+            0.0
+          ],
+          [
+            0.48980221152305603,
+            0.5101977586746216,
+            0.0
+          ],
+          [
+            0.49698519706726074,
+            0.5030147433280945,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.003837233237973,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 512,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        512,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 46.70255000007728,
+        "elapsed_ms_std": 3.4719650062764535,
+        "elapsed_ms_samples": [
+          49.157600000057755,
+          44.24750000009681
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 10962.998808398102,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.04735672101378441,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 25.221500000043306,
+        "elapsed_ms_std": 0.8855805326765743,
+        "elapsed_ms_samples": [
+          24.595300000100906,
+          25.847699999985707
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 20300.140752894193,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          512,
+          64
+        ],
+        "output_mean_abs": 0.0315803661942482,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.43406161665916443,
+            0.565938413143158,
+            0.0
+          ],
+          [
+            0.4451708197593689,
+            0.5548292398452759,
+            0.0
+          ],
+          [
+            0.44435402750968933,
+            0.5556459426879883,
+            0.0
+          ],
+          [
+            0.44796210527420044,
+            0.5520378947257996,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.8516959736731395,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 605.2520999999729,
+        "elapsed_ms_std": 13.571076187210544,
+        "elapsed_ms_samples": [
+          614.8482999999487,
+          595.655899999997
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1691.8569964483327,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.061223722994327545,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 242.77594999995245,
+        "elapsed_ms_std": 0.9948285304558205,
+        "elapsed_ms_samples": [
+          242.0724999999493,
+          243.4793999999556
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4217.880725006742,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.04409897327423096,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5744495391845703,
+            0.4255504608154297,
+            0.0
+          ],
+          [
+            0.5501377582550049,
+            0.4498622417449951,
+            0.0
+          ],
+          [
+            0.5432173609733582,
+            0.45678263902664185,
+            0.0
+          ],
+          [
+            0.5238162279129028,
+            0.47618380188941956,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.4930480140231825,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 289.2171000000303,
+        "elapsed_ms_std": 7.797549318848777,
+        "elapsed_ms_samples": [
+          283.7034000000358,
+          294.73080000002483
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3540.5928625931615,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05583631619811058,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 126.87179999994669,
+        "elapsed_ms_std": 0.9134405400100729,
+        "elapsed_ms_samples": [
+          127.51769999999851,
+          126.22589999989486
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8071.139528251591,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.041027992963790894,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4627046585083008,
+            0.5372952818870544,
+            0.0
+          ],
+          [
+            0.43678224086761475,
+            0.5632177591323853,
+            0.0
+          ],
+          [
+            0.4564705491065979,
+            0.5435294508934021,
+            0.0
+          ],
+          [
+            0.45107126235961914,
+            0.5489287972450256,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.279601140680213,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 139.92819999998574,
+        "elapsed_ms_std": 1.7488164911883792,
+        "elapsed_ms_samples": [
+          138.69160000001557,
+          141.1647999999559
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7318.0388227684225,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05952738970518112,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 70.66359999998895,
+        "elapsed_ms_std": 0.6734484983738596,
+        "elapsed_ms_samples": [
+          70.18740000000889,
+          71.139799999969
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14491.19490091306,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03656291961669922,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.44701632857322693,
+            0.5529837012290955,
+            0.0
+          ],
+          [
+            0.43932580947875977,
+            0.5606741905212402,
+            0.0
+          ],
+          [
+            0.4570918679237366,
+            0.5429081916809082,
+            0.0
+          ],
+          [
+            0.4394018352031708,
+            0.5605981349945068,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9802019710290393,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 80.10469999999259,
+        "elapsed_ms_std": 3.1002389713885776,
+        "elapsed_ms_samples": [
+          82.29689999996026,
+          77.91250000002492
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 12783.269895525415,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.04797001928091049,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 36.36984999997139,
+        "elapsed_ms_std": 0.2612759555916864,
+        "elapsed_ms_samples": [
+          36.55459999993127,
+          36.185100000011516
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 28155.18898210483,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03496097773313522,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4996130168437958,
+            0.5003869533538818,
+            0.0
+          ],
+          [
+            0.5002177953720093,
+            0.4997822046279907,
+            0.0
+          ],
+          [
+            0.5073636174201965,
+            0.4926363527774811,
+            0.0
+          ],
+          [
+            0.5108801126480103,
+            0.48911988735198975,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.2025028973189493,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 610.6985999999779,
+        "elapsed_ms_std": 0.9858482743654632,
+        "elapsed_ms_samples": [
+          610.001499999953,
+          611.3957000000028
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1676.7682126666691,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05991329997777939,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 240.27639999997064,
+        "elapsed_ms_std": 2.503723690902976,
+        "elapsed_ms_samples": [
+          242.04680000002554,
+          238.50599999991573
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4261.75854141366,
+        "max_state_bytes": 26112,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.04111267253756523,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.48211470246315,
+            0.5178852081298828,
+            0.0
+          ],
+          [
+            0.48019006848335266,
+            0.519809901714325,
+            0.0
+          ],
+          [
+            0.5045120716094971,
+            0.4954879879951477,
+            0.0
+          ],
+          [
+            0.48544466495513916,
+            0.5145553350448608,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.541650365995381,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 288.5452499999701,
+        "elapsed_ms_std": 1.041921842060412,
+        "elapsed_ms_samples": [
+          289.2819999999574,
+          287.8084999999828
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3548.836794229349,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.052932992577552795,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 127.77120000004061,
+        "elapsed_ms_std": 5.235277186482753,
+        "elapsed_ms_samples": [
+          124.06930000008742,
+          131.4730999999938
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8014.325607020006,
+        "max_state_bytes": 34304,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03819793462753296,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.496509850025177,
+            0.503490149974823,
+            0.0
+          ],
+          [
+            0.5055174827575684,
+            0.49448254704475403,
+            0.0
+          ],
+          [
+            0.49996861815452576,
+            0.5000313520431519,
+            0.0
+          ],
+          [
+            0.5049506425857544,
+            0.4950494170188904,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.258296470565185,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 152.26905000002944,
+        "elapsed_ms_std": 5.982052658194041,
+        "elapsed_ms_samples": [
+          148.03910000000542,
+          156.49900000005346
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 6724.9385216483715,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05467400699853897,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 69.15715000002365,
+        "elapsed_ms_std": 2.916461918996126,
+        "elapsed_ms_samples": [
+          67.09490000002916,
+          71.21940000001814
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14806.856557849042,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.0357942134141922,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5122648477554321,
+            0.48773518204689026,
+            0.0
+          ],
+          [
+            0.5123658776283264,
+            0.4876340925693512,
+            0.0
+          ],
+          [
+            0.5083404779434204,
+            0.49165958166122437,
+            0.0
+          ],
+          [
+            0.5155311822891235,
+            0.48446884751319885,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.2017831851077925,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 32,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 92.5990499999898,
+        "elapsed_ms_std": 0.7650188266680739,
+        "elapsed_ms_samples": [
+          92.05809999991743,
+          93.14000000006217
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 11058.428785177739,
+        "max_state_bytes": 50688,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05119231715798378,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 38.76155000006065,
+        "elapsed_ms_std": 1.106551401922777,
+        "elapsed_ms_samples": [
+          39.54400000009173,
+          37.979100000029575
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 26417.93220339222,
+        "max_state_bytes": 83456,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03163959085941315,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5232701301574707,
+            0.4767298698425293,
+            0.0
+          ],
+          [
+            0.5108281970024109,
+            0.4891718029975891,
+            0.0
+          ],
+          [
+            0.5150647163391113,
+            0.48493528366088867,
+            0.0
+          ],
+          [
+            0.5173244476318359,
+            0.48267555236816406,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.38894084472486,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "state_bytes_ratio": 0.6073619631901841
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 609.5169500000566,
+        "elapsed_ms_std": 3.0577418538902887,
+        "elapsed_ms_samples": [
+          611.6791000000603,
+          607.3548000000528
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1680.0189067751191,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05360995605587959,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 248.35864999994328,
+        "elapsed_ms_std": 1.0990560700450456,
+        "elapsed_ms_samples": [
+          247.5814999999102,
+          249.13579999997637
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4123.069601160394,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.041480422019958496,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.51004558801651,
+            0.48995441198349,
+            0.0
+          ],
+          [
+            0.5068743228912354,
+            0.49312567710876465,
+            0.0
+          ],
+          [
+            0.5171374082565308,
+            0.48286259174346924,
+            0.0
+          ],
+          [
+            0.513654351234436,
+            0.48634567856788635,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.454180476501204,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 300.02419999999574,
+        "elapsed_ms_std": 2.462570076148889,
+        "elapsed_ms_samples": [
+          301.7654999999877,
+          298.2829000000038
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3413.058013320307,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05762244015932083,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 129.89229999993768,
+        "elapsed_ms_std": 3.23812479377377,
+        "elapsed_ms_samples": [
+          132.1819999999434,
+          127.60259999993195
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 7883.454215534649,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.040023431181907654,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4991952180862427,
+            0.5008048415184021,
+            0.0
+          ],
+          [
+            0.5015966296195984,
+            0.4984033703804016,
+            0.0
+          ],
+          [
+            0.5162962675094604,
+            0.48370370268821716,
+            0.0
+          ],
+          [
+            0.5329796671867371,
+            0.46702030301094055,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.309792035402712,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 146.99815000000171,
+        "elapsed_ms_std": 3.8892994284759057,
+        "elapsed_ms_samples": [
+          149.748299999942,
+          144.24800000006144
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 6966.074062836764,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.0535179004073143,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 71.31055000002107,
+        "elapsed_ms_std": 1.5945965022231343,
+        "elapsed_ms_samples": [
+          70.18300000004274,
+          72.4380999999994
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 14359.726576217648,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03668184578418732,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5128610730171204,
+            0.48713892698287964,
+            0.0
+          ],
+          [
+            0.48821336030960083,
+            0.511786699295044,
+            0.0
+          ],
+          [
+            0.5134583711624146,
+            0.4865416884422302,
+            0.0
+          ],
+          [
+            0.4982013702392578,
+            0.5017985701560974,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.061380118368997,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 4,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 88.08710000005249,
+        "elapsed_ms_std": 0.18639334746819738,
+        "elapsed_ms_samples": [
+          87.95530000008966,
+          88.21890000001531
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 11624.857669277226,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05027133226394653,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 44.08945000000131,
+        "elapsed_ms_std": 2.5227448632929868,
+        "elapsed_ms_samples": [
+          45.87330000003931,
+          42.305599999963306
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 23225.510864843396,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.035751327872276306,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.47039589285850525,
+            0.5296041369438171,
+            0.0
+          ],
+          [
+            0.4781193435192108,
+            0.5218806862831116,
+            0.0
+          ],
+          [
+            0.4726067781448364,
+            0.5273932218551636,
+            0.0
+          ],
+          [
+            0.4859458804130554,
+            0.5140541195869446,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.9979178692419588,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 16,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 613.9477499999657,
+        "elapsed_ms_std": 0.9642815174731412,
+        "elapsed_ms_samples": [
+          613.2658999999876,
+          614.6295999999438
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1667.8943770053024,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.058068521320819855,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 251.047299999982,
+        "elapsed_ms_std": 5.4042757072419905,
+        "elapsed_ms_samples": [
+          254.86869999997452,
+          247.22589999998945
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 4078.912619255708,
+        "max_state_bytes": 44032,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03827150538563728,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4606720209121704,
+            0.5393279790878296,
+            0.0
+          ],
+          [
+            0.4776899218559265,
+            0.5223100781440735,
+            0.0
+          ],
+          [
+            0.4530904293060303,
+            0.5469095706939697,
+            0.0
+          ],
+          [
+            0.45898550748825073,
+            0.5410144925117493,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.4455461182016687,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "state_bytes_ratio": 2.302325581395349
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 32,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 296.0149999999544,
+        "elapsed_ms_std": 0.7643824304621074,
+        "elapsed_ms_samples": [
+          296.555499999954,
+          295.4744999999548
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 3459.284157897937,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05214934051036835,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 127.66255000002502,
+        "elapsed_ms_std": 0.49037855276080927,
+        "elapsed_ms_samples": [
+          128.00930000003063,
+          127.31580000001941
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 8021.146373778366,
+        "max_state_bytes": 52224,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.035721227526664734,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.507741391658783,
+            0.49225863814353943,
+            0.0
+          ],
+          [
+            0.49646538496017456,
+            0.5035346150398254,
+            0.0
+          ],
+          [
+            0.5034394860267639,
+            0.49656054377555847,
+            0.0
+          ],
+          [
+            0.5185054540634155,
+            0.4814945161342621,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.3187301209312863,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 64,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 155.00015000003486,
+        "elapsed_ms_std": 2.6606306855977904,
+        "elapsed_ms_samples": [
+          156.88150000005407,
+          153.11880000001565
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 6606.445219567657,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.050022292882204056,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 74.39284999992424,
+        "elapsed_ms_std": 0.9137940933595792,
+        "elapsed_ms_samples": [
+          75.03899999994701,
+          73.74669999990147
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 13764.76368362071,
+        "max_state_bytes": 68608,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03673623874783516,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5155087113380432,
+            0.4844912886619568,
+            0.0
+          ],
+          [
+            0.510744571685791,
+            0.4892553985118866,
+            0.0
+          ],
+          [
+            0.5187881588935852,
+            0.4812118411064148,
+            0.0
+          ],
+          [
+            0.5163527727127075,
+            0.4836471974849701,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.0835355817150805,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4776119402985075,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.6767676767676768,
+      "state_bytes_ratio": 1.4776119402985075
+    },
+    {
+      "batch_size": 1,
+      "dim": 64,
+      "seq_len": 1024,
+      "slots": 64,
+      "read_topk": 8,
+      "chunk_size": 128,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        1024,
+        64
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 96.89729999996644,
+        "elapsed_ms_std": 2.0762069308550566,
+        "elapsed_ms_samples": [
+          98.36539999992056,
+          95.42920000001232
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 10567.889920569043,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.05463229492306709,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 47.73115000000416,
+        "elapsed_ms_std": 3.129301060158631,
+        "elapsed_ms_samples": [
+          49.94390000001658,
+          45.51839999999174
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 21453.49525414558,
+        "max_state_bytes": 101376,
+        "output_shape": [
+          1,
+          1024,
+          64
+        ],
+        "output_mean_abs": 0.03350158408284187,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5357241630554199,
+            0.4642758369445801,
+            0.0
+          ],
+          [
+            0.5198448896408081,
+            0.4801551103591919,
+            0.0
+          ],
+          [
+            0.5359475016593933,
+            0.4640524983406067,
+            0.0
+          ],
+          [
+            0.5327625274658203,
+            0.4672374725341797,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 2.0300642243054687,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_cases": 48,
+      "mhdsra2_faster_cases": 48,
+      "mhdsra2_faster_ratio": 1.0,
+      "avg_speedup_ratio": 2.035371400907338,
+      "median_speedup_ratio": 2.0286395253946665,
+      "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+      "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+      "avg_state_bytes_ratio": 1.4684080457948774
+    },
+    "best_speedup_case": {
+      "label": "batch=1, dim=64, seq=1024, slots=32, topk=8, chunk=16",
+      "speedup_ratio": 2.541650365995381,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+      "state_bytes_ratio": 1.9411764705882353
+    },
+    "worst_speedup_case": {
+      "label": "batch=1, dim=64, seq=256, slots=64, topk=8, chunk=128",
+      "speedup_ratio": 1.5032876787609,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.0,
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.0,
+      "state_bytes_ratio": 1.0
+    },
+    "mhdsra2_min_state_overhead_case": {
+      "label": "batch=1, dim=64, seq=256, slots=64, topk=4, chunk=16",
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+      "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+      "state_bytes_ratio": 2.302325581395349,
+      "speedup_ratio": 2.06113948326797
+    },
+    "mhdsra2_max_state_overhead_case": {
+      "label": "batch=1, dim=64, seq=256, slots=32, topk=4, chunk=128",
+      "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+      "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+      "state_bytes_ratio": 0.6073619631901841,
+      "speedup_ratio": 1.5695379338869968
+    },
+    "best_memory_case": {
+      "label": "batch=1, dim=64, seq=256, slots=32, topk=4, chunk=128",
+      "state_bytes_ratio": 0.6073619631901841,
+      "speedup_ratio": 1.5695379338869968
+    },
+    "worst_memory_case": {
+      "label": "batch=1, dim=64, seq=256, slots=64, topk=4, chunk=16",
+      "state_bytes_ratio": 2.302325581395349,
+      "speedup_ratio": 2.06113948326797
+    },
+    "grouped": {
+      "batch_size": [
+        {
+          "value": 1,
+          "avg_speedup_ratio": 2.035371400907338,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 158.7366552083355,
+          "avg_dsra_std_ms": 2.5183357578250876,
+          "avg_mhdsra2_ms": 71.82925729166338,
+          "avg_mhdsra2_std_ms": 1.402111724443887,
+          "cases": 48
+        }
+      ],
+      "dim": [
+        {
+          "value": 64,
+          "avg_speedup_ratio": 2.035371400907338,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 158.7366552083355,
+          "avg_dsra_std_ms": 2.5183357578250876,
+          "avg_mhdsra2_ms": 71.82925729166338,
+          "avg_mhdsra2_std_ms": 1.402111724443887,
+          "cases": 48
+        }
+      ],
+      "seq_len": [
+        {
+          "value": 256,
+          "avg_speedup_ratio": 1.823146068684226,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 60.19010937500724,
+          "avg_dsra_std_ms": 1.1877493574512037,
+          "avg_mhdsra2_ms": 31.4934718750024,
+          "avg_mhdsra2_std_ms": 0.7097805287171199,
+          "cases": 16
+        },
+        {
+          "value": 512,
+          "avg_speedup_ratio": 2.030019919405727,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 130.70106562500072,
+          "avg_dsra_std_ms": 3.1763811135055815,
+          "avg_mhdsra2_ms": 62.29853125000062,
+          "avg_mhdsra2_std_ms": 1.43422468426504,
+          "cases": 16
+        },
+        {
+          "value": 1024,
+          "avg_speedup_ratio": 2.252948214632061,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 285.31879062499854,
+          "avg_dsra_std_ms": 3.1908768025184777,
+          "avg_mhdsra2_ms": 121.69576874998711,
+          "avg_mhdsra2_std_ms": 2.062329960349501,
+          "cases": 16
+        }
+      ],
+      "slots": [
+        {
+          "value": 32,
+          "avg_speedup_ratio": 2.0804201661965562,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.2565375935192318,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.9595959595959597,
+          "avg_dsra_ms": 157.58274374999814,
+          "avg_dsra_std_ms": 2.8695954708028597,
+          "avg_mhdsra2_ms": 70.23272291665943,
+          "avg_mhdsra2_std_ms": 1.300213217854031,
+          "cases": 24
+        },
+        {
+          "value": 64,
+          "avg_speedup_ratio": 1.9903226356181196,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.680278498070523,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.6565656565656566,
+          "avg_dsra_ms": 159.89056666667287,
+          "avg_dsra_std_ms": 2.167076044847316,
+          "avg_mhdsra2_ms": 73.42579166666734,
+          "avg_mhdsra2_std_ms": 1.5040102310337427,
+          "cases": 24
+        }
+      ],
+      "read_topk": [
+        {
+          "value": 4,
+          "avg_speedup_ratio": 2.0122634340118575,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 157.7145312500008,
+          "avg_dsra_std_ms": 2.6250425905178867,
+          "avg_mhdsra2_ms": 71.89186458332368,
+          "avg_mhdsra2_std_ms": 1.2941144218649474,
+          "cases": 24
+        },
+        {
+          "value": 8,
+          "avg_speedup_ratio": 2.058479367802818,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4684080457948774,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8080808080808081,
+          "avg_dsra_ms": 159.75877916667022,
+          "avg_dsra_std_ms": 2.4116289251322884,
+          "avg_mhdsra2_ms": 71.76665000000308,
+          "avg_mhdsra2_std_ms": 1.5101090270228266,
+          "cases": 24
+        }
+      ],
+      "chunk_size": [
+        {
+          "value": 16,
+          "avg_speedup_ratio": 2.231085496439355,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 2.121751025991792,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.47474747474747475,
+          "avg_dsra_ms": 338.6984208333293,
+          "avg_dsra_std_ms": 3.9549130453057626,
+          "avg_mhdsra2_ms": 145.37467083332936,
+          "avg_mhdsra2_std_ms": 1.8477348373575122,
+          "cases": 12
+        },
+        {
+          "value": 32,
+          "avg_speedup_ratio": 2.0866196870473614,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.7093942054433713,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.5959595959595959,
+          "avg_dsra_ms": 163.4251541666553,
+          "avg_dsra_std_ms": 2.5600152831607743,
+          "avg_mhdsra2_ms": 75.28502916665995,
+          "avg_mhdsra2_std_ms": 1.6183493975462993,
+          "cases": 12
+        },
+        {
+          "value": 64,
+          "avg_speedup_ratio": 1.9207984070669637,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.2388059701492538,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.8383838383838383,
+          "avg_dsra_ms": 83.42379166667986,
+          "avg_dsra_std_ms": 2.2527125686009954,
+          "avg_mhdsra2_ms": 41.95169999999848,
+          "avg_mhdsra2_std_ms": 1.2352919765178478,
+          "cases": 12
+        },
+        {
+          "value": 128,
+          "avg_speedup_ratio": 1.9029820130756712,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 0.8036809815950919,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 1.3232323232323233,
+          "avg_dsra_ms": 49.39925416667753,
+          "avg_dsra_std_ms": 1.305702134232818,
+          "avg_mhdsra2_ms": 24.705629166665705,
+          "avg_mhdsra2_std_ms": 0.9070706863538884,
+          "cases": 12
+        }
+      ]
+    },
+    "top_speedup_cases": [
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=32, topk=8, chunk=16",
+        "speedup_ratio": 2.541650365995381,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+        "state_bytes_ratio": 1.9411764705882353
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=32, topk=4, chunk=16",
+        "speedup_ratio": 2.4930480140231825,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.9411764705882353,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.5151515151515151,
+        "state_bytes_ratio": 1.9411764705882353
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=64, topk=4, chunk=16",
+        "speedup_ratio": 2.454180476501204,
+        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+        "state_bytes_ratio": 2.302325581395349
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=64, topk=8, chunk=16",
+        "speedup_ratio": 2.4455461182016687,
+        "dsra_to_mhdsra2_state_bytes_ratio": 2.302325581395349,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.43434343434343436,
+        "state_bytes_ratio": 2.302325581395349
+      },
+      {
+        "label": "batch=1, dim=64, seq=1024, slots=32, topk=8, chunk=128",
+        "speedup_ratio": 2.38894084472486,
+        "dsra_to_mhdsra2_state_bytes_ratio": 0.6073619631901841,
+        "mhdsra2_to_dsra_state_bytes_ratio": 1.6464646464646464,
+        "state_bytes_ratio": 0.6073619631901841
+      }
+    ]
+  }
+}

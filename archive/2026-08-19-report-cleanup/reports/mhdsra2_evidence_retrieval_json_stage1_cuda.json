@@ -1,0 +1,1427 @@
+{
+  "name": "mhdsra2_evidence_retrieval_json_stage1_cuda",
+  "config": {
+    "device": "cuda:0",
+    "groups": [
+      "baseline",
+      "evidence_hit_supervision",
+      "learned_retrieval_gate",
+      "evidence_plus_gate"
+    ],
+    "tasks": [
+      "json"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_evidence_retrieval_json_stage1_cuda.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 11,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 19,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 11,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 19,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 11,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 19,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 11,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 19,
+      "status": "planned",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.3090853602002658
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.31066690800614033
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.7142965311105126,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6747550008704046
+      },
+      "elapsed_sec": 114.73137159999897
+    },
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 11,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.32589794802974237
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.3034716480639383
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.676604038086955,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.7528259187415863
+      },
+      "elapsed_sec": 117.41628000000492
+    },
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 19,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.29635996541929743
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.32635426071254947
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.754652598646868,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6827295698953453
+      },
+      "elapsed_sec": 119.74133759999677
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.3190212576361632
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.31167064283340457
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.7005578575034179,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6559568318852964
+      },
+      "elapsed_sec": 122.40315550000378
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 11,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.04537435651169671
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.07937515237277536
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.6517057265865311,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.7073982944849005
+      },
+      "elapsed_sec": 124.71420509999734
+    },
+    {
+      "group": "evidence_hit_supervision",
+      "task": "json",
+      "seed": 19,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.3029548724388987
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.3386815056601153
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.7218863065618504,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6822657289234829
+      },
+      "elapsed_sec": 124.00254180000047
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.30112983390655146
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.32018458513348846
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.6948173244326318,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6766218210448021
+      },
+      "elapsed_sec": 122.60132180000073
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 11,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.3057749763618839
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.3281124458082912
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.6795780742593367,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.7449930306017533
+      },
+      "elapsed_sec": 126.89795740000409
+    },
+    {
+      "group": "learned_retrieval_gate",
+      "task": "json",
+      "seed": 19,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.17270530693570726
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.2517087190883982
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.7488071938262874,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.7050277262844108
+      },
+      "elapsed_sec": 159.55093520000082
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.30924485317815975
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.3171325309784931
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.669321111792988,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6493634176834575
+      },
+      "elapsed_sec": 173.39528180000343
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 11,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 11,
+          "train_dataset_seed": 11,
+          "validation_dataset_seed": 112,
+          "test_dataset_seed": 213,
+          "pair_split_seed": 314,
+          "model_seed": 415
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.23712681681173323
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.22124785353133844
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.6624685491073175,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.7203875435918635
+      },
+      "elapsed_sec": 178.21515920000093
+    },
+    {
+      "group": "evidence_plus_gate",
+      "task": "json",
+      "seed": 19,
+      "status": "completed",
+      "config": {
+        "epochs": 80,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 12,
+        "validation_dataset_size": 4,
+        "test_dataset_size": 4,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "seed_bundle": {
+          "seed_root": 19,
+          "train_dataset_seed": 19,
+          "validation_dataset_seed": 120,
+          "test_dataset_seed": 221,
+          "pair_split_seed": 322,
+          "model_seed": 423
+        },
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.09845283754018322
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.10553136702869323
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.734504761027821,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.6702287017795039
+      },
+      "elapsed_sec": 182.00781769999594
+    }
+  ],
+  "sections": {
+    "json": {
+      "task": "json",
+      "rows": [
+        {
+          "group": "baseline",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.3090853602002658
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.31066690800614033
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.7142965311105126,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6747550008704046
+          },
+          "elapsed_sec": 114.73137159999897
+        },
+        {
+          "group": "baseline",
+          "task": "json",
+          "seed": 11,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 11,
+              "train_dataset_seed": 11,
+              "validation_dataset_seed": 112,
+              "test_dataset_seed": 213,
+              "pair_split_seed": 314,
+              "model_seed": 415
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.32589794802974237
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.3034716480639383
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.676604038086955,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.7528259187415863
+          },
+          "elapsed_sec": 117.41628000000492
+        },
+        {
+          "group": "baseline",
+          "task": "json",
+          "seed": 19,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 19,
+              "train_dataset_seed": 19,
+              "validation_dataset_seed": 120,
+              "test_dataset_seed": 221,
+              "pair_split_seed": 322,
+              "model_seed": 423
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.29635996541929743
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.32635426071254947
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.754652598646868,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6827295698953453
+          },
+          "elapsed_sec": 119.74133759999677
+        },
+        {
+          "group": "evidence_hit_supervision",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.3190212576361632
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.31167064283340457
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.7005578575034179,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6559568318852964
+          },
+          "elapsed_sec": 122.40315550000378
+        },
+        {
+          "group": "evidence_hit_supervision",
+          "task": "json",
+          "seed": 11,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 11,
+              "train_dataset_seed": 11,
+              "validation_dataset_seed": 112,
+              "test_dataset_seed": 213,
+              "pair_split_seed": 314,
+              "model_seed": 415
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.04537435651169671
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.07937515237277536
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.6517057265865311,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.7073982944849005
+          },
+          "elapsed_sec": 124.71420509999734
+        },
+        {
+          "group": "evidence_hit_supervision",
+          "task": "json",
+          "seed": 19,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 19,
+              "train_dataset_seed": 19,
+              "validation_dataset_seed": 120,
+              "test_dataset_seed": 221,
+              "pair_split_seed": 322,
+              "model_seed": 423
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.3029548724388987
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.3386815056601153
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.7218863065618504,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6822657289234829
+          },
+          "elapsed_sec": 124.00254180000047
+        },
+        {
+          "group": "learned_retrieval_gate",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.30112983390655146
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.32018458513348846
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.6948173244326318,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6766218210448021
+          },
+          "elapsed_sec": 122.60132180000073
+        },
+        {
+          "group": "learned_retrieval_gate",
+          "task": "json",
+          "seed": 11,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 11,
+              "train_dataset_seed": 11,
+              "validation_dataset_seed": 112,
+              "test_dataset_seed": 213,
+              "pair_split_seed": 314,
+              "model_seed": 415
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.3057749763618839
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.3281124458082912
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.6795780742593367,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.7449930306017533
+          },
+          "elapsed_sec": 126.89795740000409
+        },
+        {
+          "group": "learned_retrieval_gate",
+          "task": "json",
+          "seed": 19,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "seed_bundle": {
+              "seed_root": 19,
+              "train_dataset_seed": 19,
+              "validation_dataset_seed": 120,
+              "test_dataset_seed": 221,
+              "pair_split_seed": 322,
+              "model_seed": 423
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.17270530693570726
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.2517087190883982
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.7488071938262874,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.7050277262844108
+          },
+          "elapsed_sec": 159.55093520000082
+        },
+        {
+          "group": "evidence_plus_gate",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.30924485317815975
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.3171325309784931
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.669321111792988,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6493634176834575
+          },
+          "elapsed_sec": 173.39528180000343
+        },
+        {
+          "group": "evidence_plus_gate",
+          "task": "json",
+          "seed": 11,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 11,
+              "train_dataset_seed": 11,
+              "validation_dataset_seed": 112,
+              "test_dataset_seed": 213,
+              "pair_split_seed": 314,
+              "model_seed": 415
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.23712681681173323
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.22124785353133844
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.6624685491073175,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.7203875435918635
+          },
+          "elapsed_sec": 178.21515920000093
+        },
+        {
+          "group": "evidence_plus_gate",
+          "task": "json",
+          "seed": 19,
+          "status": "completed",
+          "config": {
+            "epochs": 80,
+            "dim": 128,
+            "slots": 128,
+            "read_topk": 32,
+            "chunk_size": 256,
+            "train_dataset_size": 12,
+            "validation_dataset_size": 4,
+            "test_dataset_size": 4,
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "seed_bundle": {
+              "seed_root": 19,
+              "train_dataset_seed": 19,
+              "validation_dataset_seed": 120,
+              "test_dataset_seed": 221,
+              "pair_split_seed": 322,
+              "model_seed": 423
+            },
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.09845283754018322
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.10553136702869323
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.734504761027821,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.6702287017795039
+          },
+          "elapsed_sec": 182.00781769999594
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 12,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

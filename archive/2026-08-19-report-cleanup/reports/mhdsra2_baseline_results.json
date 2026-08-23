@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-06-30T01:04:01+08:00",
+  "scope": "Step 0 baseline anchoring for the MHDSRA2 improvement-candidate layered validation loop.",
+  "evidence_boundary": {
+    "mechanism_level": "shape, causality/future-cutoff, retrieval mask, batch isolation, dtype/device, numeric stability",
+    "smoke_level": "small CPU/CUDA runs proving the path executes",
+    "project_proxy_level": "tiny LM PPL smoke only in this run",
+    "external_llm_level": "not executed"
+  },
+  "worktree_state_before_reports": {
+    "git_status_short_lines": 222,
+    "modified_lines": 16,
+    "deleted_lines": 5,
+    "untracked_lines": 201,
+    "note": "Existing dirty worktree was preserved; this run did not revert or delete user work."
+  },
+  "environment": {
+    "python": "3.14.4",
+    "torch": "2.11.0+cu130",
+    "cuda_available": true,
+    "cuda_device_count": 1,
+    "cuda_name_0": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "device_policy": "cuda:0 if torch.cuda.is_available() else cpu"
+  },
+  "budget": {
+    "max_hypotheses": 3,
+    "max_cuda_hours": 0.1,
+    "max_wall_time_minutes": 45,
+    "max_seed_count": 1,
+    "max_context_length_observed": 32233,
+    "allow_dataset_downloads": false
+  },
+  "current_mhdsra2_configuration": {
+    "core_default_dim128": {
+      "dim": 128,
+      "heads": 8,
+      "layers": "single core layer; caller stacks layers",
+      "slots": 128,
+      "read_topk": 8,
+      "write_topk": 4,
+      "local_window": 512,
+      "chunk_size": null,
+      "use_retrieval": true,
+      "retrieval_max_tokens": 128,
+      "retrieval_attention_topk": null,
+      "retrieval_query_pooling": "mean",
+      "retrieval_neighbor_span": 0,
+      "retrieval_neighbor_direction": "right",
+      "detach_state": true
+    },
+    "multilayer_default_entry": {
+      "dim_example": 64,
+      "heads_for_dim64": 4,
+      "num_layers_default": 2,
+      "slots_default": 128,
+      "read_topk_default_for_kr16": 16,
+      "write_topk_default_for_kr16": 16,
+      "chunk_size_default": 256,
+      "local_window_default": 256,
+      "use_retrieval_default": false,
+      "detach_state_default": true
+    },
+    "tiny_lm_default": {
+      "dim": 256,
+      "heads": 4,
+      "num_layers": 6,
+      "seq_len": 512,
+      "batch_size": 8,
+      "max_steps": 50000,
+      "mhdsra2_slots": 64,
+      "mhdsra2_read_topk": 8,
+      "mhdsra2_write_topk": 4,
+      "mhdsra2_chunk_size": 128,
+      "mhdsra2_local_window": 512,
+      "mhdsra2_use_retrieval": false,
+      "mhdsra2_detach_state": false
+    }
+  },
+  "executed_commands": [
+    {
+      "command": "python -m py_compile src\\dsra\\mhdsra2\\improved_dsra_mha.py src\\dsra\\mhdsra2\\paged_exact_memory.py src\\dsra\\dsra_model.py src\\dsra\\infrastructure\\paged_memory_repository.py scripts\\verify_mhdsra2.py scripts\\tiny_llama_baseline.py scripts\\tiny_llama_mhdsra2.py scripts\\tiny_llama_compare.py scripts\\mhdsra2_quality_improvement_ablation.py scripts\\json_retrieval_test.py scripts\\needle_in_haystack_test.py",
+      "exit_code": 0,
+      "result": "passed",
+      "evidence_level": "phase0_compile"
+    },
+    {
+      "command": "python -m pytest tests\\test_tiny_llama_ppl_regressions.py -q",
+      "exit_code": 0,
+      "result": "4 passed in 13.42s",
+      "evidence_level": "ppl_metric_guard"
+    },
+    {
+      "command": "python -m pytest tests\\test_diagnostic_gate_policy_regressions.py -k \"retrieval_attention_topk or retrieval_mask or gate_quality_bias\" -q",
+      "exit_code": 0,
+      "result": "11 passed, 5 deselected in 13.52s",
+      "evidence_level": "phase1_mechanism"
+    },
+    {
+      "command": "python scripts\\verify_mhdsra2.py --seq-len 2048 --batch 1 --dim 128 --heads 4 --chunk 64 --slots 32 --read-topk 4 --write-topk 2 --local-window 64 --retrieval-tokens 16 --steps 1 --run-bench",
+      "exit_code": 0,
+      "result": {
+        "smoke": "passed",
+        "estimated_total_working_set": "171.00 KB",
+        "cpu_micro_benchmark_tok_per_s": 13168.5
+      },
+      "evidence_level": "smoke_shape"
+    },
+    {
+      "command": "python -m pytest tests\\test_memory_lifecycle_regressions.py -q",
+      "exit_code": 0,
+      "result": "42 passed in 3.86s",
+      "evidence_level": "phase1_mechanism"
+    },
+    {
+      "command": "python -m pytest tests\\test_multilayer_retrieval_regressions.py -q",
+      "exit_code": 0,
+      "result": "6 passed in 3.84s",
+      "evidence_level": "phase1_call_chain"
+    },
+    {
+      "command": "python scripts\\mhdsra2_batch_retrieval_quality_smoke.py --device cpu --tokens 64 --batch-sizes 1,2 --page-size 16 --top-pages 2 --max-tokens 4 --json-out reports\\mhdsra2_baseline_batch_retrieval_quality_smoke_cpu.json --markdown-out reports\\mhdsra2_baseline_batch_retrieval_quality_smoke_cpu.md",
+      "exit_code": 0,
+      "result": {
+        "passed": true,
+        "case_count": 6,
+        "passed_cases": 6,
+        "no_cross_sample_leak": true,
+        "no_future_leak": true,
+        "all_batch_loop_positions_match": true
+      },
+      "evidence_level": "mechanism_smoke"
+    },
+    {
+      "command": "python -X utf8 scripts\\tiny_llama_compare.py --seq-len 32 --batch-size 8 --max-steps 1 --dim 16 --heads 4 --layers 1 --device cuda:0",
+      "exit_code": 0,
+      "result": {
+        "standard_validation_ppl": 116.46,
+        "mhdsra2_validation_ppl": 115.24,
+        "ratio": 0.99,
+        "standard_time_s": 3,
+        "mhdsra2_time_s": 5
+      },
+      "evidence_level": "tiny_lm_smoke"
+    }
+  ],
+  "failed_or_retried_commands": [
+    {
+      "command": "python - <<'PY' ...",
+      "exit_code": 1,
+      "failure": "PowerShell ParserError because bash here-doc syntax is unsupported.",
+      "resolution": "Re-ran environment probe with a PowerShell here-string."
+    },
+    {
+      "command": "python scripts\\tiny_llama_compare.py --seq-len 32 --batch-size 8 --max-steps 1 --dim 16 --heads 4 --layers 1 --device cuda:0",
+      "exit_code": 1,
+      "failure": "UnicodeEncodeError when printing a checkmark under Windows GBK after both PPL values had been printed.",
+      "resolution": "Re-ran with python -X utf8 and used the successful rerun as evidence."
+    }
+  ],
+  "not_executed": [
+    {
+      "item": "full pytest",
+      "reason": "Large dirty worktree existed before this run; targeted tests were prioritized for this low-cost loop."
+    },
+    {
+      "item": "ruff check .",
+      "reason": "No business code was changed in this run."
+    },
+    {
+      "item": "tiny LM 50000 step baseline",
+      "reason": "Exceeds this loop's wall-time/CUDA budget."
+    },
+    {
+      "item": "NIAH/JSON/two-digit Phase 3 multi-seed",
+      "reason": "No Phase 2 validation-first quality signal strong enough to justify escalation."
+    },
+    {
+      "item": "external LLM benchmarks",
+      "reason": "Out of current project capability and not required for the early loop."
+    }
+  ],
+  "historical_reference_only": [
+    "extract_compose_readout had prior mixed-template JSON multi-seed positive reports in docs/code_project_case_studies.md; not re-executed at that scale in this run.",
+    "retrieval_attention_topk had prior tensor-probe exact-match weight concentration evidence; this run only repeated targeted regression tests."
+  ]
+}
+

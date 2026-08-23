@@ -1,0 +1,367 @@
+{
+  "name": "mhdsra2_loop_extract_compose_json_smoke_cuda",
+  "config": {
+    "device": "cuda:0",
+    "groups": [
+      "baseline",
+      "extract_compose_readout"
+    ],
+    "tasks": [
+      "json"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_loop_extract_compose_json_smoke_cuda.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 1,
+        "dim": 16,
+        "slots": 8,
+        "read_topk": 2,
+        "chunk_size": 64,
+        "train_dataset_size": 1,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "distractor_records_per_case": 2,
+        "answer_template_mode": "mixed",
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "generation_readout_mode": "model",
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "extract_compose_readout",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 1,
+        "dim": 16,
+        "slots": 8,
+        "read_topk": 2,
+        "chunk_size": 64,
+        "train_dataset_size": 1,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "distractor_records_per_case": 2,
+        "answer_template_mode": "mixed",
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "generation_readout_mode": "extract_then_compose",
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 1,
+        "dim": 16,
+        "slots": 8,
+        "read_topk": 2,
+        "chunk_size": 64,
+        "train_dataset_size": 1,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "distractor_records_per_case": 2,
+        "answer_template_mode": "mixed",
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "generation_readout_mode": "model",
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.007575757575757576
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.0
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.007575757575757576,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.007692307692307693,
+        "validation_slot_decoder_full_answer_accuracy": null,
+        "validation_slot_decoder_museum_accuracy": null,
+        "validation_slot_decoder_artifact_accuracy": null,
+        "validation_slot_decoder_artist_accuracy": null,
+        "validation_slot_decoder_dynasty_accuracy": null,
+        "test_slot_decoder_full_answer_accuracy": null,
+        "test_slot_decoder_museum_accuracy": null,
+        "test_slot_decoder_artifact_accuracy": null,
+        "test_slot_decoder_artist_accuracy": null,
+        "test_slot_decoder_dynasty_accuracy": null,
+        "validation_evidence_window_accuracy": null,
+        "validation_evidence_window_mean_distance": null,
+        "test_evidence_window_accuracy": null,
+        "test_evidence_window_mean_distance": null,
+        "validation_extract_then_compose_exact_match_rate": null,
+        "validation_extract_then_compose_mean_sequence_accuracy": null,
+        "test_extract_then_compose_exact_match_rate": null,
+        "test_extract_then_compose_mean_sequence_accuracy": null
+      },
+      "elapsed_sec": 116.35786419999931
+    },
+    {
+      "group": "extract_compose_readout",
+      "task": "json",
+      "seed": 7,
+      "status": "completed",
+      "config": {
+        "epochs": 1,
+        "dim": 16,
+        "slots": 8,
+        "read_topk": 2,
+        "chunk_size": 64,
+        "train_dataset_size": 1,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "distractor_records_per_case": 2,
+        "answer_template_mode": "mixed",
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "generation_readout_mode": "extract_then_compose",
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "validation_generation_exact_match_rate": 0.0,
+        "validation_generation_mean_sequence_accuracy": 0.030303030303030304
+      },
+      "test_metrics": {
+        "test_generation_exact_match_rate": 0.0,
+        "test_generation_mean_sequence_accuracy": 0.03076923076923077
+      },
+      "diagnostic_metrics": {
+        "validation_teacher_forced_exact_match_rate": 0.0,
+        "validation_teacher_forced_mean_sequence_accuracy": 0.007575757575757576,
+        "test_teacher_forced_exact_match_rate": 0.0,
+        "test_teacher_forced_mean_sequence_accuracy": 0.007692307692307693,
+        "validation_slot_decoder_full_answer_accuracy": null,
+        "validation_slot_decoder_museum_accuracy": null,
+        "validation_slot_decoder_artifact_accuracy": null,
+        "validation_slot_decoder_artist_accuracy": null,
+        "validation_slot_decoder_dynasty_accuracy": null,
+        "test_slot_decoder_full_answer_accuracy": null,
+        "test_slot_decoder_museum_accuracy": null,
+        "test_slot_decoder_artifact_accuracy": null,
+        "test_slot_decoder_artist_accuracy": null,
+        "test_slot_decoder_dynasty_accuracy": null,
+        "validation_evidence_window_accuracy": 0.0,
+        "validation_evidence_window_mean_distance": 1.0,
+        "test_evidence_window_accuracy": 0.0,
+        "test_evidence_window_mean_distance": 5.0,
+        "validation_extract_then_compose_exact_match_rate": 0.0,
+        "validation_extract_then_compose_mean_sequence_accuracy": 0.030303030303030304,
+        "test_extract_then_compose_exact_match_rate": 0.0,
+        "test_extract_then_compose_mean_sequence_accuracy": 0.03076923076923077
+      },
+      "elapsed_sec": 74.4620496000025
+    }
+  ],
+  "sections": {
+    "json": {
+      "task": "json",
+      "rows": [
+        {
+          "group": "baseline",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 1,
+            "dim": 16,
+            "slots": 8,
+            "read_topk": 2,
+            "chunk_size": 64,
+            "train_dataset_size": 1,
+            "validation_dataset_size": 1,
+            "test_dataset_size": 1,
+            "distractor_records_per_case": 2,
+            "answer_template_mode": "mixed",
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.0,
+            "slot_decoder_loss_weight": 0.0,
+            "slot_decoder_logit_bias": 0.0,
+            "evidence_hint_weight": 0.0,
+            "generation_readout_mode": "model",
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.007575757575757576
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.0
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.007575757575757576,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.007692307692307693,
+            "validation_slot_decoder_full_answer_accuracy": null,
+            "validation_slot_decoder_museum_accuracy": null,
+            "validation_slot_decoder_artifact_accuracy": null,
+            "validation_slot_decoder_artist_accuracy": null,
+            "validation_slot_decoder_dynasty_accuracy": null,
+            "test_slot_decoder_full_answer_accuracy": null,
+            "test_slot_decoder_museum_accuracy": null,
+            "test_slot_decoder_artifact_accuracy": null,
+            "test_slot_decoder_artist_accuracy": null,
+            "test_slot_decoder_dynasty_accuracy": null,
+            "validation_evidence_window_accuracy": null,
+            "validation_evidence_window_mean_distance": null,
+            "test_evidence_window_accuracy": null,
+            "test_evidence_window_mean_distance": null,
+            "validation_extract_then_compose_exact_match_rate": null,
+            "validation_extract_then_compose_mean_sequence_accuracy": null,
+            "test_extract_then_compose_exact_match_rate": null,
+            "test_extract_then_compose_mean_sequence_accuracy": null
+          },
+          "elapsed_sec": 116.35786419999931
+        },
+        {
+          "group": "extract_compose_readout",
+          "task": "json",
+          "seed": 7,
+          "status": "completed",
+          "config": {
+            "epochs": 1,
+            "dim": 16,
+            "slots": 8,
+            "read_topk": 2,
+            "chunk_size": 64,
+            "train_dataset_size": 1,
+            "validation_dataset_size": 1,
+            "test_dataset_size": 1,
+            "distractor_records_per_case": 2,
+            "answer_template_mode": "mixed",
+            "generalization_score_mode": "generation",
+            "evidence_loss_weight": 0.2,
+            "slot_decoder_loss_weight": 0.0,
+            "slot_decoder_logit_bias": 0.0,
+            "evidence_hint_weight": 0.0,
+            "generation_readout_mode": "extract_then_compose",
+            "seed_bundle": {
+              "seed_root": 7,
+              "train_dataset_seed": 7,
+              "validation_dataset_seed": 108,
+              "test_dataset_seed": 209,
+              "pair_split_seed": 310,
+              "model_seed": 411
+            },
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "validation_generation_exact_match_rate": 0.0,
+            "validation_generation_mean_sequence_accuracy": 0.030303030303030304
+          },
+          "test_metrics": {
+            "test_generation_exact_match_rate": 0.0,
+            "test_generation_mean_sequence_accuracy": 0.03076923076923077
+          },
+          "diagnostic_metrics": {
+            "validation_teacher_forced_exact_match_rate": 0.0,
+            "validation_teacher_forced_mean_sequence_accuracy": 0.007575757575757576,
+            "test_teacher_forced_exact_match_rate": 0.0,
+            "test_teacher_forced_mean_sequence_accuracy": 0.007692307692307693,
+            "validation_slot_decoder_full_answer_accuracy": null,
+            "validation_slot_decoder_museum_accuracy": null,
+            "validation_slot_decoder_artifact_accuracy": null,
+            "validation_slot_decoder_artist_accuracy": null,
+            "validation_slot_decoder_dynasty_accuracy": null,
+            "test_slot_decoder_full_answer_accuracy": null,
+            "test_slot_decoder_museum_accuracy": null,
+            "test_slot_decoder_artifact_accuracy": null,
+            "test_slot_decoder_artist_accuracy": null,
+            "test_slot_decoder_dynasty_accuracy": null,
+            "validation_evidence_window_accuracy": 0.0,
+            "validation_evidence_window_mean_distance": 1.0,
+            "test_evidence_window_accuracy": 0.0,
+            "test_evidence_window_mean_distance": 5.0,
+            "validation_extract_then_compose_exact_match_rate": 0.0,
+            "validation_extract_then_compose_mean_sequence_accuracy": 0.030303030303030304,
+            "test_extract_then_compose_exact_match_rate": 0.0,
+            "test_extract_then_compose_mean_sequence_accuracy": 0.03076923076923077
+          },
+          "elapsed_sec": 74.4620496000025
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 2,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

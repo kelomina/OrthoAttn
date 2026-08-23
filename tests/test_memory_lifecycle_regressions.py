@@ -85,6 +85,54 @@ def test_retrieve_max_position_filters_future_tokens() -> None:
     assert 1 in positions.tolist()
 
 
+def test_retrieve_positions_respects_future_cutoff() -> None:
+    """Explicit evidence lookup must not bypass the future cutoff."""
+    memory = PagedExactMemory(page_size=4, dtype=torch.float32)
+    key = torch.zeros(1, 1, 8, 4)
+    value = torch.zeros(1, 1, 8, 4)
+    key[:, :, 2, 0] = 1.0
+    value[:, :, 2, 1] = 1.0
+    key[:, :, 6, 0] = 1.0
+    value[:, :, 6, 2] = 1.0
+    memory.append(key, value)
+
+    _, retrieved_v, positions, mask, metadata = memory.retrieve_positions(
+        torch.tensor([2, 6]),
+        device=torch.device("cpu"),
+        max_position=4,
+        return_mask=True,
+        return_metadata=True,
+    )
+
+    assert retrieved_v is not None
+    assert positions.tolist() == [2]
+    assert mask.tolist() == [True]
+    assert metadata["retrieved_token_counts"].tolist() == [1]
+
+
+def test_retrieve_positions_supports_batch_isolated_lookup() -> None:
+    memory = PagedExactMemory(page_size=4, dtype=torch.float32)
+    key = torch.zeros(2, 1, 5, 4)
+    value = torch.zeros(2, 1, 5, 4)
+    key[0, :, 1, 0] = 1.0
+    value[0, :, 1, 1] = 1.0
+    key[1, :, 3, 0] = 1.0
+    value[1, :, 3, 2] = 1.0
+    memory.append(key, value)
+
+    _, _, positions, mask, metadata = memory.retrieve_positions(
+        torch.tensor([1, 3]),
+        device=torch.device("cpu"),
+        max_position=torch.tensor([5, 5]),
+        return_mask=True,
+        return_metadata=True,
+    )
+
+    assert positions.tolist() == [[1], [3]]
+    assert mask.tolist() == [[True], [True]]
+    assert metadata["retrieved_token_counts"].tolist() == [1, 1]
+
+
 def test_paged_exact_memory_default_does_not_prune_pages() -> None:
     memory = PagedExactMemory(page_size=1, dtype=torch.float32)
     key = torch.randn(1, 1, 3, 4)
@@ -573,9 +621,305 @@ def test_paged_exact_memory_max_token_query_pooling_uses_strongest_query_token()
     assert int(positions[0].item()) in {0, 1}
 
 
+def test_paged_exact_memory_neighbor_span_adds_right_neighbor_only_when_enabled() -> None:
+    """Right-neighbor retrieval should be explicit and preserve default results."""
+    key = torch.tensor(
+        [[
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    baseline = PagedExactMemory(page_size=4, dtype=torch.float32)
+    baseline.append(key, value)
+    _, _, baseline_positions = baseline.retrieve(query, top_pages=1, max_tokens=1)
+
+    expanded = PagedExactMemory(page_size=4, dtype=torch.float32, neighbor_span=1)
+    expanded.append(key, value)
+    _, _, expanded_positions = expanded.retrieve(query, top_pages=1, max_tokens=1)
+
+    assert baseline_positions is not None
+    assert baseline_positions.tolist() == [0]
+    assert expanded_positions is not None
+    assert expanded_positions.tolist() == [0, 1]
+
+
+def test_paged_exact_memory_bidirectional_neighbor_span_adds_left_neighbor() -> None:
+    """Bidirectional neighbor expansion is opt-in and can recover key/value pairs."""
+    key = torch.tensor(
+        [[
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    right_only = PagedExactMemory(page_size=4, dtype=torch.float32, neighbor_span=1)
+    right_only.append(key, value)
+    _, _, right_only_positions = right_only.retrieve(query, top_pages=1, max_tokens=1)
+
+    bidirectional = PagedExactMemory(
+        page_size=4,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+    )
+    bidirectional.append(key, value)
+    _, _, bidirectional_positions = bidirectional.retrieve(query, top_pages=1, max_tokens=1)
+
+    assert right_only_positions is not None
+    assert right_only_positions.tolist() == [1, 2]
+    assert bidirectional_positions is not None
+    assert bidirectional_positions.tolist() == [1, 0, 2]
+
+
+def test_paged_exact_memory_neighbor_span_respects_future_cutoff() -> None:
+    """Neighbor expansion must not leak current or future tokens."""
+    memory = PagedExactMemory(page_size=4, dtype=torch.float32, neighbor_span=1)
+    key = torch.tensor(
+        [[
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    memory.append(key, value)
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    _, _, positions = memory.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=1,
+        max_position=1,
+    )
+
+    assert positions is not None
+    assert positions.tolist() == [0]
+
+
+def test_paged_exact_memory_bidirectional_neighbor_span_respects_future_cutoff() -> None:
+    """Bidirectional neighbor expansion may add past tokens but never future tokens."""
+    memory = PagedExactMemory(
+        page_size=4,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+    )
+    key = torch.tensor(
+        [[
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    memory.append(key, value)
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    _, _, positions = memory.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=1,
+        max_position=2,
+    )
+
+    assert positions is not None
+    assert positions.tolist() == [1, 0]
+
+
+def test_paged_exact_memory_metadata_reports_page_and_top_token_positions() -> None:
+    """Retrieval metadata should expose page-locality diagnostics only when requested."""
+    memory = PagedExactMemory(
+        page_size=4,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+    )
+    key = torch.tensor(
+        [[
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    memory.append(key, value)
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    default_result = memory.retrieve(query, top_pages=1, max_tokens=1)
+    assert len(default_result) == 3
+
+    _, _, positions, mask, metadata = memory.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=1,
+        return_mask=True,
+        return_metadata=True,
+    )
+
+    assert positions is not None
+    assert mask is not None
+    assert positions.tolist() == [1, 0, 2]
+    assert mask.tolist() == [True, True, True]
+    assert metadata["selected_page_ranges"].tolist() == [[0, 4]]
+    assert metadata["page_candidate_positions"].tolist() == [0, 1, 2, 3]
+    assert metadata["top_token_positions"].tolist() == [1]
+    assert metadata["page_candidate_positions_by_sample"][0].tolist() == [0, 1, 2, 3]
+    assert metadata["top_token_positions_by_sample"][0].tolist() == [1]
+
+
+def test_paged_exact_memory_neighbor_seed_multiplier_expands_before_final_budget() -> None:
+    """Extra neighbor seeds can materialize page-local neighbors before output."""
+    key = torch.tensor(
+        [[
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.99, 0.01],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    default_seed = PagedExactMemory(
+        page_size=4,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+    )
+    default_seed.append(key, value)
+    _, _, default_positions = default_seed.retrieve(query, top_pages=1, max_tokens=1)
+
+    wide_seed = PagedExactMemory(
+        page_size=4,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+        neighbor_seed_multiplier=2,
+    )
+    wide_seed.append(key, value)
+    _, _, wide_positions, mask, metadata = wide_seed.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=1,
+        return_mask=True,
+        return_metadata=True,
+    )
+
+    assert default_positions is not None
+    assert default_positions.tolist() == [1, 0, 2]
+    assert wide_positions is not None
+    assert wide_positions.tolist() == [1, 0, 2, 3]
+    assert mask is not None
+    assert int(mask.sum().item()) == 4
+    assert metadata["top_token_positions"].tolist() == [1]
+    assert metadata["seed_token_positions"].tolist() == [1, 2]
+
+
+def test_paged_exact_memory_pair_aware_neighbor_budget_caps_materialized_tokens() -> None:
+    """Pair-aware budget keeps seed expansion from widening retrieval unboundedly."""
+    key = torch.tensor(
+        [[
+            [0.0, 1.0],
+            [1.0, 0.0],
+            [0.99, 0.01],
+            [0.98, 0.02],
+            [0.0, 1.0],
+        ]],
+        dtype=torch.float32,
+    )
+    value = key.clone()
+    query = torch.tensor([[[[1.0, 0.0]]]], dtype=torch.float32)
+
+    unbounded = PagedExactMemory(
+        page_size=8,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+        neighbor_seed_multiplier=3,
+    )
+    unbounded.append(key, value)
+    _, _, unbounded_positions = unbounded.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=1,
+    )
+
+    pair_aware = PagedExactMemory(
+        page_size=8,
+        dtype=torch.float32,
+        neighbor_span=1,
+        neighbor_direction="both",
+        neighbor_seed_multiplier=3,
+        neighbor_budget_mode="pair_aware",
+    )
+    pair_aware.append(key, value)
+    _, _, pair_aware_positions, mask, metadata = pair_aware.retrieve(
+        query,
+        top_pages=1,
+        max_tokens=2,
+        return_mask=True,
+        return_metadata=True,
+    )
+
+    assert unbounded_positions is not None
+    assert unbounded_positions.tolist() == [1, 0, 2, 3, 4]
+    assert pair_aware_positions is not None
+    assert pair_aware_positions.tolist() == [1, 0]
+    assert mask is not None
+    assert int(mask.sum().item()) == 2
+    assert metadata["seed_token_positions"].tolist() == [1, 2, 3, 4, 0]
+
+
 def test_paged_exact_memory_rejects_unknown_query_pooling() -> None:
     with pytest.raises(ValueError, match="query_pooling"):
         PagedExactMemory(page_size=2, dtype=torch.float32, query_pooling="bad")
+
+
+def test_paged_exact_memory_rejects_negative_neighbor_span() -> None:
+    with pytest.raises(ValueError, match="neighbor_span"):
+        PagedExactMemory(page_size=2, dtype=torch.float32, neighbor_span=-1)
+
+
+def test_paged_exact_memory_rejects_unknown_neighbor_direction() -> None:
+    with pytest.raises(ValueError, match="neighbor_direction"):
+        PagedExactMemory(
+            page_size=2,
+            dtype=torch.float32,
+            neighbor_span=1,
+            neighbor_direction="diagonal",
+        )
+
+
+def test_paged_exact_memory_rejects_non_positive_neighbor_seed_multiplier() -> None:
+    with pytest.raises(ValueError, match="neighbor_seed_multiplier"):
+        PagedExactMemory(
+            page_size=2,
+            dtype=torch.float32,
+            neighbor_span=1,
+            neighbor_seed_multiplier=0,
+        )
+
+
+def test_paged_exact_memory_rejects_unknown_neighbor_budget_mode() -> None:
+    with pytest.raises(ValueError, match="neighbor_budget_mode"):
+        PagedExactMemory(
+            page_size=2,
+            dtype=torch.float32,
+            neighbor_budget_mode="bad",
+        )
 
 
 def test_dsra_chunk_layer_forward_step_uses_single_fast_qkv_projection() -> None:

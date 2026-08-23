@@ -24,6 +24,7 @@ from scripts.tiny_llama_shared import (
     load_wikitext2_splits,
     split_train_validation_text,
     resolve_device,
+    set_reproducible_seed,
 )
 from scripts.tiny_llama_mhdsra2 import evaluate_ppl
 
@@ -170,6 +171,7 @@ def main_standard(config: dict | None = None) -> float:
     if config:
         cfg.update(config)
 
+    set_reproducible_seed(cfg.get("seed"))
     device = resolve_device(cfg["device"])
     tokenizer = CharTokenizer()
     print(f"[Standard] Device: {device}, Vocab: {tokenizer.vocab_size}")

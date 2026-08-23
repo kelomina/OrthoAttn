@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from pathlib import Path
 from collections import deque
 
@@ -75,12 +76,42 @@ DEFAULT_EVIDENCE_WINDOW_COUNT = 16
 DEFAULT_EVIDENCE_LOSS_WEIGHT = 0.0
 DEFAULT_EVIDENCE_HINT_WEIGHT = 0.0
 DEFAULT_EVIDENCE_MIN_CONTEXT_BYTES = 0
+DEFAULT_GENERATION_READOUT_MODE = "model"
+DEFAULT_EXTRACT_COMPOSE_SENTENCE_EXPAND_BYTES = 256
+DEFAULT_DISTRACTOR_RECORDS_PER_CASE = 0
+DEFAULT_ANSWER_TEMPLATE_MODE = "canonical"
+ALLOWED_ANSWER_TEMPLATE_MODES = ("canonical", "mixed")
 ENTITY_SPAN_NAMES = ("museum", "artifact")
 ANSWER_SLOT_NAMES = ("museum", "artifact", "artist", "dynasty")
+GENERATION_READOUT_ADAPTER_CONFIGS = {
+    "extract_then_compose": {
+        "diagnostic_key": "extract_then_compose",
+        "metric_prefix": "extract_then_compose",
+        "evaluator_name": "evaluate_extract_then_compose",
+        "requires_hidden_states": True,
+        "slot_metric_names": ANSWER_SLOT_NAMES,
+    },
+}
+ALLOWED_GENERATION_READOUT_MODES = (
+    DEFAULT_GENERATION_READOUT_MODE,
+    *GENERATION_READOUT_ADAPTER_CONFIGS.keys(),
+)
 QUESTION_TEMPLATE = "What is the most valuable exhibit in the {museum}? Answer based on the context."
-ANSWER_TEMPLATE = (
+CANONICAL_ANSWER_TEMPLATE = (
     "The most valuable exhibit in the {museum} is {artifact} painted by {artist} "
     "of the {dynasty} dynasty."
+)
+ANSWER_TEMPLATE = CANONICAL_ANSWER_TEMPLATE
+ANSWER_TEMPLATE_VARIANTS = (
+    CANONICAL_ANSWER_TEMPLATE,
+    (
+        "For the {museum}, the most valuable exhibit is {artifact}; "
+        "it was painted by {artist} of the {dynasty} dynasty."
+    ),
+    (
+        "{artifact}, painted by {artist} of the {dynasty} dynasty, "
+        "is the most valuable exhibit in the {museum}."
+    ),
 )
 MUSEUM_NAMES = (
     "Palace Museum",
@@ -114,6 +145,137 @@ DYNASTY_NAMES = (
     "Han",
     "Jin",
 )
+ANSWER_RECORD_PATTERNS = (
+    re.compile(
+        r"The most valuable exhibit in the (?P<museum>[^.]+?) is (?P<artifact>[^.]+?) "
+        r"painted by (?P<artist>[^.]+?) of the (?P<dynasty>[^.]+?) dynasty\."
+    ),
+    re.compile(
+        r"For the (?P<museum>[^.]+?), the most valuable exhibit is (?P<artifact>[^.]+?); "
+        r"it was painted by (?P<artist>[^.]+?) of the (?P<dynasty>[^.]+?) dynasty\."
+    ),
+    re.compile(
+        r"(?P<artifact>[^.]+?), painted by (?P<artist>[^.]+?) of the (?P<dynasty>[^.]+?) "
+        r"dynasty, is the most valuable exhibit in the (?P<museum>[^.]+?)\."
+    ),
+)
+ANSWER_RECORD_PATTERN = ANSWER_RECORD_PATTERNS[0]
+
+
+def resolve_json_retrieval_device(device=None):
+    """Resolve the JSON retrieval experiment device.
+
+    中文说明:
+    - 调用方 / Called by: `run_json_retrieval_test`,
+      `run_json_retrieval_generalization_test`
+    - 调用对象 / Calls: `torch.device`, `torch.cuda.is_available`
+    - 作用 / Purpose: 保持旧默认“CUDA 可用时使用 cuda:0”，同时允许统一
+      ablation 入口显式传入 `cpu` 或 `cuda:0`，避免 CLI device 与实际训练设备不一致。
+    - 参数 / Args: `device` 可为 None、字符串或 `torch.device`。
+    - 返回 / Returns: 规范化后的 `torch.device`。
+    - 错误处理 / Error handling: 请求非 cuda:0 或不可用 CUDA 时抛 `ValueError`。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        resolve_json_retrieval_device
+    Purpose:
+        Preserve legacy auto device behavior while letting callers explicitly
+        pin JSON retrieval experiments to cpu or cuda:0.
+    """
+    if device is None or str(device) == "auto":
+        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    resolved = torch.device(device)
+    if resolved.type == "cuda":
+        if resolved.index not in (0, None):
+            raise ValueError("Only cuda:0 is supported for JSON retrieval experiments.")
+        if not torch.cuda.is_available():
+            raise ValueError("CUDA was requested but is not available.")
+        return torch.device("cuda:0")
+    return resolved
+
+
+def normalize_generation_readout_mode(value=DEFAULT_GENERATION_READOUT_MODE):
+    """Normalize the optional JSON generation readout mode.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_generation`, `train_single_configuration`
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 默认保留原始模型逐字生成；显式选择
+      `extract_then_compose` 时，generation 指标改用模型预测证据窗口后的确定性抽取拼写。
+    - 参数 / Args: `value` 为 readout 模式字符串。
+    - 返回 / Returns: 规范化后的模式名。
+    - 错误处理 / Error handling: 非法模式抛 `ValueError`，避免静默跑错实验组。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        normalize_generation_readout_mode
+    Purpose:
+        Keep the default byte-by-byte generation path unchanged while making
+        experimental readout modes explicit and validated.
+    """
+    mode = str(value or DEFAULT_GENERATION_READOUT_MODE).strip()
+    if mode not in ALLOWED_GENERATION_READOUT_MODES:
+        allowed = ", ".join(ALLOWED_GENERATION_READOUT_MODES)
+        raise ValueError(f"Unsupported generation_readout_mode: {mode!r}; allowed: {allowed}")
+    return mode
+
+
+def get_generation_readout_adapter_config(readout_mode):
+    """Return the opt-in JSON generation readout adapter config.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_generation`, `evaluate_single_case`,
+      `aggregate_case_pool_results`.
+    - 调用对象 / Calls: `normalize_generation_readout_mode`。
+    - 作用 / Purpose: 把默认逐字生成和任务特化读出器分开管理；默认 `model`
+      返回 None，显式实验组才会拿到 adapter 配置。
+    - 参数 / Args: `readout_mode` 是 CLI/ablation 传入的读出模式名。
+    - 返回 / Returns: adapter 配置 dict 或 None。
+    - 错误处理 / Error handling: 非法模式由 normalize 函数抛 `ValueError`。
+    - 副作用 / Side effects: 无，不改变训练或模型默认行为。
+
+    English documentation:
+    Function name:
+        get_generation_readout_adapter_config
+    Purpose:
+        Centralize default-off structured generation readout adapters so future
+        task-specific adapters do not add more hard-coded branches.
+    """
+    normalized_mode = normalize_generation_readout_mode(readout_mode)
+    if normalized_mode == DEFAULT_GENERATION_READOUT_MODE:
+        return None
+    return GENERATION_READOUT_ADAPTER_CONFIGS[normalized_mode]
+
+
+def normalize_answer_template_mode(value=DEFAULT_ANSWER_TEMPLATE_MODE):
+    """Normalize the optional JSON answer template mode.
+
+    中文说明:
+    - 调用方 / Called by: JSON retrieval case-pool builders and train/eval entry points.
+    - 调用对象 / Calls: 无。
+    - 作用 / Purpose: 默认保留单一 canonical 答案句式；显式选择 `mixed`
+      时，合成样本会随机使用多个等价答案模板，测试 readout 是否过拟合固定句式。
+    - 参数 / Args: `value` 为模板模式字符串。
+    - 返回 / Returns: 规范化后的模板模式。
+    - 错误处理 / Error handling: 非法模式抛 `ValueError`。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        normalize_answer_template_mode
+    Purpose:
+        Keep canonical answer records as the default while allowing opt-in
+        mixed template distributions for robustness experiments.
+    """
+    mode = str(value or DEFAULT_ANSWER_TEMPLATE_MODE).strip()
+    if mode not in ALLOWED_ANSWER_TEMPLATE_MODES:
+        allowed = ", ".join(ALLOWED_ANSWER_TEMPLATE_MODES)
+        raise ValueError(f"Unsupported answer_template_mode: {mode!r}; allowed: {allowed}")
+    return mode
+
+
 FILLER_SUBJECTS = (
     "The gallery archive",
     "The museum record",
@@ -385,8 +547,11 @@ def generate_random_json_retrieval_case(
     target_total_bytes=None,
     allowed_museum_artifact_pairs=None,
     forced_museum_artifact_pair=None,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
 ):
     metadata = reference_case["metadata"]
+    answer_template_mode = normalize_answer_template_mode(answer_template_mode)
     total_bytes = int(target_total_bytes or metadata.get("target_total_bytes", len(reference_case["sample_bytes"])))
     if forced_museum_artifact_pair is not None:
         museum, artifact = forced_museum_artifact_pair
@@ -402,21 +567,68 @@ def generate_random_json_retrieval_case(
     artist = rng.choice(ARTIST_NAMES)
     dynasty = rng.choice(DYNASTY_NAMES)
     question = QUESTION_TEMPLATE.format(museum=museum)
-    expected_answer_text = ANSWER_TEMPLATE.format(
-        museum=museum,
-        artifact=artifact,
-        artist=artist,
-        dynasty=dynasty,
+    expected_answer_text, answer_template_id = build_answer_text_from_metadata(
+        {
+            "museum": museum,
+            "artifact": artifact,
+            "artist": artist,
+            "dynasty": dynasty,
+        },
+        rng=rng,
+        answer_template_mode=answer_template_mode,
+        return_template_id=True,
     )
     expected_answer_bytes = expected_answer_text.encode("ascii")
-    filler_bytes = build_noise_bytes(total_bytes - len(expected_answer_bytes), rng)
+    requested_distractor_records_per_case = max(0, int(distractor_records_per_case))
+    distractor_records = []
+    distractor_source_pairs = (
+        tuple(sorted(allowed_museum_artifact_pairs))
+        if allowed_museum_artifact_pairs is not None
+        else ALL_MUSEUM_ARTIFACT_PAIRS
+    )
+    # Keep distractors inside the current split. This prevents train cases from
+    # leaking validation/test museum-artifact pairs through synthetic noise.
+    distractor_candidate_pairs = [
+        pair
+        for pair in distractor_source_pairs
+        if pair[0] != museum
+    ]
+    selected_distractor_pairs = (
+        rng.sample(
+            distractor_candidate_pairs,
+            k=min(requested_distractor_records_per_case, len(distractor_candidate_pairs)),
+        )
+        if distractor_candidate_pairs
+        else []
+    )
+    for distractor_museum, distractor_artifact in selected_distractor_pairs:
+        distractor_metadata = {
+            "museum": distractor_museum,
+            "artifact": distractor_artifact,
+            "artist": rng.choice(ARTIST_NAMES),
+            "dynasty": rng.choice(DYNASTY_NAMES),
+        }
+        distractor_record, _ = build_answer_text_from_metadata(
+            distractor_metadata,
+            rng=rng,
+            answer_template_mode=answer_template_mode,
+            return_template_id=True,
+        )
+        distractor_records.append(distractor_record)
+    distractor_bytes = (
+        (" ".join(distractor_records) + " ").encode("ascii")
+        if distractor_records
+        else b""
+    )
+    needle_bytes = distractor_bytes + expected_answer_bytes
+    filler_bytes = build_noise_bytes(total_bytes - len(needle_bytes), rng)
     needle_position_pct = rng.uniform(0.15, 0.85)
     max_insert_position = len(filler_bytes)
     desired_insert_position = int(total_bytes * needle_position_pct)
     insert_position = max(0, min(desired_insert_position, max_insert_position))
     sample_bytes = (
         filler_bytes[:insert_position]
-        + expected_answer_bytes
+        + needle_bytes
         + filler_bytes[insert_position:]
     )
 
@@ -425,7 +637,13 @@ def generate_random_json_retrieval_case(
         "metadata": {
             "target_total_bytes": total_bytes,
             "actual_total_bytes": len(sample_bytes),
-            "needle_bytes": len(expected_answer_bytes),
+            "needle_bytes": len(needle_bytes),
+            "answer_bytes": len(expected_answer_bytes),
+            "distractor_records_per_case": len(distractor_records),
+            "requested_distractor_records_per_case": requested_distractor_records_per_case,
+            "distractor_records": distractor_records,
+            "answer_template_mode": answer_template_mode,
+            "answer_template_id": answer_template_id,
             "needle_position_pct": needle_position_pct,
             "insert_position_byte_index": insert_position,
             "museum": museum,
@@ -446,6 +664,8 @@ def build_random_training_case_pool(
     dataset_size,
     seed,
     allowed_museum_artifact_pairs=None,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
 ):
     rng = random.Random(seed)
     return [
@@ -453,6 +673,8 @@ def build_random_training_case_pool(
             reference_case,
             rng,
             allowed_museum_artifact_pairs=allowed_museum_artifact_pairs,
+            distractor_records_per_case=distractor_records_per_case,
+            answer_template_mode=answer_template_mode,
         )
         for _ in range(max(1, dataset_size))
     ]
@@ -481,6 +703,8 @@ def build_disjoint_case_pool(
     seed,
     used_signatures=None,
     allowed_museum_artifact_pairs=None,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
 ):
     target_size = max(1, dataset_size)
     rng = random.Random(seed)
@@ -495,6 +719,8 @@ def build_disjoint_case_pool(
             reference_case,
             rng,
             allowed_museum_artifact_pairs=allowed_museum_artifact_pairs,
+            distractor_records_per_case=distractor_records_per_case,
+            answer_template_mode=answer_template_mode,
         )
         signature = build_case_signature(candidate)
         if signature in seen_signatures:
@@ -556,13 +782,54 @@ def get_relative_needle_bounds(case, context_bytes=None):
     return relative_start, relative_end
 
 
+def get_relative_answer_record_bounds(case, context_bytes=None):
+    """Return the target answer-record span inside the active curriculum window.
+
+    中文说明:
+    - 调用方 / Called by: `get_evidence_window_target`。
+    - 调用对象 / Calls: `get_curriculum_window_bounds`。
+    - 作用 / Purpose: 当 JSON 样本在真答案前插入 distractor answer records 时，
+      `needle_bytes` 覆盖的是“干扰记录 + 真答案记录”；evidence decoder 监督应指向
+      被问题请求的真答案句，而不是整个 needle 的中心。
+    - 参数 / Args: `case` 是 JSON retrieval 样本；`context_bytes` 是当前 curriculum 长度。
+    - 返回 / Returns: 真答案句在当前上下文里的 `[start, end)` 相对字节边界。
+    - 错误处理 / Error handling: 旧样本没有 `answer_bytes` 时回退到 `needle_bytes`，
+      因而不改变默认无干扰记录的数据。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Function name:
+        get_relative_answer_record_bounds
+    Purpose:
+        Point evidence supervision at the requested answer record when the
+        synthetic needle also contains distractor answer records.
+    """
+    metadata = case["metadata"]
+    window_start, window_end = get_curriculum_window_bounds(case, context_bytes)
+    active_window_length = window_end - window_start
+    needle_start = metadata["insert_position_byte_index"]
+    needle_bytes = int(metadata.get("needle_bytes", 0))
+    answer_bytes = int(metadata.get("answer_bytes", needle_bytes))
+    answer_offset = max(0, needle_bytes - max(0, answer_bytes))
+    absolute_start = needle_start + answer_offset
+    absolute_end = absolute_start + max(0, answer_bytes)
+    relative_start = absolute_start - window_start
+    relative_end = absolute_end - window_start
+    relative_start = max(0, min(relative_start, active_window_length))
+    relative_end = max(relative_start, min(relative_end, active_window_length))
+    return relative_start, relative_end
+
+
 def get_evidence_window_target(case, context_bytes=None, window_count=DEFAULT_EVIDENCE_WINDOW_COUNT):
     sample_length = len(build_curriculum_context(case, context_bytes))
     if sample_length <= 0:
         return 0
-    relative_start, relative_end = get_relative_needle_bounds(case, context_bytes=context_bytes)
-    needle_center = (relative_start + max(relative_start, relative_end - 1)) / 2.0
-    target_window = int((needle_center / max(1, sample_length)) * max(1, window_count))
+    relative_start, relative_end = get_relative_answer_record_bounds(
+        case,
+        context_bytes=context_bytes,
+    )
+    answer_center = (relative_start + max(relative_start, relative_end - 1)) / 2.0
+    target_window = int((answer_center / max(1, sample_length)) * max(1, window_count))
     return max(0, min(int(window_count) - 1, target_window))
 
 
@@ -614,13 +881,49 @@ def get_answer_start_index(case, context_bytes=None):
     return len(sample_bytes) + 1 + len(case["question_bytes"])
 
 
-def build_answer_text_from_metadata(metadata):
-    return ANSWER_TEMPLATE.format(
+def choose_answer_template_id(rng=None, answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE):
+    """Choose an answer template id for one synthetic JSON answer record.
+
+    中文说明:
+    - 调用方 / Called by: `build_answer_text_from_metadata`。
+    - 作用 / Purpose: 默认返回 canonical 模板；`mixed` 模式下为每条记录随机选
+      一个等价模板，用于检测结构化 readout 是否过拟合单一句式。
+    - 副作用 / Side effects: `mixed` 模式会消耗传入 RNG 的一次随机选择。
+
+    English documentation:
+    Choose a canonical or mixed answer template id for one generated record.
+    """
+    mode = normalize_answer_template_mode(answer_template_mode)
+    if mode == "canonical":
+        return 0
+    active_rng = rng if rng is not None else random
+    return int(active_rng.randrange(len(ANSWER_TEMPLATE_VARIANTS)))
+
+
+def build_answer_text_from_metadata(
+    metadata,
+    *,
+    template_id=None,
+    rng=None,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
+    return_template_id=False,
+):
+    if template_id is None:
+        template_id = choose_answer_template_id(
+            rng=rng,
+            answer_template_mode=answer_template_mode,
+        )
+    template_id = int(template_id)
+    template = ANSWER_TEMPLATE_VARIANTS[template_id]
+    answer_text = template.format(
         museum=metadata["museum"],
         artifact=metadata["artifact"],
         artist=metadata["artist"],
         dynasty=metadata["dynasty"],
     )
+    if return_template_id:
+        return answer_text, template_id
+    return answer_text
 
 
 def get_answer_slot_spans(case):
@@ -1481,8 +1784,73 @@ def evaluate_evidence_decoder(model, hidden_states, case, context_bytes=None):
     }
 
 
-def extract_slot_labels_from_window_bytes(window_bytes):
+def extract_target_museum_from_question_bytes(question_bytes):
+    """Extract the museum requested by the JSON retrieval question.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_extract_then_compose`
+    - 作用 / Purpose: 从问题文本中解析目标 museum，用来在预测 evidence
+      window 里优先选择与问题对应的完整答案句，避免同一窗口内的无关记录干扰。
+    - 返回 / Returns: 解析到的 museum 名称；解析失败时返回 None。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Extract the requested museum name from the synthetic JSON retrieval question.
+    """
+    question_text = question_bytes.decode("ascii", errors="ignore")
+    prefix = "What is the most valuable exhibit in the "
+    suffix = "? Answer based on the context."
+    if not question_text.startswith(prefix) or not question_text.endswith(suffix):
+        return None
+    return question_text[len(prefix) : -len(suffix)]
+
+
+def extract_answer_slot_labels_from_text(window_text, target_museum=None):
+    """Extract slot labels from complete answer-template records first.
+
+    中文说明:
+    - 调用方 / Called by: `extract_slot_labels_from_window_bytes`
+    - 作用 / Purpose: 优先从完整答案模板句中解析 museum/artifact/artist/dynasty；
+      如果问题指定了 `target_museum`，只接受对应 museum 的记录，防止同一窗口里
+      其它 museum 的字段值被全局字符串匹配误选。
+    - 返回 / Returns: 找到完整答案句时返回四个 slot；否则返回空 dict。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Prefer complete answer-template records over global substring lookup.
+    """
+    for template_id, pattern in enumerate(ANSWER_RECORD_PATTERNS):
+        for match in pattern.finditer(window_text):
+            slots = {slot_name: match.group(slot_name).strip() for slot_name in ANSWER_SLOT_NAMES}
+            if target_museum is not None and slots["museum"] != target_museum:
+                continue
+            slots["answer_template_id"] = template_id
+            return slots
+    return {}
+
+
+def extract_slot_labels_from_window_bytes(window_bytes, target_museum=None):
+    """Extract answer slots from a predicted evidence window.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_extract_then_compose`
+    - 作用 / Purpose: 先尝试解析完整答案模板句；找不到时才回退到旧的全窗口
+      候选字符串匹配，保持历史实验兼容。
+    - 返回 / Returns: 已抽取的 slot label 字典，可能只包含部分字段。
+    - 副作用 / Side effects: 无。
+
+    English documentation:
+    Extract slot labels from the predicted evidence window, preferring complete
+    answer records and falling back to substring lookup for compatibility.
+    """
     window_text = window_bytes.decode("ascii", errors="ignore")
+    record_slots = extract_answer_slot_labels_from_text(
+        window_text,
+        target_museum=target_museum,
+    )
+    if record_slots:
+        return record_slots
+
     extracted_slots = {}
     for slot_name, candidate_values in SLOT_VALUE_LOOKUPS.items():
         matching_values = [
@@ -1495,11 +1863,73 @@ def extract_slot_labels_from_window_bytes(window_bytes):
     return extracted_slots
 
 
+def expand_window_to_sentence_boundaries(
+    sample_bytes,
+    window_start,
+    window_end,
+    max_expand_bytes=DEFAULT_EXTRACT_COMPOSE_SENTENCE_EXPAND_BYTES,
+):
+    """Expand a predicted evidence window to nearby sentence boundaries.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_extract_then_compose` and parser tests.
+    - 调用对象 / Calls: bytes boundary search only.
+    - 作用 / Purpose: evidence decoder 预测的是固定宽度窗口，窗口可能从答案句中间
+      开始或在句尾前截断；本函数只在模型预测窗口附近找最近的句号边界，让显式
+      `extract_then_compose` 读出器能解析完整答案句。
+    - 参数 / Args: `sample_bytes` 是当前样本上下文；`window_start/window_end` 是模型
+      预测窗口边界；`max_expand_bytes` 限制左右最多扩多少字节，避免退化成全局搜索。
+    - 返回 / Returns: 扩展后的 `[start, end)` 字节边界。
+    - 错误处理 / Error handling: 空样本或非法窗口会被夹到有效范围。
+    - 副作用 / Side effects: 无；不读取 expected answer 或 metadata label。
+
+    English documentation:
+    Function name:
+        expand_window_to_sentence_boundaries
+    Purpose:
+        Let the explicit extract-then-compose readout recover complete answer
+        records when fixed evidence windows cut through sentence boundaries,
+        without scanning the whole context or using gold answers.
+    """
+    sample_length = len(sample_bytes)
+    if sample_length <= 0:
+        return 0, 0
+
+    start_index = max(0, min(int(window_start), sample_length))
+    end_index = max(start_index, min(int(window_end), sample_length))
+    expand_limit = max(0, int(max_expand_bytes))
+
+    left_search_start = max(0, start_index - expand_limit)
+    left_segment = sample_bytes[left_search_start:start_index]
+    previous_period = left_segment.rfind(b".")
+    if previous_period >= 0:
+        expanded_start = left_search_start + previous_period + 1
+        while expanded_start < start_index and sample_bytes[expanded_start:expanded_start + 1] == b" ":
+            expanded_start += 1
+    else:
+        expanded_start = left_search_start
+
+    right_search_end = min(sample_length, end_index + expand_limit)
+    right_segment = sample_bytes[end_index:right_search_end]
+    next_period = right_segment.find(b".")
+    if next_period >= 0:
+        expanded_end = end_index + next_period + 1
+    else:
+        expanded_end = right_search_end
+
+    if expanded_end <= expanded_start:
+        expanded_end = min(sample_length, expanded_start + 1)
+    return expanded_start, expanded_end
+
+
 def build_extract_compose_prediction_bytes(extracted_slots):
     predicted_metadata = {}
     for slot_name in ANSWER_SLOT_NAMES:
         predicted_metadata[slot_name] = extracted_slots.get(slot_name, "UNKNOWN")
-    return build_answer_text_from_metadata(predicted_metadata).encode("ascii")
+    return build_answer_text_from_metadata(
+        predicted_metadata,
+        template_id=extracted_slots.get("answer_template_id", 0),
+    ).encode("ascii")
 
 
 def evaluate_extract_then_compose(model, hidden_states, case, context_bytes=None):
@@ -1515,8 +1945,17 @@ def evaluate_extract_then_compose(model, hidden_states, case, context_bytes=None
         window_index=predicted_window,
         window_count=evidence_window_count,
     )
-    window_bytes = sample_bytes[window_start:window_end]
-    extracted_slots = extract_slot_labels_from_window_bytes(window_bytes)
+    readout_window_start, readout_window_end = expand_window_to_sentence_boundaries(
+        sample_bytes,
+        window_start,
+        window_end,
+    )
+    window_bytes = sample_bytes[readout_window_start:readout_window_end]
+    target_museum = extract_target_museum_from_question_bytes(case["question_bytes"])
+    extracted_slots = extract_slot_labels_from_window_bytes(
+        window_bytes,
+        target_museum=target_museum,
+    )
     predicted_answer_bytes = build_extract_compose_prediction_bytes(extracted_slots)
     predicted_tokens = list(predicted_answer_bytes)
     expected_tokens = list(case["expected_answer_bytes"])
@@ -1543,10 +1982,54 @@ def evaluate_extract_then_compose(model, hidden_states, case, context_bytes=None
         "predicted_window": predicted_window,
         "window_start": window_start,
         "window_end": window_end,
+        "readout_window_start": readout_window_start,
+        "readout_window_end": readout_window_end,
         **metrics,
         **tail_metrics,
         "entity_span_metrics": entity_span_metrics,
     }
+
+
+def evaluate_generation_readout_adapter(
+    model,
+    hidden_states,
+    case,
+    readout_mode,
+    context_bytes=None,
+):
+    """Evaluate an explicit structured generation readout adapter.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_generation`, `evaluate_single_case`。
+    - 调用对象 / Calls: 当前只调用 `evaluate_extract_then_compose`；后续新增
+      readout adapter 时只扩展注册表和本分发点。
+    - 作用 / Purpose: 将“模型逐字生成”和“预测证据窗口后的结构化读出”隔离，
+      防止 JSON 特化 parser 继续散落到通用 generation 逻辑里。
+    - 参数 / Args: `hidden_states` 必须来自当前 case 的 teacher-forced forward；
+      `readout_mode` 必须是显式启用的 adapter 名称。
+    - 返回 / Returns: adapter 自身的评估结果 dict。
+    - 错误处理 / Error handling: 未注册 adapter 抛 `ValueError`，避免静默回退。
+    - 副作用 / Side effects: 无；不读取 validation/test 选择信号。
+
+    English documentation:
+    Function name:
+        evaluate_generation_readout_adapter
+    Purpose:
+        Keep task-specific answer readouts default-off and routed through a
+        single adapter boundary instead of adding one branch per experiment.
+    """
+    adapter_config = get_generation_readout_adapter_config(readout_mode)
+    if adapter_config is None:
+        raise ValueError(f"Readout mode {readout_mode!r} is not an adapter mode.")
+    evaluator_name = adapter_config["evaluator_name"]
+    if evaluator_name == "evaluate_extract_then_compose":
+        return evaluate_extract_then_compose(
+            model,
+            hidden_states,
+            case,
+            context_bytes=context_bytes,
+        )
+    raise ValueError(f"Unsupported generation readout adapter evaluator: {evaluator_name!r}")
 
 
 def evaluate_slot_decoder(model, hidden_states, case, context_bytes=None):
@@ -1761,7 +2244,57 @@ def evaluate_teacher_forced(logits, Y, case):
     }
 
 
-def evaluate_generation(model, case, device, context_bytes=None):
+def evaluate_generation(
+    model,
+    case,
+    device,
+    context_bytes=None,
+    hidden_states=None,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+):
+    generation_readout_mode = normalize_generation_readout_mode(generation_readout_mode)
+    adapter_config = get_generation_readout_adapter_config(generation_readout_mode)
+    if adapter_config is not None:
+        if hidden_states is None:
+            X, _ = build_training_example(case, context_bytes=context_bytes)
+            X = X.to(device)
+            with torch.no_grad():
+                _, hidden_states, _ = forward_json_retrieval(
+                    model,
+                    X,
+                    case,
+                    context_bytes=context_bytes,
+                    return_hidden=True,
+                )
+        readout = evaluate_generation_readout_adapter(
+            model,
+            hidden_states,
+            case,
+            generation_readout_mode,
+            context_bytes=context_bytes,
+        )
+        expected_bytes = case["expected_answer_bytes"]
+        predicted_text = readout.get("predicted_text", "")
+        predicted_bytes = predicted_text.encode("ascii", errors="replace")
+        expected_text = expected_bytes.decode("utf-8", errors="replace")
+        predicted_tokens = list(predicted_bytes)
+        expected_tokens = list(expected_bytes)
+        metrics = compute_sequence_metrics(predicted_tokens, expected_tokens)
+        tail_metrics = compute_tail_slice_metrics(predicted_tokens, expected_tokens)
+        entity_span_metrics = compute_entity_span_metrics(predicted_tokens, case)
+        return {
+            "predicted_tokens": predicted_tokens,
+            "predicted_text": predicted_text,
+            "expected_text": expected_text,
+            "exact_byte_match": bool(readout.get("exact_byte_match", False)),
+            "exact_text_match": predicted_text == expected_text,
+            "readout_mode": generation_readout_mode,
+            "readout_available": bool(readout.get("available", False)),
+            **metrics,
+            **tail_metrics,
+            "entity_span_metrics": entity_span_metrics,
+        }
+
     sample_bytes = build_curriculum_context(case, context_bytes) if context_bytes is not None else case["sample_bytes"]
     sample_tokens = list(sample_bytes)
     question_tokens = list(case["question_bytes"])
@@ -1790,19 +2323,42 @@ def evaluate_generation(model, case, device, context_bytes=None):
         "expected_text": expected_text,
         "exact_byte_match": predicted_bytes == expected_bytes,
         "exact_text_match": predicted_text == expected_text,
+        "readout_mode": generation_readout_mode,
+        "readout_available": True,
         **metrics,
         **tail_metrics,
         "entity_span_metrics": entity_span_metrics,
     }
 
 
-def evaluate_single_case(model, case, device):
+def evaluate_single_case(
+    model,
+    case,
+    device,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+):
+    generation_readout_mode = normalize_generation_readout_mode(generation_readout_mode)
     X, Y = build_training_example(case)
     X, Y = X.to(device), Y.to(device)
     with torch.no_grad():
         logits, hidden_states, _ = forward_json_retrieval(model, X, case, return_hidden=True)
     teacher_forced = evaluate_teacher_forced(logits, Y, case)
-    generation = evaluate_generation(model, case, device)
+    generation = evaluate_generation(
+        model,
+        case,
+        device,
+        hidden_states=hidden_states,
+        generation_readout_mode=generation_readout_mode,
+    )
+    readout_diagnostics = {}
+    adapter_config = get_generation_readout_adapter_config(generation_readout_mode)
+    if adapter_config is not None:
+        readout_diagnostics[adapter_config["diagnostic_key"]] = evaluate_generation_readout_adapter(
+            model,
+            hidden_states,
+            case,
+            generation_readout_mode,
+        )
     return {
         "question": case["metadata"]["question"],
         "expected_answer_text": case["metadata"]["expected_answer_text"],
@@ -1812,7 +2368,7 @@ def evaluate_single_case(model, case, device):
         "answer_entity_spans": get_answer_entity_spans(case),
         "entity_auxiliary": evaluate_entity_auxiliary(model, hidden_states, case),
         "evidence_decoder": evaluate_evidence_decoder(model, hidden_states, case),
-        "extract_then_compose": evaluate_extract_then_compose(model, hidden_states, case),
+        **readout_diagnostics,
         "slot_decoder": evaluate_slot_decoder(model, hidden_states, case),
         "needle_position_pct": case["metadata"]["needle_position_pct"],
         "teacher_forced": teacher_forced,
@@ -1901,35 +2457,41 @@ def aggregate_case_pool_results(case_results):
     else:
         aggregated["evidence_window_accuracy"] = None
         aggregated["evidence_window_mean_distance"] = None
-    extract_compose_results = [
-        case_result.get("extract_then_compose", {})
-        for case_result in case_results
-        if case_result.get("extract_then_compose", {}).get("available")
-    ]
-    if extract_compose_results:
-        aggregated["extract_then_compose_exact_match_rate"] = (
-            sum(int(result["exact_byte_match"]) for result in extract_compose_results)
-            / len(extract_compose_results)
-        )
-        aggregated["extract_then_compose_mean_sequence_accuracy"] = (
-            sum(result["sequence_accuracy"] for result in extract_compose_results)
-            / len(extract_compose_results)
-        )
-        aggregated["extract_then_compose_mean_prefix_match_length"] = (
-            sum(result["prefix_match_length"] for result in extract_compose_results)
-            / len(extract_compose_results)
-        )
-        for slot_name in ANSWER_SLOT_NAMES:
-            aggregated[f"extract_then_compose_{slot_name}_accuracy"] = (
-                sum(int(result["extracted_slots"][slot_name]["exact_match"]) for result in extract_compose_results)
-                / len(extract_compose_results)
+    for adapter_config in GENERATION_READOUT_ADAPTER_CONFIGS.values():
+        diagnostic_key = adapter_config["diagnostic_key"]
+        metric_prefix = adapter_config["metric_prefix"]
+        adapter_results = [
+            case_result.get(diagnostic_key, {})
+            for case_result in case_results
+            if case_result.get(diagnostic_key, {}).get("available")
+        ]
+        if adapter_results:
+            aggregated[f"{metric_prefix}_exact_match_rate"] = (
+                sum(int(result["exact_byte_match"]) for result in adapter_results)
+                / len(adapter_results)
             )
-    else:
-        aggregated["extract_then_compose_exact_match_rate"] = None
-        aggregated["extract_then_compose_mean_sequence_accuracy"] = None
-        aggregated["extract_then_compose_mean_prefix_match_length"] = None
-        for slot_name in ANSWER_SLOT_NAMES:
-            aggregated[f"extract_then_compose_{slot_name}_accuracy"] = None
+            aggregated[f"{metric_prefix}_mean_sequence_accuracy"] = (
+                sum(result["sequence_accuracy"] for result in adapter_results)
+                / len(adapter_results)
+            )
+            aggregated[f"{metric_prefix}_mean_prefix_match_length"] = (
+                sum(result["prefix_match_length"] for result in adapter_results)
+                / len(adapter_results)
+            )
+            for slot_name in adapter_config["slot_metric_names"]:
+                aggregated[f"{metric_prefix}_{slot_name}_accuracy"] = (
+                    sum(
+                        int(result["extracted_slots"][slot_name]["exact_match"])
+                        for result in adapter_results
+                    )
+                    / len(adapter_results)
+                )
+        else:
+            aggregated[f"{metric_prefix}_exact_match_rate"] = None
+            aggregated[f"{metric_prefix}_mean_sequence_accuracy"] = None
+            aggregated[f"{metric_prefix}_mean_prefix_match_length"] = None
+            for slot_name in adapter_config["slot_metric_names"]:
+                aggregated[f"{metric_prefix}_{slot_name}_accuracy"] = None
     for mode in ("teacher_forced", "generation"):
         for entity_name in ENTITY_SPAN_NAMES:
             entity_results = [
@@ -1957,11 +2519,23 @@ def aggregate_case_pool_results(case_results):
     return aggregated
 
 
-def evaluate_case_pool(model, cases, device):
+def evaluate_case_pool(
+    model,
+    cases,
+    device,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+):
     model.eval()
     case_results = []
     for case in cases:
-        case_results.append(evaluate_single_case(model, case, device))
+        case_results.append(
+            evaluate_single_case(
+                model,
+                case,
+                device,
+                generation_readout_mode=generation_readout_mode,
+            )
+        )
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
     return aggregate_case_pool_results(case_results)
@@ -3084,10 +3658,15 @@ def train_single_configuration(
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
     mhdsra2_config_override=None,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
     return_model=False,
 ):
     if not isinstance(device, torch.device):
         device = torch.device(device)
+    generation_readout_mode = normalize_generation_readout_mode(generation_readout_mode)
+    answer_template_mode = normalize_answer_template_mode(answer_template_mode)
     active_model_type = normalize_model_type(model_type)
     curriculum_plan = build_curriculum_plan(case, epochs)
     if training_cases_override is None:
@@ -3095,6 +3674,8 @@ def train_single_configuration(
             reference_case=case,
             dataset_size=train_dataset_size,
             seed=train_dataset_seed,
+            distractor_records_per_case=distractor_records_per_case,
+            answer_template_mode=answer_template_mode,
         )
     else:
         training_cases = list(training_cases_override)
@@ -3390,7 +3971,12 @@ def train_single_configuration(
     with torch.no_grad():
         full_logits = forward_json_retrieval(model, full_X, case)
     final_teacher_forced = evaluate_teacher_forced(full_logits, full_Y, case)
-    final_generation = evaluate_generation(model, case, device)
+    final_generation = evaluate_generation(
+        model,
+        case,
+        device,
+        generation_readout_mode=generation_readout_mode,
+    )
     config = {
         "device": str(device),
         "model_type": active_model_type,
@@ -3407,6 +3993,8 @@ def train_single_configuration(
         "target_case_sampling_ratio": target_case_sampling_ratio,
         "train_dataset_size": len(training_cases),
         "train_dataset_seed": train_dataset_seed,
+        "distractor_records_per_case": int(distractor_records_per_case),
+        "answer_template_mode": answer_template_mode,
         "training_mode": training_mode,
         "curriculum_labels": " -> ".join(stage["name"] for stage in curriculum_plan),
         "final_polish_epochs": int(final_polish_epochs),
@@ -3440,6 +4028,7 @@ def train_single_configuration(
         "local_context_size": int(local_context_size),
         "local_context_mode": local_context_mode,
         "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
+        "generation_readout_mode": generation_readout_mode,
         "best_teacher_forced_exact_match": (
             best_teacher_forced_exact_match or final_teacher_forced["exact_byte_match"]
         ),
@@ -3505,8 +4094,15 @@ def run_json_retrieval_test(
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
     mhdsra2_config_override=None,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
+    device=None,
 ):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = resolve_json_retrieval_device(device)
+    generation_readout_mode = normalize_generation_readout_mode(generation_readout_mode)
+    distractor_records_per_case = max(0, int(distractor_records_per_case))
+    answer_template_mode = normalize_answer_template_mode(answer_template_mode)
     active_model_type = normalize_model_type(model_type)
     swanlab_run = init_swanlab(
         project="MHDSRA2",
@@ -3520,6 +4116,8 @@ def run_json_retrieval_test(
             "local_context_mode": local_context_mode,
             "local_context_size": local_context_size,
             "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
+            "distractor_records_per_case": distractor_records_per_case,
+            "answer_template_mode": answer_template_mode,
         },
         mode="disabled",
         tags=["json_retrieval"],
@@ -3672,6 +4270,9 @@ def run_json_retrieval_test(
             model_type=active_model_type,
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
+            generation_readout_mode=generation_readout_mode,
+            distractor_records_per_case=distractor_records_per_case,
+            answer_template_mode=answer_template_mode,
         )
         search_results.append(summarize_search_result(result))
         best_result = search_service.choose_best(best_result, result, score_search_result)
@@ -3787,8 +4388,15 @@ def run_json_retrieval_generalization_test(
     local_context_size=DEFAULT_LOCAL_CONTEXT_SIZE,
     local_context_mode=DEFAULT_LOCAL_CONTEXT_MODE,
     mhdsra2_config_override=None,
+    generation_readout_mode=DEFAULT_GENERATION_READOUT_MODE,
+    distractor_records_per_case=DEFAULT_DISTRACTOR_RECORDS_PER_CASE,
+    answer_template_mode=DEFAULT_ANSWER_TEMPLATE_MODE,
+    device=None,
 ):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = resolve_json_retrieval_device(device)
+    generation_readout_mode = normalize_generation_readout_mode(generation_readout_mode)
+    distractor_records_per_case = max(0, int(distractor_records_per_case))
+    answer_template_mode = normalize_answer_template_mode(answer_template_mode)
     active_model_type = normalize_model_type(model_type)
     validate_formal_generalization_config(
         target_case_sampling_ratio=target_case_sampling_ratio,
@@ -3808,6 +4416,8 @@ def run_json_retrieval_generalization_test(
             "local_context_mode": local_context_mode,
             "local_context_size": local_context_size,
             "mhdsra2_config_override": dict(mhdsra2_config_override or {}),
+            "distractor_records_per_case": distractor_records_per_case,
+            "answer_template_mode": answer_template_mode,
         },
         mode="disabled",
         tags=["json_retrieval", "generalization"],
@@ -3828,6 +4438,8 @@ def run_json_retrieval_generalization_test(
         seed=train_dataset_seed,
         used_signatures=used_case_signatures,
         allowed_museum_artifact_pairs=train_pairs,
+        distractor_records_per_case=distractor_records_per_case,
+        answer_template_mode=answer_template_mode,
     )
     validation_cases, used_case_signatures = build_disjoint_case_pool(
         reference_case=reference_case,
@@ -3835,6 +4447,8 @@ def run_json_retrieval_generalization_test(
         seed=validation_dataset_seed,
         used_signatures=used_case_signatures,
         allowed_museum_artifact_pairs=validation_pairs,
+        distractor_records_per_case=distractor_records_per_case,
+        answer_template_mode=answer_template_mode,
     )
     test_cases, used_case_signatures = build_disjoint_case_pool(
         reference_case=reference_case,
@@ -3842,6 +4456,8 @@ def run_json_retrieval_generalization_test(
         seed=test_dataset_seed,
         used_signatures=used_case_signatures,
         allowed_museum_artifact_pairs=test_pairs,
+        distractor_records_per_case=distractor_records_per_case,
+        answer_template_mode=answer_template_mode,
     )
 
     epochs_grid = sorted({int(epoch_value) for epoch_value in (epochs_grid or [epochs])})
@@ -3891,7 +4507,9 @@ def run_json_retrieval_generalization_test(
     )
     print(
         f"Training Data | target_case_sampling_ratio={target_case_sampling_ratio} "
-        f"| disjoint_split=museum/artifact held-out"
+        f"| disjoint_split=museum/artifact held-out "
+        f"| distractor_records_per_case={distractor_records_per_case} "
+        f"| answer_template_mode={answer_template_mode}"
     )
     print(
         f"Pair Split | seed={pair_split_seed} | train_pairs={len(train_pairs)} "
@@ -3998,10 +4616,21 @@ def run_json_retrieval_generalization_test(
             local_context_size=local_context_size,
             local_context_mode=local_context_mode,
             mhdsra2_config_override=mhdsra2_config_override,
+            generation_readout_mode=generation_readout_mode,
+            distractor_records_per_case=distractor_records_per_case,
+            answer_template_mode=answer_template_mode,
             return_model=True,
         )
         trained_model = train_result.pop("model")
-        validation_eval = evaluate_case_pool(trained_model, validation_cases, device)
+        if generation_readout_mode == DEFAULT_GENERATION_READOUT_MODE:
+            validation_eval = evaluate_case_pool(trained_model, validation_cases, device)
+        else:
+            validation_eval = evaluate_case_pool(
+                trained_model,
+                validation_cases,
+                device,
+                generation_readout_mode=generation_readout_mode,
+            )
         config = {
             **train_result["config"],
             "validation_dataset_size": len(validation_cases),
@@ -4009,6 +4638,8 @@ def run_json_retrieval_generalization_test(
             "pool_split_mode": "museum_artifact_held_out",
             "pair_split_seed": pair_split_seed,
             "generalization_score_mode": generalization_score_mode,
+            "distractor_records_per_case": distractor_records_per_case,
+            "answer_template_mode": answer_template_mode,
             "train_pair_count": len(train_pairs),
             "test_dataset_size": len(test_cases),
             "test_dataset_seed": test_dataset_seed,
@@ -4062,7 +4693,15 @@ def run_json_retrieval_generalization_test(
         ),
     )
 
-    test_eval = evaluate_case_pool(best_model, test_cases, device)
+    if generation_readout_mode == DEFAULT_GENERATION_READOUT_MODE:
+        test_eval = evaluate_case_pool(best_model, test_cases, device)
+    else:
+        test_eval = evaluate_case_pool(
+            best_model,
+            test_cases,
+            device,
+            generation_readout_mode=generation_readout_mode,
+        )
     best_result["test_pool_evaluation"] = test_eval
     validation_tail_error_analysis = build_tail_error_analysis(best_result["validation_pool_evaluation"])
     test_tail_error_analysis = build_tail_error_analysis(best_result["test_pool_evaluation"])
@@ -4127,4 +4766,4 @@ def run_json_retrieval_generalization_test(
 
 
 if __name__ == "__main__":
-    run_json_retrieval_test(reports_dir=Path(__file__).resolve().parents[1] / "reports")
+    run_json_retrieval_test(reports_dir=Path(__file__).resolve().parents[1] / "docs" / "reports")

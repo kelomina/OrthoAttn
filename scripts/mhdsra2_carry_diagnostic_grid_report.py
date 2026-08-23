@@ -306,7 +306,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=dict(DEFAULT_STAGE_LOSS_WEIGHTS),
     )
     parser.add_argument("--target-stage-count", type=int, default=2)
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     parser.add_argument(
         "--checkpoint-path",
         type=Path,

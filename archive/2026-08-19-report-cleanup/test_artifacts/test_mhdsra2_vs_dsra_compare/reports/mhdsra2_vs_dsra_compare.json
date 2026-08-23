@@ -1,0 +1,354 @@
+{
+  "config": {
+    "device": "cpu",
+    "seed": 7,
+    "batch_size": [
+      1
+    ],
+    "dim": [
+      32
+    ],
+    "warmup_runs": 1,
+    "repeat_runs": 2,
+    "use_retrieval": false,
+    "retrieval_tokens": 0,
+    "slots": [
+      8
+    ],
+    "read_topk": [
+      4
+    ],
+    "chunk_sizes": [
+      8
+    ],
+    "seq_lengths": [
+      8,
+      16
+    ]
+  },
+  "results": [
+    {
+      "batch_size": 1,
+      "dim": 32,
+      "seq_len": 8,
+      "slots": 8,
+      "read_topk": 4,
+      "chunk_size": 8,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        8,
+        32
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 3.8991000000123677,
+        "elapsed_ms_std": 0.19091883092067652,
+        "elapsed_ms_samples": [
+          3.7641000000121494,
+          4.034100000012586
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 2051.755533321696,
+        "max_state_bytes": 6336,
+        "output_shape": [
+          1,
+          8,
+          32
+        ],
+        "output_mean_abs": 0.12349754571914673,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 3.4209500000201842,
+        "elapsed_ms_std": 0.04504270192021105,
+        "elapsed_ms_samples": [
+          3.3891000000494387,
+          3.45279999999093
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 2338.531694398573,
+        "max_state_bytes": 4480,
+        "output_shape": [
+          1,
+          8,
+          32
+        ],
+        "output_mean_abs": 0.1221916526556015,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.4919174313545227,
+            0.5080826282501221,
+            0.0
+          ],
+          [
+            0.48600640892982483,
+            0.5139936208724976,
+            0.0
+          ],
+          [
+            0.4504578709602356,
+            0.5495420694351196,
+            0.0
+          ],
+          [
+            0.4894702434539795,
+            0.5105297565460205,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.1397711162072999,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "state_bytes_ratio": 1.4142857142857144
+    },
+    {
+      "batch_size": 1,
+      "dim": 32,
+      "seq_len": 16,
+      "slots": 8,
+      "read_topk": 4,
+      "chunk_size": 8,
+      "use_retrieval": false,
+      "retrieval_tokens": 0,
+      "shared_input_shape": [
+        1,
+        16,
+        32
+      ],
+      "dsra": {
+        "model": "dsra",
+        "elapsed_ms": 10.173100000031354,
+        "elapsed_ms_std": 0.5014801291893703,
+        "elapsed_ms_samples": [
+          9.818500000051245,
+          10.527700000011464
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 1572.7752602403089,
+        "max_state_bytes": 6336,
+        "output_shape": [
+          1,
+          16,
+          32
+        ],
+        "output_mean_abs": 0.06978209316730499,
+        "is_finite": true
+      },
+      "mhdsra2": {
+        "model": "mhdsra2",
+        "elapsed_ms": 7.938899999999194,
+        "elapsed_ms_std": 0.8034147247976019,
+        "elapsed_ms_samples": [
+          8.507000000008702,
+          7.370799999989686
+        ],
+        "warmup_runs": 1,
+        "repeat_runs": 2,
+        "tokens_per_second": 2015.392560682415,
+        "max_state_bytes": 4480,
+        "output_shape": [
+          1,
+          16,
+          32
+        ],
+        "output_mean_abs": 0.073519267141819,
+        "is_finite": true,
+        "use_retrieval": false,
+        "retrieval_tokens": 0,
+        "gates_mean": [
+          [
+            0.5278428792953491,
+            0.4721571207046509,
+            0.0
+          ],
+          [
+            0.5554226636886597,
+            0.44457727670669556,
+            0.0
+          ],
+          [
+            0.6009129881858826,
+            0.39908701181411743,
+            0.0
+          ],
+          [
+            0.5453606843948364,
+            0.4546392858028412,
+            0.0
+          ]
+        ]
+      },
+      "speedup_ratio": 1.2814243786963417,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "state_bytes_ratio": 1.4142857142857144
+    }
+  ],
+  "summary": {
+    "overall": {
+      "total_cases": 2,
+      "mhdsra2_faster_cases": 2,
+      "mhdsra2_faster_ratio": 1.0,
+      "avg_speedup_ratio": 1.2105977474518208,
+      "median_speedup_ratio": 1.2105977474518208,
+      "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "avg_state_bytes_ratio": 1.4142857142857144
+    },
+    "best_speedup_case": {
+      "label": "batch=1, dim=32, seq=16, slots=8, topk=4, chunk=8",
+      "speedup_ratio": 1.2814243786963417,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "state_bytes_ratio": 1.4142857142857144
+    },
+    "worst_speedup_case": {
+      "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+      "speedup_ratio": 1.1397711162072999,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "state_bytes_ratio": 1.4142857142857144
+    },
+    "mhdsra2_min_state_overhead_case": {
+      "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "state_bytes_ratio": 1.4142857142857144,
+      "speedup_ratio": 1.1397711162072999
+    },
+    "mhdsra2_max_state_overhead_case": {
+      "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+      "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+      "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+      "state_bytes_ratio": 1.4142857142857144,
+      "speedup_ratio": 1.1397711162072999
+    },
+    "best_memory_case": {
+      "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+      "state_bytes_ratio": 1.4142857142857144,
+      "speedup_ratio": 1.1397711162072999
+    },
+    "worst_memory_case": {
+      "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+      "state_bytes_ratio": 1.4142857142857144,
+      "speedup_ratio": 1.1397711162072999
+    },
+    "grouped": {
+      "batch_size": [
+        {
+          "value": 1,
+          "avg_speedup_ratio": 1.2105977474518208,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 7.036100000021861,
+          "avg_dsra_std_ms": 0.34619948005502343,
+          "avg_mhdsra2_ms": 5.679925000009689,
+          "avg_mhdsra2_std_ms": 0.4242287133589065,
+          "cases": 2
+        }
+      ],
+      "dim": [
+        {
+          "value": 32,
+          "avg_speedup_ratio": 1.2105977474518208,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 7.036100000021861,
+          "avg_dsra_std_ms": 0.34619948005502343,
+          "avg_mhdsra2_ms": 5.679925000009689,
+          "avg_mhdsra2_std_ms": 0.4242287133589065,
+          "cases": 2
+        }
+      ],
+      "seq_len": [
+        {
+          "value": 8,
+          "avg_speedup_ratio": 1.1397711162072999,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 3.8991000000123677,
+          "avg_dsra_std_ms": 0.19091883092067652,
+          "avg_mhdsra2_ms": 3.4209500000201842,
+          "avg_mhdsra2_std_ms": 0.04504270192021105,
+          "cases": 1
+        },
+        {
+          "value": 16,
+          "avg_speedup_ratio": 1.2814243786963417,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 10.173100000031354,
+          "avg_dsra_std_ms": 0.5014801291893703,
+          "avg_mhdsra2_ms": 7.938899999999194,
+          "avg_mhdsra2_std_ms": 0.8034147247976019,
+          "cases": 1
+        }
+      ],
+      "slots": [
+        {
+          "value": 8,
+          "avg_speedup_ratio": 1.2105977474518208,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 7.036100000021861,
+          "avg_dsra_std_ms": 0.34619948005502343,
+          "avg_mhdsra2_ms": 5.679925000009689,
+          "avg_mhdsra2_std_ms": 0.4242287133589065,
+          "cases": 2
+        }
+      ],
+      "read_topk": [
+        {
+          "value": 4,
+          "avg_speedup_ratio": 1.2105977474518208,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 7.036100000021861,
+          "avg_dsra_std_ms": 0.34619948005502343,
+          "avg_mhdsra2_ms": 5.679925000009689,
+          "avg_mhdsra2_std_ms": 0.4242287133589065,
+          "cases": 2
+        }
+      ],
+      "chunk_size": [
+        {
+          "value": 8,
+          "avg_speedup_ratio": 1.2105977474518208,
+          "avg_dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+          "avg_mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+          "avg_dsra_ms": 7.036100000021861,
+          "avg_dsra_std_ms": 0.34619948005502343,
+          "avg_mhdsra2_ms": 5.679925000009689,
+          "avg_mhdsra2_std_ms": 0.4242287133589065,
+          "cases": 2
+        }
+      ]
+    },
+    "top_speedup_cases": [
+      {
+        "label": "batch=1, dim=32, seq=16, slots=8, topk=4, chunk=8",
+        "speedup_ratio": 1.2814243786963417,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+        "state_bytes_ratio": 1.4142857142857144
+      },
+      {
+        "label": "batch=1, dim=32, seq=8, slots=8, topk=4, chunk=8",
+        "speedup_ratio": 1.1397711162072999,
+        "dsra_to_mhdsra2_state_bytes_ratio": 1.4142857142857144,
+        "mhdsra2_to_dsra_state_bytes_ratio": 0.7070707070707071,
+        "state_bytes_ratio": 1.4142857142857144
+      }
+    ]
+  }
+}

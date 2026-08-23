@@ -232,6 +232,7 @@ def run_dsra_baseline_once(
         kr=min(read_topk, slots),
         use_orthogonal_update=True,
         use_bypass=True,
+        use_retrieval=False,
     ).to(device)
     layer.eval()
 
@@ -1184,7 +1185,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--use-retrieval", action="store_true")
     parser.add_argument("--retrieval-tokens", type=int, default=32)
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     return parser
 
 

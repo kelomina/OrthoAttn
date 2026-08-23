@@ -1,0 +1,101 @@
+{
+  "name": "mhdsra2_evidence_retrieval_ablation",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "baseline"
+    ],
+    "tasks": [
+      "smoke"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "E:\\Project\\python\\DSRA\\reports\\mhdsra2_evidence_retrieval_ablation.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "shared",
+      "task": "smoke",
+      "seed": 20260602,
+      "status": "planned",
+      "config": {
+        "batch_sizes": [
+          1
+        ],
+        "tokens": [
+          64
+        ],
+        "page_size": 16,
+        "top_pages": 2,
+        "max_tokens": 4
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "shared",
+      "task": "smoke",
+      "seed": 20260602,
+      "status": "passed",
+      "config": {
+        "batch_sizes": [
+          1
+        ],
+        "tokens": [
+          64
+        ],
+        "page_size": 16,
+        "top_pages": 2,
+        "max_tokens": 4
+      },
+      "validation_metrics": {
+        "passed": true,
+        "no_cross_sample_leak": true,
+        "no_future_leak": true,
+        "all_batch_loop_positions_match": true
+      },
+      "test_metrics": {},
+      "elapsed_sec": 0.08686339999997017
+    }
+  ],
+  "sections": {
+    "smoke": {
+      "task": "smoke",
+      "rows": [
+        {
+          "group": "shared",
+          "task": "smoke",
+          "seed": 20260602,
+          "status": "passed",
+          "config": {
+            "batch_sizes": [
+              1
+            ],
+            "tokens": [
+              64
+            ],
+            "page_size": 16,
+            "top_pages": 2,
+            "max_tokens": 4
+          },
+          "validation_metrics": {
+            "passed": true,
+            "no_cross_sample_leak": true,
+            "no_future_leak": true,
+            "all_batch_loop_positions_match": true
+          },
+          "test_metrics": {},
+          "elapsed_sec": 0.08686339999997017
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

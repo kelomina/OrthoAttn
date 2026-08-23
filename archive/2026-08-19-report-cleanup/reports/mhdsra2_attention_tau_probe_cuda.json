@@ -1,0 +1,809 @@
+{
+  "name": "mhdsra2_attention_tau_probe_cuda",
+  "created_at": "2026-06-13 23:02:11",
+  "objective": "Probe whether increasing retrieval_tau reduces retrieval attention dilution without reducing retrieval_max_tokens.",
+  "config": {
+    "device": "cuda:0",
+    "taus": [
+      8.0,
+      16.0,
+      24.0
+    ],
+    "seeds": [
+      101,
+      202,
+      303
+    ],
+    "rows_planned": 9,
+    "seq_len": 256,
+    "chunk_size": 64,
+    "epochs": 10,
+    "retrieval_max_tokens": 128,
+    "readout_mode": "span_predictor",
+    "candidate_filter": "prefer_key_value_pair",
+    "span_loss_mode": "multi_positive"
+  },
+  "summary": {
+    "8.0": {
+      "row_count": 3,
+      "seed_count": 3,
+      "elapsed_sec_total": 108.1536422999925,
+      "metrics": {
+        "final_accuracy": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.3333333333333333
+          ]
+        },
+        "best_accuracy": {
+          "mean": 0.611111111111111,
+          "std": 0.0785674201318386,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_min_depth_accuracy": {
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "final_eval_loss": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.3333333333333333,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_target_candidate_hit_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_target_value_top_token_rate": {
+          "mean": 0.6111111111111112,
+          "std": 0.15713484026367724,
+          "values": [
+            0.8333333333333334,
+            0.5,
+            0.5
+          ]
+        },
+        "span_target_value_seed_token_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_predictor_hit_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_target_rank_mean": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_top1_rate": {
+          "mean": 0.3333333333333333,
+          "std": 0.4714045207910317,
+          "values": [
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "train_span_predictor_mean_loss": {
+          "mean": 1.6071953897122986,
+          "std": 0.07341823437559664,
+          "values": [
+            1.5218681229485407,
+            1.5986262321472169,
+            1.7010918140411377
+          ]
+        },
+        "train_span_predictor_mean_top1_rate": {
+          "mean": 0.2148148148148148,
+          "std": 0.18174583920570808,
+          "values": [
+            0.4444444444444444,
+            0.0,
+            0.2
+          ]
+        }
+      }
+    },
+    "16.0": {
+      "row_count": 3,
+      "seed_count": 3,
+      "elapsed_sec_total": 137.80029620000278,
+      "metrics": {
+        "final_accuracy": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.3333333333333333
+          ]
+        },
+        "best_accuracy": {
+          "mean": 0.611111111111111,
+          "std": 0.0785674201318386,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_min_depth_accuracy": {
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "final_eval_loss": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.3333333333333333,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_target_candidate_hit_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_target_value_top_token_rate": {
+          "mean": 0.6111111111111112,
+          "std": 0.15713484026367724,
+          "values": [
+            0.8333333333333334,
+            0.5,
+            0.5
+          ]
+        },
+        "span_target_value_seed_token_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_predictor_hit_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_target_rank_mean": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_top1_rate": {
+          "mean": 0.3333333333333333,
+          "std": 0.4714045207910317,
+          "values": [
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "train_span_predictor_mean_loss": {
+          "mean": 1.6152368439568414,
+          "std": 0.08543276309370405,
+          "values": [
+            1.5254818598429363,
+            1.5900702953338623,
+            1.7301583766937256
+          ]
+        },
+        "train_span_predictor_mean_top1_rate": {
+          "mean": 0.24814814814814815,
+          "std": 0.1851110962903674,
+          "values": [
+            0.4444444444444444,
+            0.0,
+            0.3
+          ]
+        }
+      }
+    },
+    "24.0": {
+      "row_count": 3,
+      "seed_count": 3,
+      "elapsed_sec_total": 250.98887569995713,
+      "metrics": {
+        "final_accuracy": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.3333333333333333
+          ]
+        },
+        "best_accuracy": {
+          "mean": 0.611111111111111,
+          "std": 0.0785674201318386,
+          "values": [
+            0.6666666666666666,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_min_depth_accuracy": {
+          "mean": 0.0,
+          "std": 0.0,
+          "values": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "final_eval_loss": {
+          "mean": 0.5,
+          "std": 0.13608276348795434,
+          "values": [
+            0.3333333333333333,
+            0.5,
+            0.6666666666666666
+          ]
+        },
+        "final_target_candidate_hit_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_target_value_top_token_rate": {
+          "mean": 0.6111111111111112,
+          "std": 0.15713484026367724,
+          "values": [
+            0.8333333333333334,
+            0.5,
+            0.5
+          ]
+        },
+        "span_target_value_seed_token_rate": {
+          "mean": 0.8333333333333334,
+          "std": 0.13608276348795437,
+          "values": [
+            1.0,
+            0.8333333333333334,
+            0.6666666666666666
+          ]
+        },
+        "span_predictor_hit_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_target_rank_mean": {
+          "mean": 1.0,
+          "std": 0.0,
+          "values": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "span_predictor_top1_rate": {
+          "mean": 0.3333333333333333,
+          "std": 0.4714045207910317,
+          "values": [
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "train_span_predictor_mean_loss": {
+          "mean": 1.6211856559470847,
+          "std": 0.09459994087763783,
+          "values": [
+            1.5295096503363714,
+            1.5826414585113526,
+            1.7514058589935302
+          ]
+        },
+        "train_span_predictor_mean_top1_rate": {
+          "mean": 0.31851851851851853,
+          "std": 0.23400842961379725,
+          "values": [
+            0.5555555555555556,
+            0.0,
+            0.4
+          ]
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "tau": 8.0,
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 50.676433999993606,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 8.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.6666666666666666,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.3333333333333333,
+        "final_target_candidate_hit_rate": 1.0,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 65.33333333333333,
+        "mean_span_pair_candidate_count": 1.3333333333333333,
+        "span_target_value_page_candidate_rate": 1.0,
+        "span_target_value_seed_token_rate": 1.0,
+        "span_target_value_top_token_rate": 0.8333333333333334,
+        "span_target_pair_page_candidate_rate": 0.5,
+        "span_target_pair_seed_token_rate": 0.5,
+        "span_target_pair_top_token_rate": 0.5,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 1.0,
+        "train_span_predictor_mean_loss": 1.5218681229485407,
+        "train_span_predictor_mean_top1_rate": 0.4444444444444444,
+        "train_span_predictor_mean_target_rank": 32.111111111111114,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 8.0,
+      "seed": 202,
+      "status": "completed",
+      "elapsed_sec": 30.88102390000131,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 8.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.5,
+        "best_accuracy": 0.5,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.5,
+        "final_target_candidate_hit_rate": 0.8333333333333334,
+        "final_readout_available_rate": 0.8333333333333334,
+        "mean_span_raw_candidate_count": 138.66666666666666,
+        "mean_span_valid_candidate_count": 65.0,
+        "mean_span_pair_candidate_count": 1.0,
+        "span_target_value_page_candidate_rate": 0.8333333333333334,
+        "span_target_value_seed_token_rate": 0.8333333333333334,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.16666666666666666,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.5986262321472169,
+        "train_span_predictor_mean_top1_rate": 0.0,
+        "train_span_predictor_mean_target_rank": 33.4,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 8.0,
+      "seed": 303,
+      "status": "completed",
+      "elapsed_sec": 26.596184399997583,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 8.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.3333333333333333,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.6666666666666666,
+        "final_target_candidate_hit_rate": 0.6666666666666666,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 107.16666666666667,
+        "mean_span_pair_candidate_count": 0.6666666666666666,
+        "span_target_value_page_candidate_rate": 0.6666666666666666,
+        "span_target_value_seed_token_rate": 0.6666666666666666,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.0,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.7010918140411377,
+        "train_span_predictor_mean_top1_rate": 0.2,
+        "train_span_predictor_mean_target_rank": 46.4,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 16.0,
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 20.373826499999268,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 16.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.6666666666666666,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.3333333333333333,
+        "final_target_candidate_hit_rate": 1.0,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 65.33333333333333,
+        "mean_span_pair_candidate_count": 1.3333333333333333,
+        "span_target_value_page_candidate_rate": 1.0,
+        "span_target_value_seed_token_rate": 1.0,
+        "span_target_value_top_token_rate": 0.8333333333333334,
+        "span_target_pair_page_candidate_rate": 0.5,
+        "span_target_pair_seed_token_rate": 0.5,
+        "span_target_pair_top_token_rate": 0.5,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 1.0,
+        "train_span_predictor_mean_loss": 1.5254818598429363,
+        "train_span_predictor_mean_top1_rate": 0.4444444444444444,
+        "train_span_predictor_mean_target_rank": 32.666666666666664,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 16.0,
+      "seed": 202,
+      "status": "completed",
+      "elapsed_sec": 36.748648300010245,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 16.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.5,
+        "best_accuracy": 0.5,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.5,
+        "final_target_candidate_hit_rate": 0.8333333333333334,
+        "final_readout_available_rate": 0.8333333333333334,
+        "mean_span_raw_candidate_count": 138.66666666666666,
+        "mean_span_valid_candidate_count": 65.0,
+        "mean_span_pair_candidate_count": 1.0,
+        "span_target_value_page_candidate_rate": 0.8333333333333334,
+        "span_target_value_seed_token_rate": 0.8333333333333334,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.16666666666666666,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.5900702953338623,
+        "train_span_predictor_mean_top1_rate": 0.0,
+        "train_span_predictor_mean_target_rank": 31.8,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 16.0,
+      "seed": 303,
+      "status": "completed",
+      "elapsed_sec": 80.67782139999326,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 16.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.3333333333333333,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.6666666666666666,
+        "final_target_candidate_hit_rate": 0.6666666666666666,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 107.16666666666667,
+        "mean_span_pair_candidate_count": 0.6666666666666666,
+        "span_target_value_page_candidate_rate": 0.6666666666666666,
+        "span_target_value_seed_token_rate": 0.6666666666666666,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.0,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.7301583766937256,
+        "train_span_predictor_mean_top1_rate": 0.3,
+        "train_span_predictor_mean_target_rank": 46.9,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 24.0,
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 85.38110569998389,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 24.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.6666666666666666,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.3333333333333333,
+        "final_target_candidate_hit_rate": 1.0,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 65.33333333333333,
+        "mean_span_pair_candidate_count": 1.3333333333333333,
+        "span_target_value_page_candidate_rate": 1.0,
+        "span_target_value_seed_token_rate": 1.0,
+        "span_target_value_top_token_rate": 0.8333333333333334,
+        "span_target_pair_page_candidate_rate": 0.5,
+        "span_target_pair_seed_token_rate": 0.5,
+        "span_target_pair_top_token_rate": 0.5,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 1.0,
+        "train_span_predictor_mean_loss": 1.5295096503363714,
+        "train_span_predictor_mean_top1_rate": 0.5555555555555556,
+        "train_span_predictor_mean_target_rank": 31.444444444444443,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 24.0,
+      "seed": 202,
+      "status": "completed",
+      "elapsed_sec": 83.68673369998578,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 24.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.5,
+        "best_accuracy": 0.5,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.5,
+        "final_target_candidate_hit_rate": 0.8333333333333334,
+        "final_readout_available_rate": 0.8333333333333334,
+        "mean_span_raw_candidate_count": 138.66666666666666,
+        "mean_span_valid_candidate_count": 65.0,
+        "mean_span_pair_candidate_count": 1.0,
+        "span_target_value_page_candidate_rate": 0.8333333333333334,
+        "span_target_value_seed_token_rate": 0.8333333333333334,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.16666666666666666,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.5826414585113526,
+        "train_span_predictor_mean_top1_rate": 0.0,
+        "train_span_predictor_mean_target_rank": 29.0,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    },
+    {
+      "tau": 24.0,
+      "seed": 303,
+      "status": "completed",
+      "elapsed_sec": 81.92103629998746,
+      "config": {
+        "seq_len": 256,
+        "chunk_size": 64,
+        "epochs": 10,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 2,
+        "retrieval_max_tokens": 128,
+        "retrieval_tau": 24.0,
+        "retrieval_neighbor_span": 1,
+        "retrieval_neighbor_direction": "both",
+        "retrieval_neighbor_seed_multiplier": 4,
+        "device": "cuda:0"
+      },
+      "metrics": {
+        "final_accuracy": 0.3333333333333333,
+        "best_accuracy": 0.6666666666666666,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 0.6666666666666666,
+        "final_target_candidate_hit_rate": 0.6666666666666666,
+        "final_readout_available_rate": 1.0,
+        "mean_span_raw_candidate_count": 159.83333333333334,
+        "mean_span_valid_candidate_count": 107.16666666666667,
+        "mean_span_pair_candidate_count": 0.6666666666666666,
+        "span_target_value_page_candidate_rate": 0.6666666666666666,
+        "span_target_value_seed_token_rate": 0.6666666666666666,
+        "span_target_value_top_token_rate": 0.5,
+        "span_target_pair_page_candidate_rate": 0.16666666666666666,
+        "span_target_pair_seed_token_rate": 0.16666666666666666,
+        "span_target_pair_top_token_rate": 0.0,
+        "span_predictor_available": true,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0,
+        "train_span_predictor_mean_loss": 1.7514058589935302,
+        "train_span_predictor_mean_top1_rate": 0.4,
+        "train_span_predictor_mean_target_rank": 47.0,
+        "slot_effective_count": null,
+        "slot_top1_usage_share": null,
+        "slot_confidence_mean": null
+      }
+    }
+  ],
+  "errors": [],
+  "elapsed_sec_total": 497.19423550000647
+}

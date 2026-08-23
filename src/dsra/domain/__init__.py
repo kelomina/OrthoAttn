@@ -9,6 +9,8 @@ from .arithmetic_emergence import (
 )
 from .model_spec import ARCHIVED_MODEL_ALIASES, RetrievalModelSpec, normalize_model_type
 
+from .mqar import MQARConfig, generate_mqar_batch
+
 __all__ = [
     "ARCHIVED_MODEL_ALIASES",
     "ArithmeticCurriculumStage",
@@ -16,7 +18,10 @@ __all__ = [
     "ArithmeticExample",
     "ArithmeticRuleDatasetSpec",
     "AttentionLayerSpec",
+    "MQARConfig",
     "RetrievalModelSpec",
+    "generate_mqar_batch",
     "normalize_model_type",
     "select_mhdsra2_heads",
 ]
+

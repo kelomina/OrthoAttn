@@ -1,0 +1,42 @@
+{
+  "name": "mhdsra2_practical_tiny_lm_runner_cpu_smoke",
+  "config": {
+    "seeds": [
+      42
+    ],
+    "seq_len": 16,
+    "batch_size": 1,
+    "max_steps": 1,
+    "dim": 16,
+    "heads": 4,
+    "layers": 1,
+    "mhdsra2_chunk_size": 16,
+    "device": "cpu",
+    "seed_timeout_sec": 120
+  },
+  "rows": [],
+  "summary": {
+    "completed_count": 0,
+    "failed_count": 0,
+    "standard_validation_ppl": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "mhdsra2_validation_ppl": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "ppl_ratio_mhdsra2_over_standard": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "time_ratio_mhdsra2_over_standard": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    }
+  }
+}

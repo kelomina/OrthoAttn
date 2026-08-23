@@ -152,7 +152,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=2,
         help="Number of early curriculum stages that must be retained across all seeds.",
     )
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     return parser
 
 

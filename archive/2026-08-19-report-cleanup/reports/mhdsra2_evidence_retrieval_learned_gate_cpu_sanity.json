@@ -1,0 +1,210 @@
+{
+  "name": "mhdsra2_evidence_retrieval_learned_gate_cpu_sanity",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "learned_retrieval_gate"
+    ],
+    "tasks": [
+      "niah"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_evidence_retrieval_learned_gate_cpu_sanity.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "learned_retrieval_gate",
+      "task": "niah",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 1,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "use_retrieval": true,
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "learned_retrieval_gate",
+      "task": "niah",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 1,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.0,
+        "use_retrieval": true,
+        "mhdsra2_config_override": {
+          "retrieval_quality_gate_adapter": true
+        }
+      },
+      "validation_metrics": {
+        "final_eval_mean_accuracy": 0.0,
+        "final_eval_min_depth_accuracy": 0.0,
+        "best_eval_mean_accuracy": 0.0,
+        "final_eval_loss": 3.228862682978312
+      },
+      "test_metrics": {},
+      "diagnostic_metrics": {
+        "final_train_loss": 5.246702194213867,
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0,
+        "retrieval_evidence": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "retrieval_evidence_available": false,
+        "retrieval_evidence_unavailable_reason": null,
+        "retrieval_evidence_hit_rate": null,
+        "retrieval_evidence_weight_mean": null,
+        "slot_collision": {
+          "available": true,
+          "slot_count": 8,
+          "slot_usage_sum": 368.6432189941406,
+          "effective_slot_count": 7.847024055493933,
+          "top1_usage_share": 0.16608251631259918,
+          "slot_confidence_mean": 0.8534027338027954,
+          "collision_risk": "low"
+        }
+      },
+      "metrics": {
+        "status": "completed",
+        "final_accuracy": 0.0,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 3.228862682978312,
+        "final_train_loss": 5.246702194213867,
+        "best_accuracy": 0.0,
+        "best_min_depth_accuracy": 0.0,
+        "best_accuracy_loss": 3.3394134044647217,
+        "final_retrieval_evidence_metrics": {
+          "available": false,
+          "unavailable_reason": null,
+          "hit_rate": null,
+          "gate_mean": null,
+          "evidence_weight_mean": null,
+          "ranking_loss": null,
+          "gate_loss": null,
+          "positive_count": 0
+        },
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0
+      },
+      "elapsed_sec": 3.863390899998194
+    }
+  ],
+  "sections": {
+    "niah": {
+      "task": "niah",
+      "rows": [
+        {
+          "group": "learned_retrieval_gate",
+          "task": "niah",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "seq_len": 256,
+            "dim": 16,
+            "num_layers": 1,
+            "slots": 8,
+            "read_topk": 4,
+            "epochs": 1,
+            "eval_batches_per_depth": 1,
+            "retrieval_evidence_loss_alpha": 0.0,
+            "use_retrieval": true,
+            "mhdsra2_config_override": {
+              "retrieval_quality_gate_adapter": true
+            }
+          },
+          "validation_metrics": {
+            "final_eval_mean_accuracy": 0.0,
+            "final_eval_min_depth_accuracy": 0.0,
+            "best_eval_mean_accuracy": 0.0,
+            "final_eval_loss": 3.228862682978312
+          },
+          "test_metrics": {},
+          "diagnostic_metrics": {
+            "final_train_loss": 5.246702194213867,
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0,
+            "retrieval_evidence": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "retrieval_evidence_available": false,
+            "retrieval_evidence_unavailable_reason": null,
+            "retrieval_evidence_hit_rate": null,
+            "retrieval_evidence_weight_mean": null,
+            "slot_collision": {
+              "available": true,
+              "slot_count": 8,
+              "slot_usage_sum": 368.6432189941406,
+              "effective_slot_count": 7.847024055493933,
+              "top1_usage_share": 0.16608251631259918,
+              "slot_confidence_mean": 0.8534027338027954,
+              "collision_risk": "low"
+            }
+          },
+          "metrics": {
+            "status": "completed",
+            "final_accuracy": 0.0,
+            "final_min_depth_accuracy": 0.0,
+            "final_eval_loss": 3.228862682978312,
+            "final_train_loss": 5.246702194213867,
+            "best_accuracy": 0.0,
+            "best_min_depth_accuracy": 0.0,
+            "best_accuracy_loss": 3.3394134044647217,
+            "final_retrieval_evidence_metrics": {
+              "available": false,
+              "unavailable_reason": null,
+              "hit_rate": null,
+              "gate_mean": null,
+              "evidence_weight_mean": null,
+              "ranking_loss": null,
+              "gate_loss": null,
+              "positive_count": 0
+            },
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0
+          },
+          "elapsed_sec": 3.863390899998194
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 1,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

@@ -139,7 +139,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip StandardAttentionModel reference rows; MHDSRA2 success criteria are unchanged.",
     )
-    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=PROJECT_ROOT / "docs" / "reports")
     return parser
 
 

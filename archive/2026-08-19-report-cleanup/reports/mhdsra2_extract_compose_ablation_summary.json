@@ -1,0 +1,88 @@
+{
+  "evidence_stage1": {
+    "baseline": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    },
+    "evidence_hit_supervision": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    },
+    "learned_retrieval_gate": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    },
+    "evidence_plus_gate": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    }
+  },
+  "extract_stage1": {
+    "baseline": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    },
+    "extract_compose_readout": {
+      "values": [
+        1.0,
+        1.0,
+        0.75
+      ],
+      "mean": 0.9166666666666666,
+      "std": 0.11785113019775792,
+      "n": 3
+    }
+  },
+  "extract_extended": {
+    "baseline": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 3
+    },
+    "extract_compose_readout": {
+      "values": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 3
+    }
+  }
+}

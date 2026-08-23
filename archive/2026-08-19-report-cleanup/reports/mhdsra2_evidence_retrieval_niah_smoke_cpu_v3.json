@@ -1,0 +1,201 @@
+{
+  "name": "mhdsra2_evidence_retrieval_niah_smoke_cpu_v3",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "evidence_hit_supervision"
+    ],
+    "tasks": [
+      "niah"
+    ],
+    "dry_run": false,
+    "checkpoint_path": "reports\\mhdsra2_evidence_retrieval_niah_smoke_cpu_v3.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "evidence_hit_supervision",
+      "task": "niah",
+      "seed": 101,
+      "status": "planned",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.25,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [
+    {
+      "group": "evidence_hit_supervision",
+      "task": "niah",
+      "seed": 101,
+      "status": "completed",
+      "config": {
+        "seq_len": 256,
+        "dim": 16,
+        "num_layers": 1,
+        "slots": 8,
+        "read_topk": 4,
+        "epochs": 2,
+        "eval_batches_per_depth": 1,
+        "retrieval_evidence_loss_alpha": 0.25,
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {
+        "final_eval_mean_accuracy": 0.0,
+        "final_eval_min_depth_accuracy": 0.0,
+        "best_eval_mean_accuracy": 0.3333333333333333,
+        "final_eval_loss": 4.210214614868164
+      },
+      "test_metrics": {},
+      "diagnostic_metrics": {
+        "final_train_loss": 4.583413124084473,
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0,
+        "retrieval_evidence": {
+          "available": false,
+          "unavailable_reason": "missing_selected_metadata_or_gate",
+          "hit_rate": 0.0,
+          "gate_mean": 0.0,
+          "evidence_weight_mean": 0.0,
+          "ranking_loss": 0.0,
+          "gate_loss": 0.0,
+          "positive_count": 0
+        },
+        "retrieval_evidence_available": false,
+        "retrieval_evidence_unavailable_reason": "missing_selected_metadata_or_gate",
+        "retrieval_evidence_hit_rate": 0.0,
+        "retrieval_evidence_weight_mean": 0.0,
+        "slot_collision": {
+          "available": true,
+          "slot_count": 8,
+          "slot_usage_sum": 346.35980224609375,
+          "effective_slot_count": 7.618151919259618,
+          "top1_usage_share": 0.16594181954860687,
+          "slot_confidence_mean": 0.8722296953201294,
+          "collision_risk": "low"
+        }
+      },
+      "metrics": {
+        "status": "completed",
+        "final_accuracy": 0.0,
+        "final_min_depth_accuracy": 0.0,
+        "final_eval_loss": 4.210214614868164,
+        "final_train_loss": 4.583413124084473,
+        "best_accuracy": 0.3333333333333333,
+        "best_min_depth_accuracy": 0.0,
+        "best_accuracy_loss": 3.619124174118042,
+        "final_retrieval_evidence_metrics": {
+          "available": false,
+          "unavailable_reason": "missing_selected_metadata_or_gate",
+          "hit_rate": 0.0,
+          "gate_mean": 0.0,
+          "evidence_weight_mean": 0.0,
+          "ranking_loss": 0.0,
+          "gate_loss": 0.0,
+          "positive_count": 0
+        },
+        "peak_memory_allocated_mb": 0.0,
+        "peak_memory_reserved_mb": 0.0
+      },
+      "elapsed_sec": 3.9448913000014727
+    }
+  ],
+  "sections": {
+    "niah": {
+      "task": "niah",
+      "rows": [
+        {
+          "group": "evidence_hit_supervision",
+          "task": "niah",
+          "seed": 101,
+          "status": "completed",
+          "config": {
+            "seq_len": 256,
+            "dim": 16,
+            "num_layers": 1,
+            "slots": 8,
+            "read_topk": 4,
+            "epochs": 2,
+            "eval_batches_per_depth": 1,
+            "retrieval_evidence_loss_alpha": 0.25,
+            "mhdsra2_config_override": {}
+          },
+          "validation_metrics": {
+            "final_eval_mean_accuracy": 0.0,
+            "final_eval_min_depth_accuracy": 0.0,
+            "best_eval_mean_accuracy": 0.3333333333333333,
+            "final_eval_loss": 4.210214614868164
+          },
+          "test_metrics": {},
+          "diagnostic_metrics": {
+            "final_train_loss": 4.583413124084473,
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0,
+            "retrieval_evidence": {
+              "available": false,
+              "unavailable_reason": "missing_selected_metadata_or_gate",
+              "hit_rate": 0.0,
+              "gate_mean": 0.0,
+              "evidence_weight_mean": 0.0,
+              "ranking_loss": 0.0,
+              "gate_loss": 0.0,
+              "positive_count": 0
+            },
+            "retrieval_evidence_available": false,
+            "retrieval_evidence_unavailable_reason": "missing_selected_metadata_or_gate",
+            "retrieval_evidence_hit_rate": 0.0,
+            "retrieval_evidence_weight_mean": 0.0,
+            "slot_collision": {
+              "available": true,
+              "slot_count": 8,
+              "slot_usage_sum": 346.35980224609375,
+              "effective_slot_count": 7.618151919259618,
+              "top1_usage_share": 0.16594181954860687,
+              "slot_confidence_mean": 0.8722296953201294,
+              "collision_risk": "low"
+            }
+          },
+          "metrics": {
+            "status": "completed",
+            "final_accuracy": 0.0,
+            "final_min_depth_accuracy": 0.0,
+            "final_eval_loss": 4.210214614868164,
+            "final_train_loss": 4.583413124084473,
+            "best_accuracy": 0.3333333333333333,
+            "best_min_depth_accuracy": 0.0,
+            "best_accuracy_loss": 3.619124174118042,
+            "final_retrieval_evidence_metrics": {
+              "available": false,
+              "unavailable_reason": "missing_selected_metadata_or_gate",
+              "hit_rate": 0.0,
+              "gate_mean": 0.0,
+              "evidence_weight_mean": 0.0,
+              "ranking_loss": 0.0,
+              "gate_loss": 0.0,
+              "positive_count": 0
+            },
+            "peak_memory_allocated_mb": 0.0,
+            "peak_memory_reserved_mb": 0.0
+          },
+          "elapsed_sec": 3.9448913000014727
+        }
+      ]
+    }
+  },
+  "success_summary": {
+    "niah_rows_completed": 1,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}

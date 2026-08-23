@@ -1,0 +1,50 @@
+{
+  "name": "mhdsra2_retrieval_attention_topk_smoke_cuda",
+  "created_at": "2026-06-14 00:15:41",
+  "objective": "Smoke-test retrieval_attention_topk on the NIAH retrieval/readout path; not a quality benchmark.",
+  "config": {
+    "device": "cuda:0",
+    "topks": [
+      null,
+      16
+    ],
+    "seed": 101,
+    "epochs": 1,
+    "seq_len": 256,
+    "chunk_size": 64,
+    "retrieval_max_tokens": 128,
+    "retrieval_tau": 8.0
+  },
+  "rows": [
+    {
+      "topk": "none",
+      "status": "completed",
+      "elapsed_sec": 17.137714300013613,
+      "metrics": {
+        "final_accuracy": 0.3333333333333333,
+        "best_accuracy": 0.3333333333333333,
+        "final_target_candidate_hit_rate": 1.0,
+        "span_target_value_top_token_rate": 0.6666666666666666,
+        "span_target_value_seed_token_rate": 1.0,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0
+      }
+    },
+    {
+      "topk": "16",
+      "status": "completed",
+      "elapsed_sec": 12.700113800005056,
+      "metrics": {
+        "final_accuracy": 0.3333333333333333,
+        "best_accuracy": 0.3333333333333333,
+        "final_target_candidate_hit_rate": 1.0,
+        "span_target_value_top_token_rate": 0.6666666666666666,
+        "span_target_value_seed_token_rate": 1.0,
+        "span_predictor_hit_rate": 1.0,
+        "span_predictor_target_rank_mean": 1.0,
+        "span_predictor_top1_rate": 0.0
+      }
+    }
+  ]
+}

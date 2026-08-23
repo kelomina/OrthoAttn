@@ -1,0 +1,122 @@
+{
+  "device": "cuda:0",
+  "seq_lengths": [
+    1024,
+    4096,
+    8192,
+    16384
+  ],
+  "batch_size": 1,
+  "dim": 128,
+  "K": 128,
+  "kr": 32,
+  "chunk_size": 256,
+  "warmup_runs": 1,
+  "measured_runs": 2,
+  "models": {
+    "mhdsra2": {
+      "label": "mhdsra2",
+      "family_config": {},
+      "length_results": [
+        {
+          "seq_len": 1024,
+          "status": "ok",
+          "mean_time_ms": 141.98925000005147,
+          "std_time_ms": 1.8468922017244633,
+          "peak_mem_mb": 25.1005859375
+        },
+        {
+          "seq_len": 4096,
+          "status": "ok",
+          "mean_time_ms": 554.0671000001112,
+          "std_time_ms": 8.593185868912187,
+          "peak_mem_mb": 32.60791015625
+        },
+        {
+          "seq_len": 8192,
+          "status": "ok",
+          "mean_time_ms": 901.0435000000143,
+          "std_time_ms": 99.69272233783697,
+          "peak_mem_mb": 54.68603515625
+        },
+        {
+          "seq_len": 16384,
+          "status": "ok",
+          "mean_time_ms": 1949.7083500000372,
+          "std_time_ms": 2.5449480164716642,
+          "peak_mem_mb": 98.84228515625
+        }
+      ]
+    },
+    "standard_attention": {
+      "label": "Standard Attention",
+      "family_config": {},
+      "length_results": [
+        {
+          "seq_len": 1024,
+          "status": "ok",
+          "mean_time_ms": 16.291149999915433,
+          "std_time_ms": 1.191828479615037,
+          "peak_mem_mb": 31.462890625
+        },
+        {
+          "seq_len": 4096,
+          "status": "ok",
+          "mean_time_ms": 52.86184999999932,
+          "std_time_ms": 3.0761266303154993,
+          "peak_mem_mb": 35.447265625
+        },
+        {
+          "seq_len": 8192,
+          "status": "ok",
+          "mean_time_ms": 72.33870000004572,
+          "std_time_ms": 2.130088467638367,
+          "peak_mem_mb": 60.978515625
+        },
+        {
+          "seq_len": 16384,
+          "status": "ok",
+          "mean_time_ms": 140.98395000019082,
+          "std_time_ms": 2.5102997840398356,
+          "peak_mem_mb": 110.572265625
+        }
+      ]
+    },
+    "sliding_window_attention": {
+      "label": "Sliding Window Attention",
+      "family_config": {
+        "window_size": 1024
+      },
+      "length_results": [
+        {
+          "seq_len": 1024,
+          "status": "ok",
+          "mean_time_ms": 17.111099999965518,
+          "std_time_ms": 0.31155124766338915,
+          "peak_mem_mb": 31.462890625
+        },
+        {
+          "seq_len": 4096,
+          "status": "ok",
+          "mean_time_ms": 58.26130000014018,
+          "std_time_ms": 1.797324016110607,
+          "peak_mem_mb": 31.9609375
+        },
+        {
+          "seq_len": 8192,
+          "status": "ok",
+          "mean_time_ms": 119.3271500001174,
+          "std_time_ms": 7.051198111301596,
+          "peak_mem_mb": 54.0390625
+        },
+        {
+          "seq_len": 16384,
+          "status": "ok",
+          "mean_time_ms": 236.86474999999518,
+          "std_time_ms": 1.2236482846077057,
+          "peak_mem_mb": 98.1953125
+        }
+      ]
+    }
+  }
+}

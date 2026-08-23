@@ -1,0 +1,123 @@
+{
+  "name": "mhdsra2_slot_readout_dry_run",
+  "config": {
+    "device": "cpu",
+    "groups": [
+      "baseline",
+      "slot_readout_bias",
+      "evidence_slot_readout"
+    ],
+    "tasks": [
+      "json"
+    ],
+    "dry_run": true,
+    "checkpoint_path": "reports\\mhdsra2_slot_readout_dry_run.checkpoint.jsonl"
+  },
+  "planned_rows": [
+    {
+      "group": "baseline",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.0,
+        "slot_decoder_logit_bias": 0.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "slot_readout_bias",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.0,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    },
+    {
+      "group": "evidence_slot_readout",
+      "task": "json",
+      "seed": 7,
+      "status": "planned",
+      "config": {
+        "epochs": 3,
+        "dim": 128,
+        "slots": 128,
+        "read_topk": 32,
+        "chunk_size": 256,
+        "train_dataset_size": 2,
+        "validation_dataset_size": 1,
+        "test_dataset_size": 1,
+        "generalization_score_mode": "generation",
+        "evidence_loss_weight": 0.2,
+        "slot_decoder_loss_weight": 0.35,
+        "slot_decoder_logit_bias": 4.0,
+        "evidence_hint_weight": 0.0,
+        "seed_bundle": {
+          "seed_root": 7,
+          "train_dataset_seed": 7,
+          "validation_dataset_seed": 108,
+          "test_dataset_seed": 209,
+          "pair_split_seed": 310,
+          "model_seed": 411
+        },
+        "mhdsra2_config_override": {}
+      },
+      "validation_metrics": {},
+      "test_metrics": {}
+    }
+  ],
+  "rows": [],
+  "sections": {},
+  "success_summary": {
+    "niah_rows_completed": 0,
+    "json_rows_completed": 0,
+    "two_digit_rows_completed": 0,
+    "two_digit_min_exact_match": null,
+    "selection_policy": "Select candidates by validation metrics only; inspect held-out test metrics only after a candidate improves validation."
+  }
+}
