@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Dict, Tuple
+
 import torch
 import torch.nn as nn
 
@@ -1141,7 +1143,8 @@ class MultiLayerMHDSRA2Model(nn.Module):
         context_id: int | None = None,
         *,
         sequence_lengths: int | torch.Tensor | None = None,
-    ) -> torch.Tensor:
+        return_aux: bool = False,
+    ) -> torch.Tensor | Tuple[torch.Tensor, Dict[str, object]]:
         """Run a stacked MHDSRA2 token model over chunked long sequences.
 
         中文说明:
@@ -1153,6 +1156,9 @@ class MultiLayerMHDSRA2Model(nn.Module):
           `state_list` 保存每层流式状态, `out_list` 收集每个分块输出
         - 接入 / Integration: 输入 token ids，输出 `[B,SeqLen,vocab_size]` logits；只监督少量位置时优先用
           `forward_selected_logits` 降低显存
+        - 可选辅助量 / Optional aux: `return_aux=True` 时额外返回 dict，其中
+          `gate_entropy_loss` 为各层各分块门控熵亏空（已乘 gate_entropy_weight）的平均值，
+          供训练循环叠加到主损失以抑制单支路门控垄断；默认 False 保持历史返回签名。
         - 错误处理 / Error handling: 张量维度和底层配置错误由 PyTorch/MHDSRA2 向上抛出
         - 关键词 / Keywords:
           forward|mhdsra2|multilayer|chunked|streaming|state|token|logits|compat|前向
@@ -1163,6 +1169,8 @@ class MultiLayerMHDSRA2Model(nn.Module):
         state_list = [None] * self.num_layers
         retrieval_repositories = self._new_retrieval_repositories()
         out_list = []
+        gate_entropy_total: torch.Tensor | None = None
+        aux_chunk_count = 0
 
         for start in range(0, seq_len, self.chunk_size):
             token_chunk = x[:, start : start + self.chunk_size].to(
@@ -1179,7 +1187,7 @@ class MultiLayerMHDSRA2Model(nn.Module):
                     state_list[layer_idx],
                     normalized_lengths,
                 )
-                out_chunk, next_state = layer(
+                layer_result = layer(
                     chunk_normed,
                     state=state_list[layer_idx],
                     retrieved_k=retrieved_k,
@@ -1187,12 +1195,40 @@ class MultiLayerMHDSRA2Model(nn.Module):
                     retrieved_mask=retrieved_mask,
                     stage_id=stage_id,
                     context_id=context_id,
+                    return_aux=return_aux,
                 )
+                if return_aux:
+                    out_chunk, next_state, layer_aux = layer_result
+                    if (
+                        isinstance(layer_aux, dict)
+                        and layer_aux.get("gate_entropy_loss") is not None
+                    ):
+                        term = layer_aux["gate_entropy_loss"].to(
+                            device=model_device, dtype=torch.float32
+                        )
+                        gate_entropy_total = (
+                            term if gate_entropy_total is None else gate_entropy_total + term
+                        )
+                        aux_chunk_count += 1
+                else:
+                    out_chunk, next_state = layer_result
                 state_list[layer_idx] = next_state
                 if key_heads is not None and value_heads is not None:
                     retrieval_repositories[layer_idx].append(key_heads, value_heads)
                 chunk = residual + out_chunk
             out_list.append(chunk)
+
+        if return_aux:
+            payload: Dict[str, object] = {
+                "gate_entropy_loss": (
+                    gate_entropy_total / max(1, aux_chunk_count)
+                    if gate_entropy_total is not None
+                    else None
+                ),
+            }
+            out = torch.cat(out_list, dim=1)
+            out = self.final_norm(out)
+            return self.out_proj(out), payload
 
         out = torch.cat(out_list, dim=1)
         out = self.final_norm(out)

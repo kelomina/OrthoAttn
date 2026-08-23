@@ -12,6 +12,7 @@ O(B * H * C * K) per chunk, not O(B * H * T^2).
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 from typing import Dict, Optional, Tuple
 
@@ -69,6 +70,9 @@ class MHDSRA2Config:
     write_drive_mode: str = "overwrite_aware"
     # 页面评分模式：two_level(默认, max(page_mean, page_token)) | page_mean(纯均值, 消融用)
     page_score_mode: str = "two_level"
+    # 门控熵正则权重：>0 时对三路融合门控施加熵亏空惩罚（抑制单支路垄断/rich-get-richer）；
+    # 0.0(默认) 完全关闭，保持历史行为
+    gate_entropy_weight: float = 0.0
 
     def __post_init__(self) -> None:
         if self.dim % self.heads != 0:
@@ -108,6 +112,9 @@ class MHDSRA2Config:
             raise ValueError("write_drive_mode must be 'overwrite_aware' or 'novelty_only'")
         if self.page_score_mode not in {"two_level", "page_mean"}:
             raise ValueError("page_score_mode must be 'two_level' or 'page_mean'")
+        if float(self.gate_entropy_weight) < 0.0:
+            raise ValueError("gate_entropy_weight must be non-negative")
+        self.gate_entropy_weight = float(self.gate_entropy_weight)
 
 
 @dataclass
@@ -1065,6 +1072,20 @@ class MultiHeadDSRA2(nn.Module):
         gates = gates * gate_mask
         gates = gates / gates.sum(dim=-1, keepdim=True).clamp_min(cfg.eps)
 
+        # 门控熵正则（gate_entropy_weight > 0 时启用）：
+        # 计算归一化三路门控相对均匀分布 ln(3) 的熵亏空均值，作为可选辅助损失，
+        # 抑制训练中单支路（如 retrieval）垄断门控的 rich-get-richer 坍缩。
+        # 调用方 / Called by: `_forward_from_projected`（本函数）；
+        # 消费方 / Consumers: `return_aux=True` 时经 aux["gate_entropy_loss"] 交给训练循环加权求和。
+        gate_entropy_loss = None
+        if cfg.gate_entropy_weight > 0.0:
+            gate_entropy = -(
+                gates * torch.log(gates.clamp_min(cfg.eps))
+            ).sum(dim=-1)  # [B, H, T]
+            max_entropy = math.log(float(gates.shape[-1]))
+            entropy_deficit = (max_entropy - gate_entropy).clamp_min(0.0)
+            gate_entropy_loss = entropy_deficit.mean() * cfg.gate_entropy_weight
+
         y_heads = (
             gates[..., 0:1] * slot_out
             + gates[..., 1:2] * local_out
@@ -1110,6 +1131,13 @@ class MultiHeadDSRA2(nn.Module):
                 "gate_slot_mean": gates[..., 0].detach().mean().to(dtype=torch.float32),
                 "gate_local_mean": gates[..., 1].detach().mean().to(dtype=torch.float32),
                 "gate_retrieval_mean": gates[..., 2].detach().mean().to(dtype=torch.float32),
+                "gate_entropy_loss": (
+                    # 注意：此处不得 detach——该量是供训练循环叠加的可微辅助损失，
+                    # 其余 gate_*_mean 等字段仅用于日志才使用 detach。
+                    gate_entropy_loss.to(dtype=torch.float32)
+                    if gate_entropy_loss is not None
+                    else None
+                ),
                 "retrieval_available": retrieval_available_by_sample,
                 "retrieval_available_ratio": (
                     (retrieved_counts > 0).detach().to(dtype=torch.float32).mean()
