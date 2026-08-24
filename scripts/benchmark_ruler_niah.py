@@ -132,7 +132,9 @@ def main() -> None:
     parser.add_argument("--warmup-steps", type=int, default=80)
     parser.add_argument("--seed", type=int, default=20260506)
     parser.add_argument("--eval-interval", type=int, default=50)
-    parser.add_argument("--eval-batches", type=int, default=4)
+    parser.add_argument("--eval-batches", type=int, default=4,
+                        help="评估批数; 每批固定 8 样本, EM 粒度 = 1/(8*eval-batches)"
+                        " (如默认 4 批 → 3.125%)。与 --batch-size(训练批)独立。")
     parser.add_argument("--retrieval-quality-gate-bias", type=float, default=0.0,
                         help="A/B 单变量: 负值抑制 retrieval 支路门控")
     parser.add_argument("--device", type=str, default="cuda:0",

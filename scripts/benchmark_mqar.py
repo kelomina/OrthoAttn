@@ -968,7 +968,9 @@ if __name__ == "__main__":
         type=int,
         default=None,
         help="MHDSRA2 streaming chunk size (default: min(64, seq_len)). "
-        "Set 16/8 to separate uniformly-spaced queries into distinct chunks (Path A verification).",
+        "NOTE: the Path-A hypothesis that smaller chunks unlock multi-query was "
+        "REFUTED by controlled experiments (docs/code_project_case_studies.md, "
+        "2026-08-23); this knob is kept for ablation/diagnostics only.",
     )
     parser.add_argument("--output-json", type=str, default=None, help="Custom output JSON path")
 
