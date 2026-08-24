@@ -16,14 +16,20 @@ RULER Needle-In-A-Haystack Domain Specification and Data Generator (aligned with
      - 上下文以 "\n" 连接句子; 针句在随机位置插入(排序后逆序 insert);
      - Key 为 "{adjective}-{noun}" 复合词; S-NIAH-1 的 Value 为 7 位十进制数字;
      - 查询从 K 个 key 中无放回采样 Q 个, 答案为对应 value 序列。
-  2. 训练适配偏差 (Train-from-scratch Adaptation Deviations, 均已文档化):
+   2. 训练适配偏差 (Train-from-scratch Adaptation Deviations, 均已文档化):
      - 分词采用词级封闭词表(含数字位 token), 替代官方 cl100k/nemo tokenizer;
        因此序列长度按"词 token"计而非 BPE token;
      - wonderwords 词库截断为内嵌静态形容词/名词表(保持 "{adj}-{noun}" 组合空间);
+     - 针句打乱随机源: 官方使用固定 `random.Random(args.random_seed).shuffle`,
+       本实现使用逐样本 torch.Generator 种子流(行为等价, 轨迹不同);
+     - 多查询问句的 key 连接格式: 官方为 "k1, and k2", 本实现为 "k1, k2"
+       (作为训练提示文本的一部分, 不影响任务语义与答案对齐);
      - 评测口径为答案数字序列的精确匹配(Teacher-forcing 下逐步 Top-1 / 序列全对),
        替代官方 LLM 文本生成 + 字符串匹配。
-  3. 损失掩码: 仅答案数字位置参与损失(Y=对应数字 token id), 其余位置 Y=PAD(=0,
-     配合 CrossEntropyLoss(ignore_index=0)), 与 Zoology MQAR 掩码约定一致。
+   3. 损失掩码: 仅答案数字位置参与损失(Y=对应数字 token id), 其余位置 Y=PAD(=0,
+      配合 CrossEntropyLoss(ignore_index=0)), 与 Zoology MQAR 掩码约定一致。
+   4. 评测口径说明: 精确匹配(EM)与首位数字检索准确率的打分实现位于
+      `scripts.benchmark_ruler_niah.score_prediction`(本模块不重复实现)。
 """
 
 from dataclasses import dataclass
@@ -83,7 +89,7 @@ def _build_vocab() -> Tuple[Dict[str, int], List[str]]:
     """构建确定性词-编号映射表 / Build deterministic token-to-id vocabulary.
 
     中文说明:
-    - 调用方 / Called by: `build_ruler_niah_vocab`, 各 token 化函数
+    - 调用方 / Called by: 模块导入期(模块级 `VOCAB, ID2TOKEN = _build_vocab()`), 各 token 化函数
     - 作用 / Purpose: 将噪声句、模板句、问句、答案前缀、形容词、名词、数字与
       标点全部纳入封闭词表; PAD=0 保留给损失掩码, 不分配给任何词。
     - 返回 / Returns: (token->id 映射, id->token 列表)
@@ -211,7 +217,7 @@ def generate_ruler_niah_batch(
       Y: LongTensor[B, L] 监督目标(PAD=0 除答案数字位外);
       meta: 每样本元数据列表(query key 文本、答案数字串、针句位置等, 用于测试与诊断)。
     - 错误处理 / Error handling: 配置非法由 `RulerNiahConfig.__post_init__` 抛出。
-    - 关键词 / Keywords: ruler|niah|needle|havstack|passkey|domain|generator
+    - 关键词 / Keywords: ruler|niah|needle|haystack|passkey|domain|generator
     """
     gen = torch.Generator(device="cpu")
     if cfg.seed is not None:
@@ -313,25 +319,3 @@ def generate_ruler_niah_batch(
         X[b, : len(x)] = torch.tensor(x, dtype=torch.long)
         Y[b, : len(y)] = torch.tensor(y, dtype=torch.long)
     return X.to(cfg.device), Y.to(cfg.device), metas
-
-
-def evaluate_ruler_niah_exact_match(
-    preds_digit_ids: List[List[int]],
-    answers: List[List[str]],
-) -> float:
-    """序列级精确匹配率 / Sequence-level exact-match accuracy.
-
-    中文说明:
-    - 调用方 / Called by: `scripts.benchmark_ruler_niah` 评估循环
-    - 作用 / Purpose: 将预测数字 id 序列还原为字符串, 与真值答案做全序列比对;
-      多查询时要求每个查询的答案均正确才计 1。
-    """
-    correct = 0
-    for pred, ans in zip(preds_digit_ids, answers):
-        pred_str = "".join(str(int(i)) for i in pred)
-        ok = len(pred_str) == VALUE_NUM_DIGITS * len(ans)
-        for a in ans:
-            if a not in pred_str:
-                ok = False
-        correct += int(ok)
-    return correct / max(1, len(answers))

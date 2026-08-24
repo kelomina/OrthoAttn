@@ -17,6 +17,7 @@
 
 import pytest
 import torch
+from typing import List
 
 from src.dsra.domain.ruler_niah import (
     ADJECTIVES,
@@ -27,10 +28,8 @@ from src.dsra.domain.ruler_niah import (
     VOCAB,
     _digits_to_ids,
     _tokenize,
-    evaluate_ruler_niah_exact_match,
     generate_ruler_niah_batch,
 )
-from typing import List
 
 
 def test_vocab_closed_and_pad_reserved() -> None:
@@ -98,6 +97,25 @@ def test_spec_alignment_verbatim_sentences() -> None:
     assert needle_lower in text
 
 
+def test_spec_alignment_hardcoded_literal() -> None:
+    """硬编码字面量断言: 打破"用被测分词器验证被测分词器"的循环性.
+
+    中文说明:
+    - 直接以字面量 token 序列断言一个已知样本的上下文包含完整官方针句
+      (seed=3 时 key=quiet-opal, value=4781964), 不经过 _tokenize/VOCAB 构造
+      期望值。若未来分词器或词表发生破坏性变更, 此用例将率先失败。
+    """
+    cfg = RulerNiahConfig(num_haystack=64, num_needle_k=1, num_needle_q=1, seed=3)
+    X, _, _ = generate_ruler_niah_batch(cfg)
+    toks = [ID2TOKEN[i] for i in X[0].tolist() if ID2TOKEN[i] != "<pad>"]
+    joined = " ".join(toks)
+    literal = (
+        "one of the special magic numbers for quiet - opal is: "
+        "4 7 8 1 9 6 4 ."
+    )
+    assert literal in joined
+
+
 def test_answer_supervision_positions_and_no_leak() -> None:
     """答案数字串在上下文恰好出现一次; 监督位置严格落在答案前缀尾部之后."""
     cfg = RulerNiahConfig(num_haystack=48, num_needle_k=1, num_needle_q=1, seed=11)
@@ -138,13 +156,6 @@ def test_multi_needle_metadata_consistency() -> None:
         nonzero = (Y[b] != 0).nonzero().flatten().tolist()
         labels = Y[b, nonzero].tolist()
         assert labels[:-1] == digit_ids and labels[-1] == VOCAB["."]
-
-
-def test_exact_match_evaluator() -> None:
-    """精确匹配评测: 全对计 1, 缺位/错位计 0."""
-    assert evaluate_ruler_niah_exact_match([[1, 2, 3, 4, 5, 6, 7]], [["1234567"]]) == 1.0
-    assert evaluate_ruler_niah_exact_match([[1, 2, 3, 4, 5, 6, 8]], [["1234567"]]) == 0.0
-    assert evaluate_ruler_niah_exact_match([[1, 2, 3]], [["1234567"]]) == 0.0
 
 
 def test_score_prediction_excludes_period_and_reports_first_digit() -> None:
