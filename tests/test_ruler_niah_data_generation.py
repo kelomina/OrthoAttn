@@ -145,3 +145,33 @@ def test_exact_match_evaluator() -> None:
     assert evaluate_ruler_niah_exact_match([[1, 2, 3, 4, 5, 6, 7]], [["1234567"]]) == 1.0
     assert evaluate_ruler_niah_exact_match([[1, 2, 3, 4, 5, 6, 8]], [["1234567"]]) == 0.0
     assert evaluate_ruler_niah_exact_match([[1, 2, 3]], [["1234567"]]) == 0.0
+
+
+def test_score_prediction_excludes_period_and_reports_first_digit() -> None:
+    """打分函数必须排除句号监督位; 首位数字正确率独立上报.
+
+    中文说明:
+    - 回归背景: 历史版本把句号预测计入长度比对导致 EM 恒为 0(训练成功也被
+      判零)。本测试锁定该 off-by-one 不再复发。
+    """
+    from scripts.benchmark_ruler_niah import score_prediction
+
+    ans = ["1234567"]
+    digit_ids = [_digits_to_ids(ans[0])]
+    period = VOCAB["."]
+    # 数字全对 + 句号对 → EM=1, 首位=1
+    em, first = score_prediction(digit_ids[0] + [period], ans)
+    assert em is True and first is True
+    # 数字全对但句号预测错误 → EM 仍应为 1(句号不参与 EM)
+    em, first = score_prediction(digit_ids[0] + [VOCAB["0"]], ans)
+    assert em is True and first is True
+    # 仅首位数字错 → EM=0 且 first=False
+    wrong_first = digit_ids[0].copy()
+    wrong_first[0] = VOCAB["9"] if ans[0][0] != "9" else VOCAB["8"]
+    em, first = score_prediction(wrong_first + [period], ans)
+    assert em is False and first is False
+    # 首位对、中间错 → EM=0 但 first=True
+    mid_wrong = digit_ids[0].copy()
+    mid_wrong[3] = VOCAB["0"] if ans[0][3] != "0" else VOCAB["1"]
+    em, first = score_prediction(mid_wrong + [period], ans)
+    assert em is False and first is True

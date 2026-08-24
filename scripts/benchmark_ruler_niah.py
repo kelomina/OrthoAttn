@@ -60,6 +60,28 @@ def reset_gate_store(store: dict) -> None:
     store["count"] = 0
 
 
+def score_prediction(pred_ids: list, answers: list) -> tuple:
+    """对单个样本的监督位预测打分 / Score one sample's supervised-position predictions.
+
+    中文说明:
+    - 调用方 / Called by: `evaluate_exact_match`, 单元测试
+    - 作用 / Purpose: 只比对答案数字位的预测(排除末尾句号监督位), 返回
+      (序列级 EM, 首位数字正确率)。首位数字需真正检索上下文, 其余位存在
+      相邻复制捷径, 因此两项指标分开上报。
+    - 参数 / Parameters: `pred_ids` 是监督位置的 argmax token id 列表(含句号);
+      `answers` 是真值数字字符串列表。
+    - 返回 / Returns: (em: bool, first_digit_ok: bool)
+    """
+    n_digits = sum(len(a) for a in answers)
+    digit_preds = pred_ids[:n_digits]
+    expected: list = []
+    for a in answers:
+        expected.extend(VOCAB[ch] for ch in a)
+    em = len(digit_preds) == n_digits and digit_preds == expected
+    first_ok = bool(digit_preds) and digit_preds[0] == expected[0]
+    return bool(em), bool(first_ok)
+
+
 @torch.no_grad()
 def evaluate_exact_match(
     model: torch.nn.Module,
@@ -67,37 +89,29 @@ def evaluate_exact_match(
     device: torch.device,
     batches: int,
 ) -> tuple:
-    """序列级 EM 评估 / Evaluate answer exact-match on fresh batches.
+    """序列级 EM 与首位检索准确率评估 / Evaluate EM and first-digit retrieval accuracy.
 
     中文说明:
-    - 对每个样本取监督位置(Y!=0)处的 argmax 预测, 还原数字串并与真值全比对;
-      全部查询答案均正确才计 1。
-    - 返回 / Returns: (em 准确率, 每样本正确标志列表)
+    - 对每个样本取监督位置(Y!=0)处的 argmax 预测, 经 `score_prediction` 打分;
+    - 返回 / Returns: (em 准确率, first_digit_acc 准确率)
     """
     model.eval()
-    flags = []
+    em_flags = []
+    first_flags = []
     for _ in range(batches):
         X, Y, metas = generate_ruler_niah_batch(cfg)
         X, Y = X.to(device), Y.to(device)
         logits = model(X)
-        pos = (Y != 0)
+        pos = Y != 0
         for b in range(X.shape[0]):
-            pb = pos[b]
-            pred_ids = logits[b][pb].argmax(dim=-1).tolist()
-            answers = [str(a) for a in metas[b]["answers"]]
-            ok = len(pred_ids) == sum(len(a) for a in answers)
-            if ok:
-                s = "".join(str(d) for d in pred_ids)
-                idx = 0
-                for a in answers:
-                    if s[idx : idx + len(a)] != a:
-                        ok = False
-                        break
-                    idx += len(a)
-            flags.append(bool(ok))
+            pred_ids = logits[b][pos[b]].argmax(dim=-1).tolist()
+            em, first_ok = score_prediction(pred_ids, [str(a) for a in metas[b]["answers"]])
+            em_flags.append(em)
+            first_flags.append(first_ok)
     model.train()
-    em = sum(flags) / max(1, len(flags))
-    return em, flags
+    em_acc = sum(em_flags) / max(1, len(em_flags))
+    first_acc = sum(first_flags) / max(1, len(first_flags))
+    return em_acc, first_acc
 
 
 def main() -> None:
@@ -197,19 +211,21 @@ def main() -> None:
 
         if (step + 1) % args.eval_interval == 0 or step == args.epochs - 1:
             reset_gate_store(gate_store)
-            em, _ = evaluate_exact_match(model, eval_cfg, device, args.eval_batches)
+            em, first_acc = evaluate_exact_match(model, eval_cfg, device, args.eval_batches)
             gates = probe_gate_means(gate_store)
             best_em, best_step = max(best_em, em), (step + 1) if em > best_em else best_step
             rec = {
                 "step": step + 1,
                 "train_loss": float(loss.item()),
                 "eval_em": float(em),
+                "first_digit_acc": float(first_acc),
                 "gate_means_slot_local_retrieval": gates,
             }
             records.append(rec)
             print(
                 f"Step {step+1}/{args.epochs} loss={loss.item():.4f} em={em*100:.1f}% "
-                f"(best={best_em*100:.1f}%@{best_step}) gates(slr)={[round(g,2) for g in gates]}",
+                f"first={first_acc*100:.1f}% (best_em={best_em*100:.1f}%@{best_step}) "
+                f"gates(slr)={[round(g,2) for g in gates]}",
                 flush=True,
             )
     final = records[-1] if records else {"eval_em": 0.0}
@@ -223,6 +239,16 @@ def main() -> None:
     out = Path(args.output_json)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 保存模型权重以便事后复评(教训: 此前无 checkpoint 导致评测 bug 无法追溯修复)
+    ckpt_path = out.with_suffix(".pt")
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "config": vars(args) | {"vocab_size": len(VOCAB)},
+            "best_eval_em": float(best_em),
+        },
+        ckpt_path,
+    )
     print(f"DONE bias={args.retrieval_quality_gate_bias} best_em={best_em:.4f} -> {out}", flush=True)
 
 
