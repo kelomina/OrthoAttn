@@ -140,6 +140,10 @@ def main() -> None:
                         " (如默认 4 批 -> 3.125%%)。与 --batch-size(训练批)独立。")
     parser.add_argument("--retrieval-quality-gate-bias", type=float, default=0.0,
                         help="A/B 单变量: 负值抑制 retrieval 支路门控")
+    parser.add_argument("--early-stop-em", type=float, default=0.0,
+                        help="早停阈值: EM 达到该值且步数>=--min-steps 时提前结束; 0 关闭")
+    parser.add_argument("--min-steps", type=int, default=0,
+                        help="早停生效所需最小步数")
     parser.add_argument("--device", type=str, default="cuda:0",
                         help="计算设备; 请求 cuda 而 CUDA 不可用时报错退出, 不回退 CPU")
     parser.add_argument("--output-json", type=str, required=True)
@@ -241,6 +245,17 @@ def main() -> None:
                 f"gates(slr)={[round(g,2) for g in gates]}",
                 flush=True,
             )
+            if (
+                args.early_stop_em > 0
+                and em >= args.early_stop_em
+                and (step + 1) >= args.min_steps
+            ):
+                print(
+                    f"[early-stop] em={em*100:.1f}% >= {args.early_stop_em*100:.1f}% "
+                    f"at step {step+1}",
+                    flush=True,
+                )
+                break
     final = records[-1] if records else {"eval_em": 0.0}
     result = {
         "config": vars(args) | {"vocab_size": len(VOCAB)},
