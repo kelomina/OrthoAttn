@@ -128,7 +128,9 @@ def main() -> None:
     parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--slots", type=int, default=64)
     parser.add_argument("--read-topk", type=int, default=8)
-    parser.add_argument("--chunk-size", type=int, default=256)
+    parser.add_argument("--chunk-size", type=int, default=1024,
+                        help="流式分块大小; 1024 使每步检索往返次数降为 1/4 "
+                        "(CPU 侧检索打分是当前主要瓶颈, 见案例库 2026-08-25 性能剖析)")
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--warmup-steps", type=int, default=80)
     parser.add_argument("--seed", type=int, default=20260506)
@@ -145,6 +147,9 @@ def main() -> None:
 
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError(f"--device {args.device} 需要 CUDA 但当前不可用; 禁止静默回退 CPU")
+    # 限制 torch CPU 线程池: 检索路径的 CPU 侧打分 + 多进程 OMP 超订会把物理核
+    # 全部吃满(GPU 反被饿死); 8 线程足够且为同机其他任务留出余量。
+    torch.set_num_threads(min(8, torch.get_num_threads()))
     device = torch.device(args.device)
     seed_all(args.seed)
 
@@ -169,7 +174,10 @@ def main() -> None:
 
     override = {
         "use_retrieval": True,
-        "retrieval_neighbor_span": 1,
+        # 邻居扩展置 0: py-spy 实证 _expand_token_indices_with_neighbors 的纯 Python
+        # 逐索引循环为 CPU 熔炉(718% 核占用, GPU 4%)。RULER 针句整句连续存储于
+        # 单页, 右邻扩展对 S-NIAH-1 无增益。A/B 两臂配置一致, 不影响对照有效性。
+        "retrieval_neighbor_span": 0,
         "retrieval_neighbor_direction": "right",
         "retrieval_query_pooling": "max_token",
         "retrieval_attention_topk": 16,
