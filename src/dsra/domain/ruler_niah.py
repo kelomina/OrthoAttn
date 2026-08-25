@@ -156,6 +156,10 @@ def _tokenize(text: str) -> List[str]:
     return out
 
 
+#: 噪声海草句的 token id 序列(模块级缓存: 训练循环每步重复使用, 避免反复分词)
+NOISE_UNIT_IDS: List[int] = [VOCAB[t] for t in _tokenize(NOISE_SENTENCE)]
+
+
 @dataclass(frozen=True)
 class RulerNiahConfig:
     """RULER-NIAH 任务配置规范 / RULER-NIAH task configuration specification.
@@ -242,19 +246,20 @@ def generate_ruler_niah_batch(
             values.append(str(v))
 
         needles = [
-            _tokenize(
+            [VOCAB[t] for t in _tokenize(
                 NEEDLE_TEMPLATE.format(
                     type_v="numbers", key=f"{k[0]}-{k[1]}", value=v
                 )
-            )
+            )]
             for k, v in zip(keys, values)
         ]
         # 官方行为: 打乱针句顺序后按降序位置 insert
         perm = torch.randperm(cfg.num_needle_k, generator=gen).tolist()
         shuffled = [needles[p] for p in perm]
 
-        noise_unit = _tokenize(NOISE_SENTENCE)
-        sentences: List[List[str]] = [list(noise_unit) for _ in range(cfg.num_haystack)]
+        sentences: List[List[int]] = [
+            list(NOISE_UNIT_IDS) for _ in range(cfg.num_haystack)
+        ]
         indexes = sorted(
             torch.randperm(cfg.num_haystack, generator=gen)[: cfg.num_needle_k].tolist(),
             reverse=True,
@@ -264,10 +269,11 @@ def generate_ruler_niah_batch(
             sentences.insert(index, sent)
             needle_positions.append(index)
 
-        context: List[str] = []
+        context: List[int] = []
+        nl_id = VOCAB["\n"]
         for i, sent in enumerate(sentences):
             if i > 0:
-                context.append("\n")
+                context.append(nl_id)
             context.extend(sent)
 
         # 2. 无放回采样 Q 个查询 key
@@ -276,28 +282,30 @@ def generate_ruler_niah_batch(
         answer_digits: List[str] = [values[q] for q in q_sel]
 
         key_str = ", ".join(f"{a}-{n}" for a, n in query_keys)
-        question = _tokenize(
+        x_ids: List[int] = list(context)
+        x_ids.append(nl_id)
+        x_ids.extend(VOCAB[t] for t in _tokenize(
             f"What are all the special magic numbers for {key_str} mentioned"
             " in the provided text?"
-        )
-        answer_prefix = _tokenize(
+        ))
+        x_ids.append(nl_id)
+        x_ids.extend(VOCAB[t] for t in _tokenize(
             f"The special magic numbers for {key_str} mentioned in the"
             " provided text are"
-        )
+        ))
 
-        seq = context + ["\n"] + question + ["\n"] + answer_prefix
-        prefix_len = len(seq)
         # 目标 token(答案数字序列 + 句号)同时进入输入 X(teacher-forcing 布局),
-        # 标签按 next-token 约定挂在被预测位置的前一位置: Y[prefix_len-1+j] = target_ids[j]
+        # 标签按 next-token 约定挂在被预测位置的前一位置:
+        # 第一个目标位的标签位于其前一位置(答案前缀最后一个词), 其后依次顺延。
+        label_start = len(x_ids) - 1
         target_ids: List[int] = []
         for ans in answer_digits:
             target_ids.extend(_digits_to_ids(ans))
         target_ids.append(VOCAB["."])
-        seq = seq + [ID2TOKEN[tid] for tid in target_ids]
-        x_ids = [VOCAB[t] for t in seq]
+        x_ids.extend(target_ids)
         y_ids = [0] * len(x_ids)
         for off, tid in enumerate(target_ids):
-            y_ids[prefix_len - 1 + off] = tid
+            y_ids[label_start + off] = tid
 
         xs.append(x_ids)
         ys.append(y_ids)
