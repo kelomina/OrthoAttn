@@ -158,6 +158,26 @@ def test_multi_needle_metadata_consistency() -> None:
         assert labels[:-1] == digit_ids and labels[-1] == VOCAB["."]
 
 
+def test_per_step_seed_varies_batches() -> None:
+    """逐步重播种必须产生不同批次(防止冻结在单批上死记硬背).
+
+    中文说明:
+    - 回归背景: scripts/benchmark_ruler_niah.py 曾因每步传入同一固定 seed 导致
+      训练冻结在单批 8 样本上——loss 归零但泛化为 0(第一次幻觉复查未覆盖训练循环)。
+      本测试锁定"不同 seed ⇒ 不同批次"这一跨文件契约。
+    """
+    import dataclasses
+
+    base = RulerNiahConfig(num_haystack=64, num_needle_k=1, num_needle_q=1, batch_size=4, seed=100)
+    X1, _, _ = generate_ruler_niah_batch(base)
+    # 同种子复现
+    X1b, _, _ = generate_ruler_niah_batch(base)
+    assert torch.equal(X1, X1b)
+    # 换种子必不同批次(不同针句/位置)
+    X2, _, _ = generate_ruler_niah_batch(dataclasses.replace(base, seed=101))
+    assert not torch.equal(X1, X2)
+
+
 def test_score_prediction_excludes_period_and_reports_first_digit() -> None:
     """打分函数必须排除句号监督位; 首位数字正确率独立上报.
 

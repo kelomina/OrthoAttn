@@ -17,6 +17,7 @@
 """
 
 import argparse
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -134,7 +135,7 @@ def main() -> None:
     parser.add_argument("--eval-interval", type=int, default=50)
     parser.add_argument("--eval-batches", type=int, default=4,
                         help="评估批数; 每批固定 8 样本, EM 粒度 = 1/(8*eval-batches)"
-                        " (如默认 4 批 → 3.125%)。与 --batch-size(训练批)独立。")
+                        " (如默认 4 批 -> 3.125%%)。与 --batch-size(训练批)独立。")
     parser.add_argument("--retrieval-quality-gate-bias", type=float, default=0.0,
                         help="A/B 单变量: 负值抑制 retrieval 支路门控")
     parser.add_argument("--device", type=str, default="cuda:0",
@@ -201,7 +202,9 @@ def main() -> None:
     best_step = 0
     for step in range(args.epochs):
         model.train()
-        X, Y, _ = generate_ruler_niah_batch(cfg)
+        # 逐训练步重播种, 避免冻结在单批样本上死记硬背(教训: benchmark_mqar 亦如此)
+        step_cfg = dataclasses.replace(cfg, seed=args.seed + step)
+        X, Y, _ = generate_ruler_niah_batch(step_cfg)
         X, Y = X.to(device), Y.to(device)
         opt.zero_grad()
         logits = model(X)
