@@ -1,0 +1,165 @@
+{
+  "config": {
+    "seq_len": 128,
+    "chunk_size": 16,
+    "no_retrieval": true,
+    "detach_state": true,
+    "num_kv": 2,
+    "epochs": 800,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "force_gate": "slot",
+    "gate_bias": 2.0,
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_kv2_L128_c16_slot_detach.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.379304885864258,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 4.166266441345215,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.1875,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 4.265374660491943,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 4.140709400177002,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 4.158051490783691,
+      "per_query_acc": [
+        0.0625,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 4.135027885437012,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 700,
+      "train_loss": 4.180890083312988,
+      "per_query_acc": [
+        0.1875,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 800,
+      "train_loss": 4.130908489227295,
+      "per_query_acc": [
+        0.1875,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    }
+  ]
+}

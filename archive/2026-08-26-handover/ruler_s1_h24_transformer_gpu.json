@@ -1,0 +1,915 @@
+{
+  "config": {
+    "model": "transformer",
+    "variant": "sniah1",
+    "num_haystack": 24,
+    "num_needle_k": 1,
+    "num_needle_q": 1,
+    "epochs": 2000,
+    "batch_size": 8,
+    "dim": 128,
+    "num_layers": 2,
+    "slots": 64,
+    "read_topk": 8,
+    "chunk_size": 1024,
+    "lr": 0.001,
+    "warmup_steps": 80,
+    "seed": 20260506,
+    "eval_interval": 25,
+    "eval_batches": 4,
+    "retrieval_quality_gate_bias": 0.0,
+    "early_stop_em": 0.0,
+    "min_steps": 0,
+    "device": "cuda:0",
+    "output_json": "E:\\Project\\python\\DSRA\\reports\\ruler_s1_h24_transformer_gpu.json",
+    "vocab_size": 211,
+    "override": {
+      "model": "standard_transformer"
+    }
+  },
+  "best_eval_em": 0.0,
+  "best_step": 0,
+  "final_eval_em": 0.0,
+  "records": [
+    {
+      "step": 25,
+      "train_loss": 4.21836519241333,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 50,
+      "train_loss": 2.639817714691162,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 75,
+      "train_loss": 2.417721748352051,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 100,
+      "train_loss": 2.3689675331115723,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 125,
+      "train_loss": 2.1177096366882324,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 150,
+      "train_loss": 2.021341323852539,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 175,
+      "train_loss": 2.100956916809082,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 1.9546358585357666,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 225,
+      "train_loss": 2.047102928161621,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 250,
+      "train_loss": 2.024205446243286,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 275,
+      "train_loss": 2.0087666511535645,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 2.002202033996582,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 325,
+      "train_loss": 2.0183708667755127,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 350,
+      "train_loss": 2.0272116661071777,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 375,
+      "train_loss": 2.054520606994629,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 2.001633405685425,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 425,
+      "train_loss": 1.9899325370788574,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 450,
+      "train_loss": 2.0149102210998535,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 475,
+      "train_loss": 2.0294580459594727,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 2.009530544281006,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 525,
+      "train_loss": 2.0562853813171387,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 550,
+      "train_loss": 2.0945632457733154,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 575,
+      "train_loss": 1.9948253631591797,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 2.0302274227142334,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 625,
+      "train_loss": 2.0139851570129395,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 650,
+      "train_loss": 1.98554527759552,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 675,
+      "train_loss": 2.023153305053711,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 700,
+      "train_loss": 1.9834637641906738,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 725,
+      "train_loss": 2.0606327056884766,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 750,
+      "train_loss": 1.9772746562957764,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 775,
+      "train_loss": 1.9613971710205078,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 800,
+      "train_loss": 1.955549716949463,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 825,
+      "train_loss": 1.9332623481750488,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 850,
+      "train_loss": 1.9087262153625488,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 875,
+      "train_loss": 1.8632934093475342,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 900,
+      "train_loss": 1.8840386867523193,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 925,
+      "train_loss": 1.8821632862091064,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 950,
+      "train_loss": 1.8507792949676514,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 975,
+      "train_loss": 1.8850167989730835,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1000,
+      "train_loss": 1.7581887245178223,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1025,
+      "train_loss": 1.847555160522461,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1050,
+      "train_loss": 1.8301362991333008,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1075,
+      "train_loss": 1.7652194499969482,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1100,
+      "train_loss": 1.7896552085876465,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1125,
+      "train_loss": 1.741007685661316,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1150,
+      "train_loss": 1.7543317079544067,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1175,
+      "train_loss": 1.8050434589385986,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1200,
+      "train_loss": 1.7412984371185303,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1225,
+      "train_loss": 1.6206003427505493,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1250,
+      "train_loss": 1.7238311767578125,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1275,
+      "train_loss": 1.6689561605453491,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1300,
+      "train_loss": 1.6377713680267334,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1325,
+      "train_loss": 1.4380443096160889,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1350,
+      "train_loss": 1.7773698568344116,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1375,
+      "train_loss": 1.6933351755142212,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1400,
+      "train_loss": 1.740838646888733,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1425,
+      "train_loss": 1.4838733673095703,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1450,
+      "train_loss": 1.4694150686264038,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1475,
+      "train_loss": 1.631190299987793,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1500,
+      "train_loss": 1.503305435180664,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1525,
+      "train_loss": 1.636650800704956,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1550,
+      "train_loss": 1.5732100009918213,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1575,
+      "train_loss": 1.7089794874191284,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1600,
+      "train_loss": 1.63965904712677,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1625,
+      "train_loss": 1.5290141105651855,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1650,
+      "train_loss": 1.663492202758789,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1675,
+      "train_loss": 1.5720840692520142,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1700,
+      "train_loss": 1.6352791786193848,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1725,
+      "train_loss": 1.5732399225234985,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1750,
+      "train_loss": 1.5953741073608398,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1775,
+      "train_loss": 1.5444872379302979,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1800,
+      "train_loss": 1.7109487056732178,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1825,
+      "train_loss": 1.743825078010559,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1850,
+      "train_loss": 1.6445040702819824,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1875,
+      "train_loss": 1.5647692680358887,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1900,
+      "train_loss": 1.4395489692687988,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1925,
+      "train_loss": 1.4757843017578125,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1950,
+      "train_loss": 1.6107938289642334,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 1975,
+      "train_loss": 1.685995101928711,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 2000,
+      "train_loss": 1.5497984886169434,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

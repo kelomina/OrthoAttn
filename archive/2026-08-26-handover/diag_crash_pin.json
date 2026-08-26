@@ -1,0 +1,95 @@
+{
+  "config": {
+    "seq_len": 128,
+    "chunk_size": 16,
+    "no_retrieval": false,
+    "no_local": false,
+    "detach_state": false,
+    "num_kv": 2,
+    "epochs": 400,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "force_gate": "none",
+    "gate_bias": -4.0,
+    "gate_entropy_weight": 0.0,
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_crash_pin.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.261923789978027,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.3125,
+      "gate_means_slot_local_retrieval": [
+        0.2840295732021332,
+        0.3806460499763489,
+        0.33532440662384033
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 4.18288516998291,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625
+      ],
+      "same_pred_rate": 0.4375,
+      "gate_means_slot_local_retrieval": [
+        0.26777344942092896,
+        0.3903152644634247,
+        0.341911256313324
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 4.220236778259277,
+      "per_query_acc": [
+        0.0625,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.1875,
+      "gate_means_slot_local_retrieval": [
+        0.25972655415534973,
+        0.3929239511489868,
+        0.34734952449798584
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 4.137086868286133,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.25793784856796265,
+        0.39384883642196655,
+        0.3482132852077484
+      ]
+    }
+  ]
+}

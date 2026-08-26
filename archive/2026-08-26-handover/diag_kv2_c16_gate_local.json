@@ -1,0 +1,174 @@
+{
+  "config": {
+    "seq_len": 64,
+    "chunk_size": 16,
+    "num_kv": 2,
+    "epochs": 1200,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "force_gate": "local",
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_kv2_c16_gate_local.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.2644829750061035,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.3125
+    },
+    {
+      "step": 200,
+      "train_loss": 4.185756206512451,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625
+      ],
+      "same_pred_rate": 0.5
+    },
+    {
+      "step": 300,
+      "train_loss": 4.239321708679199,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.25
+    },
+    {
+      "step": 400,
+      "train_loss": 4.137889862060547,
+      "per_query_acc": [
+        0.0625,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.9375
+    },
+    {
+      "step": 500,
+      "train_loss": 4.150094985961914,
+      "per_query_acc": [
+        0.0625,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.1875
+    },
+    {
+      "step": 600,
+      "train_loss": 4.1255998611450195,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.4375
+    },
+    {
+      "step": 700,
+      "train_loss": 4.173650741577148,
+      "per_query_acc": [
+        0.25,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.125,
+        0.0
+      ],
+      "same_pred_rate": 0.125
+    },
+    {
+      "step": 800,
+      "train_loss": 4.01431941986084,
+      "per_query_acc": [
+        0.25,
+        0.1875
+      ],
+      "per_query_crosstalk": [
+        0.3125,
+        0.0625
+      ],
+      "same_pred_rate": 0.375
+    },
+    {
+      "step": 900,
+      "train_loss": 3.9326248168945312,
+      "per_query_acc": [
+        0.25,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.1875,
+        0.0
+      ],
+      "same_pred_rate": 0.125
+    },
+    {
+      "step": 1000,
+      "train_loss": 3.925987720489502,
+      "per_query_acc": [
+        0.3125,
+        0.125
+      ],
+      "per_query_crosstalk": [
+        0.1875,
+        0.0625
+      ],
+      "same_pred_rate": 0.125
+    },
+    {
+      "step": 1100,
+      "train_loss": 3.939177989959717,
+      "per_query_acc": [
+        0.3125,
+        0.1875
+      ],
+      "per_query_crosstalk": [
+        0.1875,
+        0.0625
+      ],
+      "same_pred_rate": 0.1875
+    },
+    {
+      "step": 1200,
+      "train_loss": 3.8780529499053955,
+      "per_query_acc": [
+        0.3125,
+        0.1875
+      ],
+      "per_query_crosstalk": [
+        0.1875,
+        0.0625
+      ],
+      "same_pred_rate": 0.1875
+    }
+  ]
+}

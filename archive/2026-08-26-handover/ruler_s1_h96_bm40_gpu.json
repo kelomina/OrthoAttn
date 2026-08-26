@@ -1,0 +1,911 @@
+{
+  "config": {
+    "variant": "sniah1",
+    "num_haystack": 96,
+    "num_needle_k": 1,
+    "num_needle_q": 1,
+    "epochs": 2000,
+    "batch_size": 8,
+    "dim": 128,
+    "num_layers": 2,
+    "slots": 64,
+    "read_topk": 8,
+    "chunk_size": 1024,
+    "lr": 0.001,
+    "warmup_steps": 80,
+    "seed": 20260506,
+    "eval_interval": 25,
+    "eval_batches": 4,
+    "retrieval_quality_gate_bias": -4.0,
+    "early_stop_em": 0.95,
+    "min_steps": 500,
+    "device": "cuda:0",
+    "output_json": "E:\\Project\\python\\DSRA\\reports\\ruler_s1_h96_bm40_gpu.json",
+    "vocab_size": 211
+  },
+  "best_eval_em": 0.0,
+  "best_step": 0,
+  "final_eval_em": 0.0,
+  "records": [
+    {
+      "step": 25,
+      "train_loss": 4.775707244873047,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.35478559136390686,
+        0.3226519525051117,
+        0.32256245613098145
+      ]
+    },
+    {
+      "step": 50,
+      "train_loss": 2.7283122539520264,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.34484779834747314,
+        0.32026228308677673,
+        0.3348899185657501
+      ]
+    },
+    {
+      "step": 75,
+      "train_loss": 2.3998820781707764,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.32230472564697266,
+        0.32908153533935547,
+        0.3486137092113495
+      ]
+    },
+    {
+      "step": 100,
+      "train_loss": 2.3841395378112793,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3226974308490753,
+        0.32593315839767456,
+        0.3513694107532501
+      ]
+    },
+    {
+      "step": 125,
+      "train_loss": 2.3686575889587402,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3223802447319031,
+        0.32770368456840515,
+        0.349916011095047
+      ]
+    },
+    {
+      "step": 150,
+      "train_loss": 2.3804473876953125,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.31684598326683044,
+        0.3323025703430176,
+        0.3508514165878296
+      ]
+    },
+    {
+      "step": 175,
+      "train_loss": 2.3764724731445312,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.31368640065193176,
+        0.33414170145988464,
+        0.3521718680858612
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 2.3870866298675537,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3085006773471832,
+        0.3384040892124176,
+        0.35309523344039917
+      ]
+    },
+    {
+      "step": 225,
+      "train_loss": 2.3739962577819824,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.30842775106430054,
+        0.33598122000694275,
+        0.3555910289287567
+      ]
+    },
+    {
+      "step": 250,
+      "train_loss": 2.3485422134399414,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.3108026683330536,
+        0.334378719329834,
+        0.3548186421394348
+      ]
+    },
+    {
+      "step": 275,
+      "train_loss": 2.374781608581543,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30059829354286194,
+        0.3382362425327301,
+        0.36116549372673035
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 2.3293886184692383,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3078269064426422,
+        0.33201348781585693,
+        0.36015957593917847
+      ]
+    },
+    {
+      "step": 325,
+      "train_loss": 2.375156879425049,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3019603192806244,
+        0.3379483222961426,
+        0.3600914180278778
+      ]
+    },
+    {
+      "step": 350,
+      "train_loss": 2.376410484313965,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3030184507369995,
+        0.33904650807380676,
+        0.35793498158454895
+      ]
+    },
+    {
+      "step": 375,
+      "train_loss": 2.3718814849853516,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.30429115891456604,
+        0.33304309844970703,
+        0.36266568303108215
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 2.3778815269470215,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.30392831563949585,
+        0.33322617411613464,
+        0.3628455400466919
+      ]
+    },
+    {
+      "step": 425,
+      "train_loss": 2.397829055786133,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3018827736377716,
+        0.33590683341026306,
+        0.36221036314964294
+      ]
+    },
+    {
+      "step": 450,
+      "train_loss": 2.3781096935272217,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.30668652057647705,
+        0.3335726261138916,
+        0.35974085330963135
+      ]
+    },
+    {
+      "step": 475,
+      "train_loss": 2.37607479095459,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3123548924922943,
+        0.330964595079422,
+        0.3566804528236389
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 2.3645243644714355,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.31167614459991455,
+        0.3326916992664337,
+        0.35563215613365173
+      ]
+    },
+    {
+      "step": 525,
+      "train_loss": 2.3301424980163574,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3140035569667816,
+        0.33227166533470154,
+        0.35372480750083923
+      ]
+    },
+    {
+      "step": 550,
+      "train_loss": 2.3661365509033203,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3164432942867279,
+        0.32834088802337646,
+        0.35521575808525085
+      ]
+    },
+    {
+      "step": 575,
+      "train_loss": 2.4015371799468994,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3048901855945587,
+        0.334053099155426,
+        0.36105671525001526
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 2.3697829246520996,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.30668675899505615,
+        0.3314243257045746,
+        0.3618888556957245
+      ]
+    },
+    {
+      "step": 625,
+      "train_loss": 2.3689651489257812,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30440226197242737,
+        0.33566534519195557,
+        0.35993239283561707
+      ]
+    },
+    {
+      "step": 650,
+      "train_loss": 2.3987488746643066,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3037641644477844,
+        0.3361471891403198,
+        0.36008867621421814
+      ]
+    },
+    {
+      "step": 675,
+      "train_loss": 2.368025302886963,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.30940836668014526,
+        0.3368586599826813,
+        0.35373297333717346
+      ]
+    },
+    {
+      "step": 700,
+      "train_loss": 2.390428066253662,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3099450170993805,
+        0.3368837237358093,
+        0.35317128896713257
+      ]
+    },
+    {
+      "step": 725,
+      "train_loss": 2.352677822113037,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30088311433792114,
+        0.3394833505153656,
+        0.35963350534439087
+      ]
+    },
+    {
+      "step": 750,
+      "train_loss": 2.3806004524230957,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3030555546283722,
+        0.333415150642395,
+        0.3635293245315552
+      ]
+    },
+    {
+      "step": 775,
+      "train_loss": 2.3730549812316895,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30713170766830444,
+        0.33322736620903015,
+        0.359640896320343
+      ]
+    },
+    {
+      "step": 800,
+      "train_loss": 2.346092700958252,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3003453314304352,
+        0.3703307807445526,
+        0.3293238580226898
+      ]
+    },
+    {
+      "step": 825,
+      "train_loss": 2.3488006591796875,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2927394509315491,
+        0.3962659239768982,
+        0.3109946548938751
+      ]
+    },
+    {
+      "step": 850,
+      "train_loss": 2.2952568531036377,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2821876108646393,
+        0.4101952314376831,
+        0.3076171576976776
+      ]
+    },
+    {
+      "step": 875,
+      "train_loss": 2.3163461685180664,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2829110324382782,
+        0.411754846572876,
+        0.3053341805934906
+      ]
+    },
+    {
+      "step": 900,
+      "train_loss": 2.2840235233306885,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.28386902809143066,
+        0.4179920256137848,
+        0.29813897609710693
+      ]
+    },
+    {
+      "step": 925,
+      "train_loss": 2.346583366394043,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.28580155968666077,
+        0.4189503490924835,
+        0.2952480614185333
+      ]
+    },
+    {
+      "step": 950,
+      "train_loss": 2.2653348445892334,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.284965842962265,
+        0.41700831055641174,
+        0.29802584648132324
+      ]
+    },
+    {
+      "step": 975,
+      "train_loss": 2.3558547496795654,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.2836879789829254,
+        0.4155227839946747,
+        0.3007892370223999
+      ]
+    },
+    {
+      "step": 1000,
+      "train_loss": 2.332362174987793,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.28340205550193787,
+        0.4113392233848572,
+        0.30525869131088257
+      ]
+    },
+    {
+      "step": 1025,
+      "train_loss": 2.2709131240844727,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.28571707010269165,
+        0.4118413031101227,
+        0.30244162678718567
+      ]
+    },
+    {
+      "step": 1050,
+      "train_loss": 2.318150281906128,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.2889477610588074,
+        0.40729665756225586,
+        0.30375558137893677
+      ]
+    },
+    {
+      "step": 1075,
+      "train_loss": 2.258993148803711,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2878069281578064,
+        0.40775370597839355,
+        0.30443939566612244
+      ]
+    },
+    {
+      "step": 1100,
+      "train_loss": 2.223471164703369,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.29052940011024475,
+        0.4049493074417114,
+        0.3045212924480438
+      ]
+    },
+    {
+      "step": 1125,
+      "train_loss": 2.261936902999878,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.29159706830978394,
+        0.40219593048095703,
+        0.3062070310115814
+      ]
+    },
+    {
+      "step": 1150,
+      "train_loss": 2.2699828147888184,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.2938598692417145,
+        0.3994235098361969,
+        0.3067166209220886
+      ]
+    },
+    {
+      "step": 1175,
+      "train_loss": 2.2705795764923096,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2945322096347809,
+        0.40262341499328613,
+        0.302844375371933
+      ]
+    },
+    {
+      "step": 1200,
+      "train_loss": 2.2233338356018066,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.2958924472332001,
+        0.40454617142677307,
+        0.29956141114234924
+      ]
+    },
+    {
+      "step": 1225,
+      "train_loss": 2.2545852661132812,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.2985401451587677,
+        0.3985271751880646,
+        0.3029327094554901
+      ]
+    },
+    {
+      "step": 1250,
+      "train_loss": 2.2593228816986084,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30386829376220703,
+        0.38960888981819153,
+        0.30652284622192383
+      ]
+    },
+    {
+      "step": 1275,
+      "train_loss": 2.241453170776367,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.30675771832466125,
+        0.3851686716079712,
+        0.30807363986968994
+      ]
+    },
+    {
+      "step": 1300,
+      "train_loss": 2.250744581222534,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.30962851643562317,
+        0.3815555274486542,
+        0.30881592631340027
+      ]
+    },
+    {
+      "step": 1325,
+      "train_loss": 2.2878313064575195,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.30896565318107605,
+        0.3835529088973999,
+        0.30748140811920166
+      ]
+    },
+    {
+      "step": 1350,
+      "train_loss": 2.300095319747925,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3077961802482605,
+        0.3872007429599762,
+        0.3050030469894409
+      ]
+    },
+    {
+      "step": 1375,
+      "train_loss": 2.2169907093048096,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3093191385269165,
+        0.3847273588180542,
+        0.3059535026550293
+      ]
+    },
+    {
+      "step": 1400,
+      "train_loss": 2.2061715126037598,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.311639666557312,
+        0.3811033070087433,
+        0.3072570562362671
+      ]
+    },
+    {
+      "step": 1425,
+      "train_loss": 2.302370548248291,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.31341803073883057,
+        0.3800663948059082,
+        0.3065156042575836
+      ]
+    },
+    {
+      "step": 1450,
+      "train_loss": 2.248753786087036,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3123006820678711,
+        0.3833606541156769,
+        0.3043386936187744
+      ]
+    },
+    {
+      "step": 1475,
+      "train_loss": 2.2443649768829346,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.3143017888069153,
+        0.3810984492301941,
+        0.3045997619628906
+      ]
+    },
+    {
+      "step": 1500,
+      "train_loss": 2.2080633640289307,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3155059516429901,
+        0.38055071234703064,
+        0.30394330620765686
+      ]
+    },
+    {
+      "step": 1525,
+      "train_loss": 2.236480951309204,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3174837529659271,
+        0.3786029517650604,
+        0.30391332507133484
+      ]
+    },
+    {
+      "step": 1550,
+      "train_loss": 2.3074393272399902,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3189581036567688,
+        0.3762795925140381,
+        0.3047623038291931
+      ]
+    },
+    {
+      "step": 1575,
+      "train_loss": 2.257113456726074,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3204631209373474,
+        0.3749135136604309,
+        0.3046233355998993
+      ]
+    },
+    {
+      "step": 1600,
+      "train_loss": 2.287594795227051,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.32107654213905334,
+        0.3744059205055237,
+        0.30451756715774536
+      ]
+    },
+    {
+      "step": 1625,
+      "train_loss": 2.186915397644043,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3208547532558441,
+        0.3755912482738495,
+        0.30355405807495117
+      ]
+    },
+    {
+      "step": 1650,
+      "train_loss": 2.182093620300293,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3222198486328125,
+        0.3752794861793518,
+        0.3025006651878357
+      ]
+    },
+    {
+      "step": 1675,
+      "train_loss": 2.2211294174194336,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3219864070415497,
+        0.375423401594162,
+        0.30259019136428833
+      ]
+    },
+    {
+      "step": 1700,
+      "train_loss": 2.1931824684143066,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3218817710876465,
+        0.3759552836418152,
+        0.30216294527053833
+      ]
+    },
+    {
+      "step": 1725,
+      "train_loss": 2.163069248199463,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.32246747612953186,
+        0.37541601061820984,
+        0.3021165132522583
+      ]
+    },
+    {
+      "step": 1750,
+      "train_loss": 2.2107021808624268,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.3230971395969391,
+        0.3747333288192749,
+        0.3021695613861084
+      ]
+    },
+    {
+      "step": 1775,
+      "train_loss": 2.1475491523742676,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3229615092277527,
+        0.37443962693214417,
+        0.30259889364242554
+      ]
+    },
+    {
+      "step": 1800,
+      "train_loss": 2.2465734481811523,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3240519165992737,
+        0.37308362126350403,
+        0.3028644621372223
+      ]
+    },
+    {
+      "step": 1825,
+      "train_loss": 2.1348602771759033,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3243066370487213,
+        0.37286314368247986,
+        0.3028302788734436
+      ]
+    },
+    {
+      "step": 1850,
+      "train_loss": 2.239124059677124,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.32475900650024414,
+        0.3722577691078186,
+        0.30298322439193726
+      ]
+    },
+    {
+      "step": 1875,
+      "train_loss": 2.181018829345703,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.375,
+      "gate_means_slot_local_retrieval": [
+        0.32560792565345764,
+        0.3710964024066925,
+        0.30329567193984985
+      ]
+    },
+    {
+      "step": 1900,
+      "train_loss": 2.184234380722046,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.325398325920105,
+        0.3716586232185364,
+        0.30294302105903625
+      ]
+    },
+    {
+      "step": 1925,
+      "train_loss": 2.1319243907928467,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3244134485721588,
+        0.3727187514305115,
+        0.3028677701950073
+      ]
+    },
+    {
+      "step": 1950,
+      "train_loss": 2.2569446563720703,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.3254453241825104,
+        0.3715710937976837,
+        0.3029835820198059
+      ]
+    },
+    {
+      "step": 1975,
+      "train_loss": 2.2018356323242188,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.32576271891593933,
+        0.37114912271499634,
+        0.30308812856674194
+      ]
+    },
+    {
+      "step": 2000,
+      "train_loss": 2.2727794647216797,
+      "eval_em": 0.0,
+      "first_digit_acc": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.32589203119277954,
+        0.37121015787124634,
+        0.3028978407382965
+      ]
+    }
+  ]
+}

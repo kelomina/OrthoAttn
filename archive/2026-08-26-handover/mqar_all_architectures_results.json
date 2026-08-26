@@ -1,0 +1,62 @@
+[
+  {
+    "model": "transformer",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.02734375,
+    "best_step": 300,
+    "final_accuracy": 0.028125,
+    "final_loss": 4.1468147277832035,
+    "total_time_sec": 8.307530403137207
+  },
+  {
+    "model": "linear",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.0234375,
+    "best_step": 50,
+    "final_accuracy": 0.021875,
+    "final_loss": 4.146659660339355,
+    "total_time_sec": 15.565099000930786
+  },
+  {
+    "model": "sliding_window",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.02734375,
+    "best_step": 200,
+    "final_accuracy": 0.015625,
+    "final_loss": 4.145418977737426,
+    "total_time_sec": 11.333363056182861
+  },
+  {
+    "model": "sparse",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.0234375,
+    "best_step": 100,
+    "final_accuracy": 0.015625,
+    "final_loss": 4.1453979969024655,
+    "total_time_sec": 11.123287916183472
+  },
+  {
+    "model": "mamba",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.0234375,
+    "best_step": 100,
+    "final_accuracy": 0.00625,
+    "final_loss": 4.149157428741455,
+    "total_time_sec": 1726.12327003479
+  },
+  {
+    "model": "mhdsra2",
+    "seq_len": 512,
+    "num_kv": 4,
+    "best_accuracy": 0.03125,
+    "best_step": 100,
+    "final_accuracy": 0.01875,
+    "final_loss": 4.152377319335938,
+    "total_time_sec": 1443.9445359706879
+  }
+]

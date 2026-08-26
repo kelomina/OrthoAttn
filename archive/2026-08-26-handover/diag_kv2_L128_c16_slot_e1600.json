@@ -1,0 +1,309 @@
+{
+  "config": {
+    "seq_len": 128,
+    "chunk_size": 16,
+    "no_retrieval": true,
+    "detach_state": false,
+    "num_kv": 2,
+    "epochs": 1600,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "force_gate": "slot",
+    "gate_bias": 2.0,
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_kv2_L128_c16_slot_e1600.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.264410018920898,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 4.181759834289551,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625
+      ],
+      "same_pred_rate": 0.5,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 4.234609127044678,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 4.139519214630127,
+      "per_query_acc": [
+        0.0625,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.9375,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 4.161767959594727,
+      "per_query_acc": [
+        0.0625,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 3.6558732986450195,
+      "per_query_acc": [
+        0.25,
+        0.1875
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 700,
+      "train_loss": 1.4242980480194092,
+      "per_query_acc": [
+        0.9375,
+        0.875
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 800,
+      "train_loss": 0.15815812349319458,
+      "per_query_acc": [
+        1.0,
+        0.9375
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 900,
+      "train_loss": 0.11870510876178741,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1000,
+      "train_loss": 0.02561497874557972,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1100,
+      "train_loss": 0.029399104416370392,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1200,
+      "train_loss": 0.015279999934136868,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1300,
+      "train_loss": 0.0036998759023845196,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1400,
+      "train_loss": 0.005221532192081213,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1500,
+      "train_loss": 0.0027660541236400604,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1600,
+      "train_loss": 0.0023876759223639965,
+      "per_query_acc": [
+        1.0,
+        1.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    }
+  ]
+}

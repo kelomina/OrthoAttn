@@ -1,0 +1,89 @@
+{
+  "config": {
+    "seq_len": 64,
+    "chunk_size": 16,
+    "num_kv": 2,
+    "epochs": 600,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_kv2_chunk16.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.262063980102539,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 4.180202484130859,
+      "per_query_acc": [
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 4.236554145812988,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 4.107504844665527,
+      "per_query_acc": [
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.125,
+        0.0
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 4.0838398933410645,
+      "per_query_acc": [
+        0.1875,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.1875
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 4.0568671226501465,
+      "per_query_acc": [
+        0.1875,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625
+      ]
+    }
+  ]
+}

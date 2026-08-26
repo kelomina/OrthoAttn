@@ -1,0 +1,373 @@
+{
+  "config": {
+    "seq_len": 256,
+    "chunk_size": 32,
+    "no_retrieval": true,
+    "detach_state": false,
+    "num_kv": 4,
+    "epochs": 1600,
+    "eval_interval": 100,
+    "batch_size": 16,
+    "dim": 128,
+    "lr": 0.001,
+    "warmup_steps": 50,
+    "seed": 20260506,
+    "force_gate": "slot",
+    "gate_bias": 2.0,
+    "output_json": "C:\\Users\\Saika\\AppData\\Local\\Temp\\opencode\\diag_kv4_L256_c32_slot_e1600.json"
+  },
+  "records": [
+    {
+      "step": 100,
+      "train_loss": 4.154750823974609,
+      "per_query_acc": [
+        0.0,
+        0.0,
+        0.0625,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.4375,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 200,
+      "train_loss": 4.168186187744141,
+      "per_query_acc": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.25,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 300,
+      "train_loss": 4.183130741119385,
+      "per_query_acc": [
+        0.0,
+        0.125,
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0,
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.5,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 400,
+      "train_loss": 4.186422348022461,
+      "per_query_acc": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.3125,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 500,
+      "train_loss": 4.161512851715088,
+      "per_query_acc": [
+        0.0625,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.4375,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 600,
+      "train_loss": 4.156395435333252,
+      "per_query_acc": [
+        0.0,
+        0.0625,
+        0.0625,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0625,
+        0.0,
+        0.0,
+        0.0625
+      ],
+      "same_pred_rate": 1.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 700,
+      "train_loss": 4.182413101196289,
+      "per_query_acc": [
+        0.0,
+        0.0,
+        0.0,
+        0.0625
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.125,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.1875,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 800,
+      "train_loss": 4.14213228225708,
+      "per_query_acc": [
+        0.0625,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 1.0,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 900,
+      "train_loss": 4.126982688903809,
+      "per_query_acc": [
+        0.0,
+        0.0625,
+        0.125,
+        0.1875
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0,
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1000,
+      "train_loss": 3.4678587913513184,
+      "per_query_acc": [
+        0.375,
+        0.3125,
+        0.4375,
+        0.3125
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.125,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1100,
+      "train_loss": 2.616644859313965,
+      "per_query_acc": [
+        0.5625,
+        0.4375,
+        0.6875,
+        0.5
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625,
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1200,
+      "train_loss": 1.9878429174423218,
+      "per_query_acc": [
+        0.6875,
+        0.4375,
+        0.8125,
+        0.75
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625,
+        0.0,
+        0.0
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1300,
+      "train_loss": 1.5733401775360107,
+      "per_query_acc": [
+        0.75,
+        0.5,
+        0.8125,
+        0.875
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.125,
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1400,
+      "train_loss": 1.3227747678756714,
+      "per_query_acc": [
+        0.75,
+        0.5625,
+        0.8125,
+        0.875
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.125,
+        0.0625,
+        0.0
+      ],
+      "same_pred_rate": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1500,
+      "train_loss": 1.4531333446502686,
+      "per_query_acc": [
+        0.75,
+        0.5625,
+        0.875,
+        0.875
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.125,
+        0.0,
+        0.0625
+      ],
+      "same_pred_rate": 0.125,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    },
+    {
+      "step": 1600,
+      "train_loss": 1.1715621948242188,
+      "per_query_acc": [
+        0.75,
+        0.5625,
+        0.8125,
+        0.9375
+      ],
+      "per_query_crosstalk": [
+        0.0,
+        0.0625,
+        0.0625,
+        0.0625
+      ],
+      "same_pred_rate": 0.0625,
+      "gate_means_slot_local_retrieval": [
+        0.9999876618385315,
+        6.144135568320053e-06,
+        6.144135568320053e-06
+      ]
+    }
+  ]
+}
