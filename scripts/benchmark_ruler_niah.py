@@ -28,7 +28,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.benchmark_mqar import get_cosine_warmup_scheduler, seed_all  # noqa: E402
+from scripts.benchmark_mqar import (  # noqa: E402
+    build_baseline_model,
+    get_cosine_warmup_scheduler,
+    seed_all,
+)
 from src.dsra.domain.ruler_niah import VOCAB, RulerNiahConfig, generate_ruler_niah_batch  # noqa: E402
 from src.dsra.dsra_model import MultiLayerMHDSRA2Model  # noqa: E402
 
@@ -117,6 +121,9 @@ def evaluate_exact_match(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="RULER-NIAH benchmark for MHDSRA2")
+    parser.add_argument("--model", type=str, default="mhdsra2",
+                        choices=["mhdsra2", "transformer"],
+                        help="mhdsra2=流式检索架构; transformer=标准因果对照(决定性控制组)")
     parser.add_argument("--variant", type=str, default="sniah1")
     parser.add_argument("--num-haystack", type=int, default=192,
                         help="噪声海草句条数(约 18 token/条), 控制上下文长度")
@@ -140,6 +147,9 @@ def main() -> None:
                         " (如默认 4 批 -> 3.125%%)。与 --batch-size(训练批)独立。")
     parser.add_argument("--retrieval-quality-gate-bias", type=float, default=0.0,
                         help="A/B 单变量: 负值抑制 retrieval 支路门控")
+    parser.add_argument("--value-digits", type=int, default=7,
+                        help="数值位数; 7=官方规格。小于 7 仅为诊断性偏离"
+                        "(定位复制链长度阻塞点), 结果不得作为 RULER 基准口径")
     parser.add_argument("--early-stop-em", type=float, default=0.0,
                         help="早停阈值: EM 达到该值且步数>=--min-steps 时提前结束; 0 关闭")
     parser.add_argument("--min-steps", type=int, default=0,
@@ -165,6 +175,7 @@ def main() -> None:
         batch_size=args.batch_size,
         device=device,
         seed=args.seed,
+        value_num_digits=args.value_digits,
     )
     eval_cfg = RulerNiahConfig(
         variant=args.variant,
@@ -174,37 +185,48 @@ def main() -> None:
         batch_size=8,
         device=device,
         seed=args.seed + 777,
+        value_num_digits=args.value_digits,
     )
 
-    override = {
-        "use_retrieval": True,
-        # 邻居扩展置 0: py-spy 实证 _expand_token_indices_with_neighbors 的纯 Python
-        # 逐索引循环为 CPU 熔炉(718% 核占用, GPU 4%)。RULER 针句整句连续存储于
-        # 单页, 右邻扩展对 S-NIAH-1 无增益。A/B 两臂配置一致, 不影响对照有效性。
-        "retrieval_neighbor_span": 0,
-        "retrieval_neighbor_direction": "right",
-        "retrieval_query_pooling": "max_token",
-        "retrieval_attention_topk": 16,
-        "retrieval_quality_gate_bias": float(args.retrieval_quality_gate_bias),
-        "detach_state": False,
-    }
-    model = MultiLayerMHDSRA2Model(
-        vocab_size=len(VOCAB),
-        dim=args.dim,
-        num_layers=args.num_layers,
-        K=args.slots,
-        kr=args.read_topk,
-        chunk_size=args.chunk_size,
-        use_retrieval=True,
-        mhdsra2_config_override=override,
-    ).to(device)
+    if args.model == "transformer":
+        # 决定性对照: 标准因果 Transformer(Pre-LN+RoPE+SDPA), 无检索/槽位/门控
+        model = build_baseline_model(
+            "transformer", vocab_size=len(VOCAB), dim=args.dim,
+            heads=4, num_layers=args.num_layers, device=device,
+        )
+        gate_store = None
+        override_used = {"model": "standard_transformer"}
+    else:
+        override = {
+            "use_retrieval": True,
+            # 邻居扩展置 0: py-spy 实证 _expand_token_indices_with_neighbors 的纯 Python
+            # 逐索引循环为 CPU 熔炉(718% 核占用, GPU 4%)。RULER 针句整句连续存储于
+            # 单页, 右邻扩展对 S-NIAH-1 无增益。A/B 两臂配置一致, 不影响对照有效性。
+            "retrieval_neighbor_span": 0,
+            "retrieval_neighbor_direction": "right",
+            "retrieval_query_pooling": "max_token",
+            "retrieval_attention_topk": 16,
+            "retrieval_quality_gate_bias": float(args.retrieval_quality_gate_bias),
+            "detach_state": False,
+        }
+        model = MultiLayerMHDSRA2Model(
+            vocab_size=len(VOCAB),
+            dim=args.dim,
+            num_layers=args.num_layers,
+            K=args.slots,
+            kr=args.read_topk,
+            chunk_size=args.chunk_size,
+            use_retrieval=True,
+            mhdsra2_config_override=override,
+        ).to(device)
+        gate_store = attach_gate_recorder(model)
+        override_used = override
     print(
         f"[forensics] requested={args.device} param_device="
-        f"{next(model.parameters()).device} vocab={len(VOCAB)}",
+        f"{next(model.parameters()).device} vocab={len(VOCAB)} "
+        f"model={args.model}",
         flush=True,
     )
-
-    gate_store = attach_gate_recorder(model)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4, betas=(0.9, 0.98))
     sched = get_cosine_warmup_scheduler(opt, warmup_steps=args.warmup_steps, total_steps=args.epochs)
     crit = torch.nn.CrossEntropyLoss(ignore_index=0)
@@ -227,9 +249,10 @@ def main() -> None:
         sched.step()
 
         if (step + 1) % args.eval_interval == 0 or step == args.epochs - 1:
-            reset_gate_store(gate_store)
+            if gate_store is not None:
+                reset_gate_store(gate_store)
             em, first_acc = evaluate_exact_match(model, eval_cfg, device, args.eval_batches)
-            gates = probe_gate_means(gate_store)
+            gates = probe_gate_means(gate_store) if gate_store is not None else [0.0, 0.0, 0.0]
             best_em, best_step = max(best_em, em), (step + 1) if em > best_em else best_step
             rec = {
                 "step": step + 1,
@@ -258,7 +281,7 @@ def main() -> None:
                 break
     final = records[-1] if records else {"eval_em": 0.0}
     result = {
-        "config": vars(args) | {"vocab_size": len(VOCAB)},
+        "config": vars(args) | {"vocab_size": len(VOCAB), "override": override_used},
         "best_eval_em": float(best_em),
         "best_step": int(best_step),
         "final_eval_em": float(final["eval_em"]),

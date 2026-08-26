@@ -172,6 +172,9 @@ class RulerNiahConfig:
         batch_size (int): 每批样本数 B, >= 1. Default: 8.
         device: 输出张量所在设备. Default: "cpu".
         seed (Optional[int]): 随机数种子(确定性复现). Default: None.
+        value_num_digits (int): 数值位数; 7 为官方规格。**小于 7 属于诊断性偏离**
+            (用于定位"复制链长度"是否为从零学习的阻塞点), 其结果不得作为
+            RULER 基准口径引用. Default: 7.
     """
 
     variant: str = "sniah1"
@@ -181,11 +184,14 @@ class RulerNiahConfig:
     batch_size: int = 8
     device: str = "cpu"
     seed: Optional[int] = None
+    value_num_digits: int = VALUE_NUM_DIGITS
 
     def __post_init__(self) -> None:
         """参数校验 / Validate parameters."""
         if self.variant != "sniah1":
             raise ValueError(f"unsupported variant: {self.variant}")
+        if not (1 <= self.value_num_digits <= 8):
+            raise ValueError("value_num_digits must be in [1, 8] (7=RULER spec)")
         if self.num_haystack < 1:
             raise ValueError("num_haystack must be >= 1")
         if self.num_needle_k < 1:
@@ -240,8 +246,8 @@ def generate_ruler_niah_batch(
         ]
         values: List[str] = []
         for _ in range(cfg.num_needle_k):
-            lo = 10 ** (VALUE_NUM_DIGITS - 1)
-            hi = 10 ** VALUE_NUM_DIGITS - 1
+            lo = 10 ** (cfg.value_num_digits - 1)
+            hi = 10 ** cfg.value_num_digits - 1
             v = int(torch.randint(lo, hi + 1, (1,), generator=gen).item())
             values.append(str(v))
 
